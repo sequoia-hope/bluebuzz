@@ -1606,6 +1606,40 @@ def main(attempt=0):
         rt.path([p, a, b, v], net, width=0.15, chamfer=0.0)
         rt.via(v, net)
 
+    # ---- pre-route: the USB pair, receptacle joins -> R3/R4, on B.Cu ----
+    # Freerouting split each line over F, In2 and In3 (28 mm, three layer
+    # changes, the ESD array on a stub). design/stackup.md wants the pair
+    # on one layer over a ground plane at 0.15 / 0.15 (90 ohm). F.Cu cannot
+    # reach R3/R4 (their connector-side pads take vias because the RM2's pad
+    # row sits 0.35 mm above them), and In2 / In3 are crossed by PG_N, the
+    # QSPI lanes, WL_CLK and WL_CS. B.Cu, over the In4 ground, is open: from
+    # the receptacle's D+ join via and D- bridge, north-east past the two
+    # GND vias by C86/C92, up the 1 mm gap between the chip's lane vias and
+    # C97/C98, north-east over the QSPI vias, into the vias in R3/R4. D+
+    # stays west of D- the whole way (as at both ends), 0.3 mm apart on
+    # centres; the ESD array taps the lines on F.Cu. 18.5 / 19.7 mm on B.Cu.
+    dpv = v6
+    dma, dmb = inb(P["A7"], 1.46), inb(P["B7"], 1.46)
+    r3 = rel(pad_net(fps["R3"], "USB_DP").GetPosition())
+    r4 = rel(pad_net(fps["R4"], "USB_DM").GetPosition())
+    xp, xm = 1.2, 1.5                        # the run up the gap (D+, D-)
+    xp2, xm2 = 2.6, 2.9                      # the run past the QSPI vias
+    yt = 0.6                                 # where D+ leaves the gap
+    k = 0.3 * math.sqrt(2)                   # x + y offset of D-'s diagonals from D+'s
+    cp, cr = dpv[0] + dpv[1], r3[0] + r3[1]  # D+'s first and last diagonals (x + y)
+    for a, b in ((P["A7"], dma), (P["B7"], dmb)):
+        rt.track(a, b, "USB_DM", width=0.15)        # straight inboard to the bare vias
+    rt.track(dmb, dma, "USB_DM", layer=pcbnew.B_Cu, width=0.15)
+    rt.path([dpv, (xp, cp - xp), (xp, yt), (xp2, yt - (xp2 - xp)), (xp2, cr - xp2), r3],
+            "USB_DP", layer=pcbnew.B_Cu, width=0.15, chamfer=0.0)
+    # D- ends 0.41 below R4's via and jogs east under R3's: parallel all the
+    # way it would pass 0.02 mm from R3's via
+    ye = r4[1] + 0.41
+    rt.path([dma, (dma[0], cp + k - dma[0]), (xm, cp + k - xm), (xm, xp + yt + k - xm),
+             (xm2, xp + yt + k - xm2), (xm2, cr + k - xm2), (cr + k - ye, ye),
+             (r4[0] - 0.41, ye), r4],
+            "USB_DM", layer=pcbnew.B_Cu, width=0.15, chamfer=0.0)
+
     # ---- inner planes ----
     inner = board_poly(design, 0.5)
     st = stackup(design)  # (also set at the top of main)
@@ -1675,6 +1709,20 @@ def main(attempt=0):
         x1s, y1s = to_mm(bb.GetRight()) - CX, to_mm(bb.GetBottom()) - CY
         rule_area(f"tac_novia_{ref}", list(pcbnew.LSET.AllCuMask(design["board"]["layers"]).Seq()),
                   [(x0s, y0s), (x1s, y0s), (x1s, y1s), (x0s, y1s)], tracks=False, vias=True)
+    # ---- R11 (ILIM) and C10 (VBUS 10u): GND to one via outside the sensor box ----
+    # Both GND pads sit in the top-left sensor's no-via box under the RF
+    # keep-out line, so neither takes a via in the pad, and on F.Cu R11.2 is
+    # walled in by VBUS, ILIM and the charger: it was the open connection
+    # in 4 of 11 orderings. (FACING keeps R11's ILIM end at pin 12, so it
+    # cannot simply turn round.) A 45-degree link from R11.2 into C10.2 and
+    # a stub from C10.2's corner to a via 0.2 mm west of the box.
+    r11g = rel(pad_of(fps["R11"], 2).GetPosition())
+    c10g = rel(pad_of(fps["C10"], 2).GetPosition())
+    rt.path([r11g, (c10g[0] + 0.5, r11g[1]), (c10g[0], r11g[1] + 0.5)], "GND", width=0.2, chamfer=0.0)
+    vg = (c10g[0] - 0.5, c10g[1] - 0.58)
+    rt.track((c10g[0] - 0.25, c10g[1] - 0.33), vg, "GND", width=0.2)
+    rt.via(vg, "GND")
+
     # ---- debug-probe connector J6 (DNP): pin 2 GND to its mounting pad ----
     # Pin 2 sits on the back right under the RM2's WL_ON pad on the front,
     # so it cannot take a via; the finish stage found no path either. The

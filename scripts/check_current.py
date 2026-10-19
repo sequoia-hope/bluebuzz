@@ -27,6 +27,10 @@ conductor (1.19 A/mm inner, 1.98 A/mm outer), which under-rates a neck
 narrower than 2 mm (a 0.3 mm inner neck: 0.36 A against IPC's 0.6 A) and
 a 45-degree neck by up to 1/sqrt(2) (a 4-connected cut runs as a
 staircase) -- conservative, which is the side a check should err on.
+The pad-entry rule holds for fills as for tracks: fill within 1.0 mm of
+a fine-pitch pad of the net (one no wider than 0.3 mm, a QFN pin) is not
+rated -- copper cannot be wider than the gap between the pin's
+neighbours there, and the pin sinks its heat.
 
 Exits 1 on any FAIL.
 
@@ -50,6 +54,8 @@ VIA_A_PER_MM_DRILL = 0.8 / 0.2           # 0.2 mm drill ~0.8 A (stackup.md)
 VIA_MARGIN = 1.5
 W_1A = {True: 0.3, False: 0.6}           # mm for 1 A: outer 1 oz, inner 0.5 oz
 CELL = 0.1                               # mm, pour raster
+PAD_ENTRY = 1.0                          # mm: unrated fill around a fine-pitch pin
+FINE_PAD = 0.3                           # mm: a pad this narrow is a fine-pitch pin
 MA = 1000                                # capacities in mA (integers for the solver)
 INF = 10 ** 7
 
@@ -155,7 +161,8 @@ class Net:
                         key = (ly, z.GetZoneName(), k, ix, iy)
                         mine[(ix, iy)] = len(self.cells)
                         self.cell_at[key] = len(self.cells)
-                        self.cells.append(dict(pos=c, layer=ly, outer=outer, zone=z.GetZoneName()))
+                        self.cells.append(dict(pos=c, layer=ly, outer=outer, zone=z.GetZoneName(),
+                                               entry=self.near_fine_pad(c, ly)))
             for (ix, iy), ci in mine.items():
                 for nb in ((ix + 1, iy), (ix, iy + 1)):
                     if nb in mine:
@@ -186,6 +193,20 @@ class Net:
                 for h in hit:
                     self.cell_item.append((ids[h], i))
 
+    def near_fine_pad(self, c, ly):
+        if not hasattr(self, "_fine"):
+            self._fine = []
+            for it in self.items:
+                if it["kind"] == "pad":
+                    sz = it["obj"].GetSize()
+                    if min(T(sz.x), T(sz.y)) <= FINE_PAD:
+                        bb = it["obj"].GetBoundingBox()
+                        self._fine.append((it, T(bb.GetLeft()), T(bb.GetTop()), T(bb.GetRight()), T(bb.GetBottom())))
+        for it, x0, y0, x1, y1 in self._fine:
+            if self.on(it, ly) and math.hypot(max(x0 - c[0], 0, c[0] - x1), max(y0 - c[1], 0, c[1] - y1)) <= PAD_ENTRY:
+                return True
+        return False
+
     @staticmethod
     def on(item, layer):
         return layer in item["layers"] if "layers" in item else item["layer"] == layer
@@ -212,7 +233,10 @@ class Net:
         if p["kind"] == "via" and q["kind"] == "via":
             return math.hypot(p["pos"][0] - q["pos"][0], p["pos"][1] - q["pos"][1]) <= p["r"] + q["r"]
         pad, other = (p, q) if p["kind"] == "pad" else (q, p)
-        return pad["obj"].HitTest(vec(other["pos"]))
+        # a via touches a pad when its copper overlaps it, not only when its
+        # centre is inside (the VBUS via beside C10's pad)
+        reach = pcbnew.FromMM(other["r"]) if other["kind"] == "via" else 0
+        return pad["obj"].HitTest(vec(other["pos"]), reach)
 
     def capacity(self, i):
         it = self.items[i]
@@ -245,7 +269,7 @@ class Net:
                 edge(2 * i + 1, 2 * j, INF)
         for c, cell in enumerate(self.cells):
             k = 2 * (n + c)
-            edge(k, k + 1, int(CELL * fill_amps_per_mm(cell["outer"]) * MA))
+            edge(k, k + 1, INF if cell["entry"] else int(CELL * fill_amps_per_mm(cell["outer"]) * MA))
         for a, b in self.cell_adj:
             ka, kb = 2 * (n + a), 2 * (n + b)
             edge(ka + 1, kb, INF)

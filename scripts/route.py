@@ -2,8 +2,10 @@
 """Routing pipeline.
 
 1. Wipe existing tracks / vias / zones (idempotent).
-2. Pre-route: the inner planes (stackup(): GND on In1 [and In4], the 3V3_SYS
-   pour on In2 [or In3]), the thermal
+2. Pre-route: the inner planes (stackup(): GND on In1 and In4, the VSYS
+   plane on In3), the power copper (the charger's OUT and BAT zones and
+   via arrays, the motor pads' via arrays, a via in every GND and VSYS
+   pad), the thermal
    vias under the charger's PowerPad, the charger's EN2 via, the ESD
    array's middle-pin stubs and vias. Plus the rule areas: no F.Cu tracks
    under the RM2 body, NO COPPER AT ALL in the RM2's RF keep-out (the top
@@ -131,8 +133,12 @@ def run_freerouting(dsn, ses, max_passes):
            # edge keepout band is straight-sided); 0.3 mm as in routing rules
            "--router.copper_to_edge_clearance_um=300"]
     print(f"running freerouting (max {max_passes} passes)…")
+    # no DISPLAY: with --gui.enabled=false it still asks Swing for a look
+    # and feel, and a stale X cookie in the environment kills it there
+    # ("Can't connect to X11 window server", 2026-10-19)
+    env = {k: v for k, v in os.environ.items() if k != "DISPLAY"}
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                            text=True, bufsize=1)
+                            text=True, bufsize=1, env=env)
     state = {"passes": 0, "last": time.time(), "tail": [], "unrouted": None}
 
     def reader():
@@ -425,11 +431,11 @@ def lay_rp2350_block(board, rt, design, fps):
         for a, b in zip(pts, pts[1:]):
             rt.track(a, b, "1V1", layer=board.GetLayerID(ly), width=0.3)
 
-    def keepout(name, layers, poly):
+    def keepout(name, layers, poly, tracks=False):
         z = pcbnew.ZONE(board)
         z.SetIsRuleArea(True)
         z.SetDoNotAllowCopperPour(True)
-        z.SetDoNotAllowTracks(False)
+        z.SetDoNotAllowTracks(tracks)
         z.SetDoNotAllowVias(False)
         z.SetDoNotAllowPads(False)
         z.SetDoNotAllowFootprints(False)
@@ -447,6 +453,11 @@ def lay_rp2350_block(board, rt, design, fps):
     # s6.3.8.1: no plane copper beneath the LX node on layer 2 (fig. 27),
     # and nothing on the top layer under the inductor but its own pads
     keepout("rp2350_lx_cutout", [stackup(design)["gnd"][0]], blk["cutout_l2"])
+    # ...and nothing on the inner signal layer under that opening: In2 sees
+    # the switch node through it (VBAT_SENSE, a 500 k source, ran 0.65 mm
+    # under LX there: phase-7 review, M6)
+    if stackup(design)["signal"]:
+        keepout("rp2350_lx_in2_clear", stackup(design)["signal"][:1], blk["cutout_l2"], tracks=True)
     keepout("rp2350_l1_gap", [pcbnew.F_Cu], blk["l1_gap"])
     return blk
 
@@ -575,13 +586,21 @@ class WireGroups:
 def stackup(design):
     """Which inner layer is which. 4 layers: In1 = GND plane, In2 = the
     VSYS pour (wires allowed at a cost). 6 layers: In1 and In4 = GND
-    planes, In2 = a free signal layer, In3 = the VSYS pour. Wires are
-    never left on a GND plane."""
+    planes, In2 = the one inner signal layer, In3 = the VSYS PLANE.
+
+    On six layers In3 carries no wire at all: with signals allowed there
+    the VSYS pour came out in two pieces joined by 0.24-0.32 mm necks,
+    under 312 mm of wiring (phase-7 review, B1), and In2 -- 0.11 mm above
+    it -- had no solid reference. VSYS is then a plane net like GND
+    (`plane_nets`): it leaves freerouting's netlist, every VSYS pad takes
+    vias into In3, and no stage routes it."""
     n = design["board"]["layers"]
     if n == 6:
         return {"gnd": [pcbnew.In1_Cu, pcbnew.In4_Cu], "signal": [pcbnew.In2_Cu],
-                "pour": pcbnew.In3_Cu}
-    return {"gnd": [pcbnew.In1_Cu], "signal": [], "pour": pcbnew.In2_Cu}
+                "pour": pcbnew.In3_Cu, "planes": [pcbnew.In1_Cu, pcbnew.In3_Cu, pcbnew.In4_Cu],
+                "plane_nets": ["GND", "VSYS"]}
+    return {"gnd": [pcbnew.In1_Cu], "signal": [], "pour": pcbnew.In2_Cu,
+            "planes": [pcbnew.In1_Cu], "plane_nets": ["GND"]}
 
 
 def relayer(board, design, node_budget=300000):
@@ -604,11 +623,13 @@ def relayer(board, design, node_budget=300000):
     # preference order: the back, then free inner signal layers, then the
     # pour layer, and a GND plane only when nothing else fits (it is
     # removed afterwards and left to the finish stage)
-    LAYERS = tuple([B] + st["signal"] + [st["pour"]] + st["gnd"])
+    # (on six layers the pour is the VSYS plane: no wire may go there)
+    pour = [] if st["pour"] in st["planes"] else [st["pour"]]
+    LAYERS = tuple([B] + st["signal"] + pour + st["planes"])
     COST = {B: 0.0, st["pour"]: 1.0}
     for ly in st["signal"]:
         COST[ly] = 0.5
-    for ly in st["gnd"]:
+    for ly in st["planes"]:
         COST[ly] = 1000.0
     mov = [g for g in wg.groups if g[2] in LAYERS]
     n = len(mov)
@@ -681,8 +702,8 @@ def relayer(board, design, node_budget=300000):
         for k, ly in best["assign"].items():
             if mov[k][2] != ly:
                 wg.move(mov[k], ly)
-    return (sum(len(g[0]) for ly in st["gnd"] for g in wg.on(ly)),
-            sum(len(g[0]) for g in wg.on(st["pour"])))
+    return (sum(len(g[0]) for ly in st["planes"] for g in wg.on(ly)),
+            sum(len(g[0]) for ly in st["signal"] + pour for g in wg.on(ly)))
 
 
 def drop_flat_vias(board):
@@ -880,19 +901,37 @@ def tame_dsn(dsn_path, design):
       the wiring section -- a wire on a net that no longer exists is fatal
       -- and each piece leaves a keepout the size of its copper plus the
       clearance, on every layer, so nothing is routed into it.
+    * on six layers all of that holds for VSYS and its In3 plane as well
+      (stackup()'s plane_nets): its pads carry pre-placed vias into In3.
+    * the classes in gen_project.LAYER_RULES get their `use_layer` limit:
+      the motor switch nodes on F.Cu only, VBUS on the outer layers.
     """
     import re
+    from gen_project import LAYER_RULES
     s = dsn_path.read_text()
     st = stackup(design)
-    for ly in st["gnd"]:
+    for ly in st["planes"]:
         name = pcbnew.LayerName(ly)
         s = s.replace(f"(layer {name}\n      (type signal)", f"(layer {name}\n      (type power)")
-    # the GND net block, and the GND planes (a plane on a net that no longer
-    # exists is as fatal as a class naming one; the layers are `power` now)
-    s, n_net = re.subn(r"\n    \(net GND\n      \(pins[^)]*\)\n    \)", "", s)
-    s = re.sub(r"\n    \(plane GND \(polygon [^\n]*(?:\n(?!    \().*)*", "", s)
-    # GND out of its class list (the token, with its surrounding space)
-    s = re.sub(r"(\(class [A-Za-z_]+[^\n]*?) GND(?=[ \n])", r"\1", s)
+    n_net = 0
+    for pn in st["plane_nets"]:
+        # the net block, and the net's planes (a plane on a net that no
+        # longer exists is as fatal as a class naming one; the layers are
+        # `power` now)
+        s, k = re.subn(rf"\n    \(net {pn}\n      \(pins[^)]*\)\n    \)", "", s)
+        n_net += k
+        s = re.sub(rf"\n    \(plane {pn} \(polygon [^\n]*(?:\n(?!    \().*)*", "", s)
+        # out of its class list (the token, with its surrounding space)
+        s = re.sub(rf"(\(class [A-Za-z_]+[^\n]*?) {pn}(?=[ \n])", r"\1", s)
+    # a class left with no nets is fatal too (Power held only GND and VSYS)
+    s = re.sub(r"\n    \(class [A-Za-z_]+\n      \(circuit\n(?:        [^\n]*\n)*      \)\n"
+               r"      \(rule\n(?:        [^\n]*\n)*      \)\n    \)", "", s)
+    # per-class layer limits: (circuit (use_layer ...)) -- freerouting
+    # reads them (NetClass.useLayer)
+    for cls, lys in LAYER_RULES.items():
+        s, k = re.subn(rf"(\n    \(class {cls} [^\n]*\n      \(circuit\n)",
+                       rf"\1        (use_layer {' '.join(lys)})\n", s)
+        assert k == 1, f"tame_dsn: class {cls} not in the DSN"
     # fixed GND copper -> keepouts
     layers = ["F.Cu"] + [f"In{i}.Cu" for i in range(1, design["board"]["layers"] - 1)] + ["B.Cu"]
     # the DSN is `(unit um)`: coordinates and sizes in micrometres. (This
@@ -909,7 +948,8 @@ def tame_dsn(dsn_path, design):
         for ly in layers:
             keep.append(f'    (keepout "" (circle {ly} {d + 2 * clr} {x} {y}))')
         return ""
-    s, n_via = re.subn(r'\n    \(via "(Via\[[^"]*\]_[0-9]+:[0-9]+_um)"  (-?\d+) (-?\d+) \(net GND\)\(type fix\)\)', via_sub, s)
+    pn_re = "|".join(st["plane_nets"])
+    s, n_via = re.subn(r'\n    \(via "(Via\[[^"]*\]_[0-9]+:[0-9]+_um)"  (-?[\d.]+) (-?[\d.]+) \(net (?:' + pn_re + r')\)\(type fix\)\)', via_sub, s)
     def wire_sub(m):
         # each fixed GND wire leaves a keepout the shape of its copper on its
         # own layer (freerouting adds its clearance around a keepout). They
@@ -936,13 +976,16 @@ def tame_dsn(dsn_path, design):
             keep.append(f'    (keepout "" (polygon {ly} 0  ' +
                         "  ".join(f"{x:.0f} {y:.0f}" for x, y in c) + "))")
         return ""
-    s, n_wire = re.subn(r"\n    \(wire \(path ([A-Za-z0-9.]+) (\d+) ([-\d ]+?)\)\(net GND\)\(type fix\)\)", wire_sub, s)
+    s, n_wire = re.subn(r"\n    \(wire \(path ([A-Za-z0-9.]+) (\d+) ([-\d. ]+?)\)\(net (?:" + pn_re + r")\)\(type fix\)\)", wire_sub, s)
+    for pn in st["plane_nets"]:
+        assert f"(net {pn})" not in s, f"tame_dsn: {pn} copper left in the DSN"
     if keep:
         i = s.index("    (wire_keepout") if "    (wire_keepout" in s else s.index("  )\n  (placement")
         s = s[:i] + "\n".join(keep) + "\n" + s[i:]
     dsn_path.write_text(s)
-    print(f"tame_dsn: {len(st['gnd'])} plane layers set to power, GND net removed ({n_net}), "
-          f"{n_via} fixed GND vias turned into keepouts, {n_wire} fixed GND wires turned into keepouts")
+    print(f"tame_dsn: {len(st['planes'])} plane layers set to power, {'/'.join(st['plane_nets'])} "
+          f"removed ({n_net}), {n_via} fixed plane-net vias and {n_wire} wires turned into keepouts, "
+          f"layer rules {LAYER_RULES}")
 
 
 def drop_debris(board):
@@ -1043,7 +1086,7 @@ class Obstacles:
         # The model has no zones otherwise; their boxes go in as a 0.2 mm
         # lattice of discs on their layer.
         for z in board.Zones():
-            if z.GetIsRuleArea() or not z.GetZoneName().startswith("rp2350_"):
+            if z.GetIsRuleArea() or not z.GetZoneName().startswith(("rp2350_", "pwr_")):
                 continue
             bb = z.GetBoundingBox()
             x0, y0 = to_mm(bb.GetLeft()) - CX, to_mm(bb.GetTop()) - CY
@@ -1123,21 +1166,26 @@ def add_stitching(board, rt, design, obs, pitch=4.0, inset=1.2):
     return placed
 
 
-def gnd_pad_vias(board, rt, design, in_pad_only, only=None):
-    """A via IN every GND pad that takes one. JLCPCB fills and caps
+def plane_pad_vias(board, rt, design, in_pad_only, net="GND", only=None, counts=None):
+    """A via IN every pad of plane net `net` (GND, VSYS) that takes one. JLCPCB fills and caps
     via-in-pad for free on six layers (servodrive's finding), so every GND
     pad on either side gets a 0.4/0.2 via at its centre, straight down to
     the planes -- where nothing of another net is within clearance of the
     via's rim or hole. Run BEFORE freerouting (in_pad_only: the vias are
     then DSN keepouts it routes around, and the decoupling pads are never
     walled off by wires) and again after it, when pads that had no room
-    get a via just beside them with a stub."""
+    get a via just beside them with a stub.
+
+    `counts` asks for more than one via in a pad, {(ref, pad): n}: the
+    current-carrying pads (design/stackup.md's via counts) get an array
+    of 0.4/0.2 vias at 0.6 mm pitch inside the pad."""
+    counts = counts or {}
     hw, hh = design["board"]["width_mm"] / 2, design["board"]["height_mm"] / 2
     have = [rel(v.GetPosition()) for v in board.GetTracks()
-            if v.Type() == pcbnew.PCB_VIA_T and v.GetNetname() == "GND"]
+            if v.Type() == pcbnew.PCB_VIA_T and v.GetNetname() == net]
     gnd_track_ends = {}
     for tr in board.GetTracks():
-        if tr.Type() == pcbnew.PCB_TRACE_T and tr.GetNetname() == "GND" and tr.IsLocked():
+        if tr.Type() == pcbnew.PCB_TRACE_T and tr.GetNetname() == net and tr.IsLocked():
             for q in (tr.GetStart(), tr.GetEnd()):
                 gnd_track_ends.setdefault(tr.GetLayer(), []).append(rel(q))
 
@@ -1150,7 +1198,7 @@ def gnd_pad_vias(board, rt, design, in_pad_only, only=None):
     # net is within clearance of the via's rim or hole. The pours still
     # spoke to the rest; the finish stage handles any pad left over.
     obs0 = Obstacles(board)
-    gnd_nc = rt.net("GND").GetNetCode()
+    gnd_nc = rt.net(net).GetNetCode()
     no_via_zones = [z for z in board.Zones() if z.GetIsRuleArea() and z.GetDoNotAllowVias()]
 
     # no GND via inside the RP2350 block's zones either: in the 1V1 ring or
@@ -1158,11 +1206,18 @@ def gnd_pad_vias(board, rt, design, in_pad_only, only=None):
     # the back, and their vias split the band), and in the PGND zone it is
     # a second return point
     block_zones = [z for z in board.Zones()
-                   if not z.GetIsRuleArea() and z.GetZoneName().startswith("rp2350_")]
+                   if not z.GetIsRuleArea() and (z.GetZoneName().startswith("rp2350_")
+                                                 or (z.GetZoneName().startswith("pwr_") and z.GetNetname() != net))]
 
-    def via_allowed(x, y):
+    # (a via IN a pad may sit inside another net's pwr_* zone: the pad is a
+    # hole in that zone already -- C14's GND pad in the charger's OUT zone)
+    pwr_zones = [z for z in block_zones if z.GetZoneName().startswith("pwr_")]
+    rp_zones = [z for z in block_zones if not z.GetZoneName().startswith("pwr_")]
+
+    def via_allowed(x, y, in_pad=False):
         pt = pcbnew.VECTOR2I(mm(CX + x), mm(CY + y))
-        return not any(z.Outline().Collide(pt, mm(0.3)) for z in no_via_zones + block_zones)
+        zs = no_via_zones + rp_zones + ([] if in_pad else pwr_zones)
+        return not any(z.Outline().Collide(pt, mm(0.3)) for z in zs)
 
     def rect_gap(x, y, bb):
         """Distance from (x,y) to an axis-aligned box (left, top, right, bottom)."""
@@ -1212,21 +1267,22 @@ def gnd_pad_vias(board, rt, design, in_pad_only, only=None):
         if only is not None and not only(fp):
             continue
         for pad in fp.Pads():
-            if pad.GetNetname() != "GND" or pad.GetAttribute() != pcbnew.PAD_ATTRIB_SMD:
+            if pad.GetNetname() != net or pad.GetAttribute() != pcbnew.PAD_ATTRIB_SMD:
                 continue
-            if (fp.GetReference(), pad.GetNumber()) in PGND_PADS:
+            if net == "GND" and (fp.GetReference(), pad.GetNumber()) in PGND_PADS:
                 continue                     # the RP2350 regulator's PGND: one return point only
             sz = pad.GetSize()
             if min(to_mm(sz.x), to_mm(sz.y)) < 0.45:
                 continue                     # too small to hold a 0.4 via
-            if min(to_mm(sz.x), to_mm(sz.y)) > 1.6:
+            if min(to_mm(sz.x), to_mm(sz.y)) > 1.6 and (fp.GetReference(), pad.GetNumber()) not in counts:
                 continue                     # an exposed pad: it has its own thermal vias
             px, py = rel(pad.GetPosition())
             bb = pad.GetBoundingBox()
             bx0, by0 = to_mm(bb.GetLeft()) - CX, to_mm(bb.GetTop()) - CY
             bx1, by1 = to_mm(bb.GetRight()) - CX, to_mm(bb.GetBottom()) - CY
-            if any(bx0 <= vx0 <= bx1 and by0 <= vy0 <= by1 for vx0, vy0 in have):
-                continue                     # a GND via already lands in this pad (its own, or
+            want = counts.get((fp.GetReference(), pad.GetNumber()), 1)
+            if sum(1 for vx0, vy0 in have if bx0 <= vx0 <= bx1 and by0 <= vy0 <= by1) >= want:
+                continue                     # a via already lands in this pad (its own, or
                                              # another pad's through it: J6's back MP under C80)
             if any(bx0 <= q[0] <= bx1 and by0 <= q[1] <= by1 for q in gnd_track_ends.get(smd_side(pad), ())):
                 continue                     # a locked GND wire already serves it (the tactile
@@ -1254,15 +1310,25 @@ def gnd_pad_vias(board, rt, design, in_pad_only, only=None):
                 ax = (1, 0) if sx > sy else (0, 1)
                 for f in (1.0, -1.0, 0.5, -0.5):
                     spots.append((px + ax[0] * reach * f, py + ax[1] * reach * f))
-            placed = False
+            if want > 1:
+                # an array: a 0.6 mm lattice inside the pad (0.25 in from its
+                # edge), nearest the centre first
+                nxs, nys = max(1, int((sx - 0.5) / 0.6) + 1), max(1, int((sy - 0.5) / 0.6) + 1)
+                spots = sorted(((px + (i - (nxs - 1) / 2) * 0.6, py + (k - (nys - 1) / 2) * 0.6)
+                                for i in range(nxs) for k in range(nys)),
+                               key=lambda q: math.hypot(q[0] - px, q[1] - py))
+            placed = 0
             for qx, qy in spots:
-                if clear_of_others(qx, qy, 0.2, 0.13) and via_allowed(qx, qy) and far_from_gnd_vias(qx, qy):
-                    rt.via((qx, qy), "GND")
+                if clear_of_others(qx, qy, 0.2, 0.13) and via_allowed(qx, qy, in_pad=True) and far_from_gnd_vias(qx, qy):
+                    rt.via((qx, qy), net)
                     have.append((qx, qy))        # paired pins share one pad (USB-C A1/B12): one via
-                    obs0.items.append((qx, qy, 0.2, gnd_nc, None, "gnd via-in-pad"))
+                    obs0.items.append((qx, qy, 0.2, gnd_nc, None, f"{net} via-in-pad"))
                     gnd_vias += 1
-                    placed = True
-                    break
+                    placed += 1
+                    if placed >= want:
+                        break
+            if placed and want > 1 and placed < want:
+                print(f"  {fp.GetReference()}.{pad.GetNumber()} ({net}): room for {placed} of {want} vias")
             if placed:
                 continue
             if in_pad_only:
@@ -1286,16 +1352,16 @@ def gnd_pad_vias(board, rt, design, in_pad_only, only=None):
                         continue                     # off the board, in its edge clearance, or in the RF keep-out
                     if (obs0.clear(vx, vy, 0.2, 0.2) and obs0.clear_seg((px, py), (vx, vy), 0.1, "GND", ly)
                             and far_from_gnd_vias(vx, vy)):
-                        rt.via((vx, vy), "GND")
+                        rt.via((vx, vy), net)
                         have.append((vx, vy))
-                        rt.track((px, py), (vx, vy), "GND", layer=ly, width=0.2)
-                        obs0.items.append((vx, vy, 0.2, gnd_nc, None, "gnd pad via"))
+                        rt.track((px, py), (vx, vy), net, layer=ly, width=0.2)
+                        obs0.items.append((vx, vy, 0.2, gnd_nc, None, f"{net} pad via"))
                         gnd_vias += 1
                         done = True
                         break
                 if done:
                     break
-    print(f"GND via-in-pad / beside ({'pre' if in_pad_only else 'post'}): {gnd_vias}")
+    print(f"{net} via-in-pad / beside ({'pre' if in_pad_only else 'post'}): {gnd_vias}")
 
 
 def main(attempt=0):
@@ -1313,35 +1379,135 @@ def main(attempt=0):
     for dx, dy in ((-0.4, -0.4), (0.4, -0.4), (-0.4, 0.4), (0.4, 0.4)):
         rt.via((ex + dx, ey + dy), "GND")
 
-    # ---- pre-route: the charger's EN2 pad (3V3_SYS) to the In2 pour ----
-    # A lone plane-net pad in a 0.5 mm QFN row: freerouting left it with a
-    # 0.7 mm stub and no via, twice. Stub outward from the pad, via at the
-    # end, locked.
+    # ---- pre-route: the charger's power pins ----
+    # The pin pairs first (VBAT 2+3, VSYS 10+11: 0.25 wide at 0.5 pitch, a
+    # bridge inside the row touches nothing else).
     u2 = fps["U2"]
+    assert abs(u2.GetOrientationDegrees() - 90) < 0.01, "route.py lays the charger's power copper for U2 at rot 90"
+    P2 = {n: rel(pad_of(u2, n).GetPosition()) for n in (1, 2, 3, 5, 9, 10, 11)}
+    for a, b in ((2, 3), (10, 11)):
+        rt.track(P2[a], P2[b], pad_of(u2, a).GetNetname(), width=0.25)
+
+    # EN2 (pin 5, VSYS): a lone plane-net pad in a 0.5 mm QFN row --
+    # freerouting left it with a 0.7 mm stub and no via, twice. Stub
+    # outward from the pad, a via into the In3 plane at the end, locked.
     u2x, u2y = rel(u2.GetPosition())
-    p5 = rel(pad_of(u2, 5).GetPosition())
+    p5 = P2[5]
     dx, dy = p5[0] - u2x, p5[1] - u2y
     if abs(dx) > abs(dy):
         out = (p5[0] + (0.8 if dx > 0 else -0.8), p5[1])
     else:
         out = (p5[0], p5[1] + (0.8 if dy > 0 else -0.8))
-    rt.track(p5, out, "3V3_SYS", width=0.15)
-    rt.via(out, "3V3_SYS")
+    rt.track(p5, out, "VSYS", width=0.15)
+    rt.via(out, "VSYS")
 
-    # ---- pre-route: VBAT from the charger's BAT pins to the cell pads ----
-    # Three runs out of three left this 4 mm open: the charger's thermal
-    # vias on one side, the set resistors behind it on the other.
-    u2 = fps["U2"]
-    p3 = rel(pad_of(u2, 3).GetPosition())
-    j2p = rel(pad_of(fps["J2"], 1).GetPosition())
-    # pin 3 (the outer VBAT pin; pin 4 beside it is GND) straight out of
-    # the row, then along it 0.7 mm clear of the pin ends, to a via at the
-    # cell pad's x, then B.Cu down into the pad
-    out = (p3[0], p3[1] + 0.86)      # 0.27 past the pin ends, 0.23 short of R13
-    vb = (j2p[0] - 0.2, out[1])
-    rt.path([p3, out, vb], "VBAT", width=0.3)
-    rt.via(vb, "VBAT", drill=0.25, size=0.5)
-    rt.path([vb, (j2p[0], j2p[1] + 0.9), j2p], "VBAT", layer=pcbnew.B_Cu, width=0.3)
+    # OUT (pins 10+11 -> the In3 VSYS plane), 2 A when both motors run at
+    # their 1 A rating (check_current.py): an F.Cu VSYS zone over the pin
+    # row's outer end, taking in C14's VSYS pad and reaching east to the
+    # OUT cap C11 (which cannot take a via: the cell pad is under it on the
+    # back), with four 0.6/0.3 vias (0.8 A each, stackup.md): two in C14's
+    # pad, two east of pin 9 (CHG_N keeps its exit below them, toward pin
+    # 8). Nothing can go straight above the pins: C120, the top-left
+    # sensor's cap, is under them on the back. It replaces one 0.2 via
+    # (0.53 A, the phase-7 review's B2).
+    top = P2[10][1] - 0.44                       # the pins' outer end (0.88 long)
+    c14 = rel(pad_net(fps["C14"], "VSYS").GetPosition())
+    vc, vd = (P2[9][0] + 0.55, top - 0.12), (P2[9][0] + 1.15, top - 0.12)
+    for v in ((c14[0], c14[1] - 0.32), (c14[0], c14[1] + 0.3), vc, vd):
+        rt.via(v, "VSYS", drill=0.3, size=0.6)
+    # (each via on copper of its own: a via that touches no pad of its net
+    # is re-netted by KiCad before the zone is ever filled)
+    rt.track(c14, vc, "VSYS", width=0.25)
+    rt.track(vc, vd, "VSYS", width=0.25)
+    c11 = pad_net(fps["C11"], "VSYS").GetBoundingBox()
+    cx1, cy0 = to_mm(c11.GetRight()) - CX, to_mm(c11.GetTop()) - CY
+    z = rt.zone(pcbnew.F_Cu, "VSYS", [(P2[11][0] - 0.15, top - 1.55), (cx1, top - 1.55), (cx1, cy0 + 0.1),
+                                       (P2[9][0] + 1.35, cy0 + 0.1), (P2[9][0] + 1.35, top + 0.16),
+                                       (P2[11][0] - 0.15, top + 0.16)],
+                priority=2, name="pwr_vsys_out", full=True)
+    z.SetLocked(True)
+
+    # CHG_N (pin 9) sits between the OUT pins and the OUT copper's vias:
+    # out of the pad's inner end, east to a via between the vias and pin 8
+    # (freerouting left it open in 5 of 8 orderings without it).
+    p9in = (P2[9][0], P2[9][1] + 0.19)
+    v9c = (P2[9][0] + 0.55, p9in[1])
+    rt.track(p9in, v9c, "CHG_N", width=0.15)
+    rt.via(v9c, "CHG_N")
+
+    # BAT (pins 2+3 -> the cell pad J2.1 on the back), 2 A on battery with
+    # both motors at their rating: an F.Cu VBAT zone under the pin row and
+    # across to the cell pad, and four 0.5/0.25 vias into J2.1 (2.7 A)
+    # where the pad is clear of C11's VSYS pad above it. It replaces a 0.3 mm
+    # track and one 0.25 via (0.67 A, B5). TS (pin 1 -> R13) is laid first,
+    # down the zone's west side, so the zone fills round it.
+    r13 = rel(pad_net(fps["R13"], "TS").GetPosition())
+    rt.path([P2[1], (P2[1][0], r13[1]), r13], "TS", width=0.15, chamfer=0.2)
+    j2 = pad_of(fps["J2"], 1).GetBoundingBox()
+    jx0, jy0 = to_mm(j2.GetLeft()) - CX, to_mm(j2.GetTop()) - CY
+    jx1, jy1 = to_mm(j2.GetRight()) - CX, to_mm(j2.GetBottom()) - CY
+    c11 = pad_net(fps["C11"], "VSYS").GetBoundingBox()
+    y_hi = to_mm(c11.GetBottom()) - CY + 0.4      # clear of C11's VSYS pad
+    # (the west column 0.55 in from the pad's edge: PG_N's In2 run comes
+    # down at x -6.75 beside it)
+    for vy in (y_hi, y_hi + 0.55):
+        for vx in (jx0 + 0.55, jx0 + 1.15):
+            rt.via((vx, vy), "VBAT", drill=0.25, size=0.5)
+    yb = P2[2][1] + 0.31                          # 0.13 into the pins' outer end
+    z = rt.zone(pcbnew.F_Cu, "VBAT", [(P2[2][0] - 0.15, yb), (jx0 - 0.05, yb), (jx0 - 0.05, y_hi - 0.3),
+                                       (jx1 + 0.2, y_hi - 0.3), (jx1 + 0.2, yb + 1.45), (P2[2][0] - 0.15, yb + 1.45)],
+                priority=2, name="pwr_vbat", full=True)
+    z.SetLocked(True)
+
+    # IN (pin 13, VBUS): pin 13 and its 10 uF C10 sit in the top-left
+    # sensor's no-via box, and TMR / ISET wall the strip below them, so the
+    # one way in for VBUS is a via in the 0.5 mm between the box and the
+    # board edge, overlapping C10's VBUS pad -- placed here, at the Vbus
+    # class's 0.7/0.4 (1.07 A), for freerouting to reach. C13 (100 nF) is
+    # on the back just below the box, for freerouting to join.
+    c10 = pad_net(fps["C10"], "VBUS").GetBoundingBox()
+    vin = (to_mm(c10.GetLeft()) - CX - 0.07, to_mm(c10.GetCenter().y) - CY)
+    rt.via(vin, "VBUS", drill=0.4, size=0.7)
+
+    # ---- pre-route: the motor corners' VSYS copper ----
+    # Each flyback diode's VSYS pad, the 22 uF bulk cap and the 100 nF sit
+    # in the bottom-corner sensor's no-via box (U22 / U23 on the back), so
+    # none can take a via of its own. An F.Cu VSYS zone joins them, with two
+    # vias just outside the box in the strip between the 100 nF and the
+    # sensor's cap C122 / C123 under the diode on the back: the flyback
+    # current (1 A, stackup.md) into the In3 plane. The feed runs up from
+    # the diode's pad and across, clear of the sensor's GND via.
+    for d, sx in (("D3", -1.0), ("D4", 1.0)):
+        dv = rel(pad_net(fps[d], "VSYS").GetPosition())
+        assert dv[0] * sx > 0, f"{d}: route.py expects it in the {'left' if sx < 0 else 'right'} corner"
+        yv = dv[1] - 1.7
+        va, vb = (sx * (abs(dv[0]) - 0.95), yv), (sx * (abs(dv[0]) - 1.55), yv)
+        for v in (va, vb):
+            rt.via(v, "VSYS")
+        rt.path([dv, (dv[0], yv), vb], "VSYS", width=0.4)
+        z = rt.zone(pcbnew.F_Cu, "VSYS", [(sx * 9.0, 17.6), (sx * 13.4, 17.6), (sx * 13.4, 21.2), (sx * 9.0, 21.2)],
+                    priority=2, name=f"pwr_vsys_{d.lower()}", full=True)
+        z.SetLocked(True)
+
+    # ---- pre-route: the motor pad row's via arrays (J4, on the back) ----
+    # The motor leads are soldered to J4 on the back; the FETs, diodes and
+    # bulk caps are on the front. Every amp crosses the board here, so each
+    # pad takes an array (stackup.md: 0.53 A per 0.2 via with margin):
+    # VSYS 4 vias into In3 (2 A), each switch node 3 (1 A) joined on F.Cu
+    # by a 0.6 mm bar the Motor class (F.Cu only) routes to. The arrays
+    # keep to the pads' upper two thirds on the VSYS pad, so a switch-node
+    # track can pass below them on F.Cu. (Phase-7 review B2, B3.)
+    j4 = fps["J4"]
+    assert abs(j4.GetOrientationDegrees()) < 0.01, "route.py lays J4's arrays for rot 0"
+    q4 = {n: rel(pad_of(j4, n).GetPosition()) for n in (1, 2, 3)}
+    for vx in (-0.3, 0.3):
+        for vy in (-0.6, 0.0):
+            rt.via((q4[1][0] + vx, q4[1][1] + vy), "VSYS")
+    for n, net in ((2, "MOTOR1_SW"), (3, "MOTOR2_SW")):
+        x, y = q4[n]
+        for vy in (-0.6, 0.0, 0.6):
+            rt.via((x, y + vy), net)
+        rt.track((x, y - 0.6), (x, y + 0.6), net, width=0.6)
 
     # ---- pre-route: the six QSPI lines ----
     # 0.4 mm pins, six of them in a row, and a flash 4 mm away: freerouting
@@ -1436,8 +1602,10 @@ def main(attempt=0):
     # The receptacle's D+ pads (A6, B6) and D- pads (A7, B7) alternate at
     # 0.5 mm pitch with 0.2 mm gaps: the two halves of each signal can only
     # meet through another layer. Three bare vias inboard of the row give
-    # freerouting the layer change; the VBUS pads get a via each with the
-    # pad's own hop to it (a pad-less via is re-netted to the plane).
+    # freerouting the layer change. The VBUS pads get a straight 0.4 mm
+    # stub out of the row; freerouting takes it from there with the Vbus
+    # class (0.65 mm, 0.7/0.4 vias). They had a 0.4/0.2 via each, which was
+    # the 0.53 A neck of every VBUS path once VBUS left In3 (2026-10-19).
     j1 = fps["J1"]
     P = {n: rel(pad_of(j1, n).GetPosition()) for n in ("A1", "A12", "A6", "B6", "A7", "B7", "A4", "A9")}
     rx, ry = P["A12"][0] - P["A1"][0], P["A12"][1] - P["A1"][1]
@@ -1456,16 +1624,8 @@ def main(attempt=0):
     rt.via(v6, "USB_DP")
     rt.track(P["A6"], v6, "USB_DP", width=0.15)                     # straight along the pad's line
     rt.path([P["B6"], inb(P["B6"], 2.11), v6], "USB_DP", width=0.15)   # out, then along the row (mitred)
-    # (the VBUS vias slide 0.6 along the row toward its middle: straight
-    # inboard they land on the receptacle's NPTH pegs)
-    vbus_hops = {}
-    for n, s in (("A4", 1.0), ("A9", -1.0)):
-        v = inb(P[n], 1.41)
-        v = (v[0] + rx * s * 0.6, v[1] + ry * s * 0.6)
-        vbus_hops[n] = v
-        rt.via(v, "VBUS")
-        rt.track(P[n], inb(P[n], 0.8), "VBUS", width=0.4)   # straight out of the row first
-        rt.track(inb(P[n], 0.8), v, "VBUS", width=0.4)
+    for n in ("A4", "A9"):
+        rt.track(P[n], inb(P[n], 0.8), "VBUS", width=0.4)   # straight out of the row
 
     # ---- pre-route: the ESD array's middle pins ----
     # SOT-666, 0.5 mm pitch: pins 2 (GND) and 5 (VBUS) sit between their
@@ -1543,9 +1703,20 @@ def main(attempt=0):
     v37 = (p37[0] + 0.75, p37[1])
     # 0.3 east past the QSPI SD3/SCLK vias, then west of the 1V1 ring's W
     # via and of C97's band via, under the pin row, up the right side
+    # On In2 (In3 is the VSYS plane), except under the bottom pin row: the
+    # RP2350 block's 1V1 strap runs down In2 at x 5.0 there, so that
+    # stretch drops to B.Cu (east of the USB pair's B.Cu run, north of the
+    # pin escapes' vias).
+    # (y 7.7: 0.15 below the pin row's pads, 0.15 above SWCLK's via; up
+    # 0.15 at 45 degrees before IMU_INT2's via)
+    vj1, vj2 = (3.6, 7.7), (8.6, 7.55)
     pts = [v9, (v9[0], -3.75), (v9[0] + 0.3, -3.45), (v9[0] + 0.3, 1.5), (1.6, 2.15),
-           (1.6, 7.6), (8.6, 7.6), (8.6, p37[1] + 0.5), v37]
-    rt.path(pts, "WL_CS", layer=st["pour"], width=0.15)   # In3: B.Cu under the bottom pin row blocked every escape via
+           (1.6, 7.7), vj1]
+    rt.path(pts, "WL_CS", layer=st["signal"][0], width=0.15)
+    rt.via(vj1, "WL_CS")
+    rt.path([vj1, (7.45, 7.7), (7.6, 7.55), vj2], "WL_CS", layer=pcbnew.B_Cu, width=0.15)
+    rt.via(vj2, "WL_CS")
+    rt.path([vj2, (8.6, p37[1] + 0.5), v37], "WL_CS", layer=st["signal"][0], width=0.15)
     rt.via(v37, "WL_CS")
     rt.track(v37, p37, "WL_CS", width=0.15)
 
@@ -1553,9 +1724,11 @@ def main(attempt=0):
     # Left open by 7 of 12 orderings once the RP2350 block and the QSPI
     # ribbon took the space above the chip's top-left corner (no path even
     # with rip-up: locked copper walls it in on F.Cu and In2). Out of the
-    # pad's outer end to a via beside the RM2's pad column, In3 down and
+    # pad's outer end to a via beside the RM2's pad column, B.Cu down and
     # across at 45 to x 0.0 (clear of the QSPI vias, pin 1's via and the
-    # motor vias), down to a via in the lane beside pin 5, in on F.Cu.
+    # motor vias), down to a via in the lane beside pin 5, in on F.Cu. (It
+    # ran on In3 until In3 became the VSYS plane; B.Cu has In4 GND under
+    # it, the reference a clock wants.)
     p3 = rel(pad_of(fps["U7"], 3).GetPosition())
     p5 = rel(pad_of(fps["U1"], 5).GetPosition())
     # va: below the battery JST's pads on the back (0.4 mm gaps, no room
@@ -1564,7 +1737,7 @@ def main(attempt=0):
     rt.path([p3, (p3[0] - 1.15, p3[1]), (va[0], p3[1] + 1.0), va], "WL_CLK", width=0.15, chamfer=0.0)
     rt.via(va, "WL_CLK")
     rt.path([va, (va[0], -8.8), (0.0, -8.8 + (0.0 - va[0])), (0.0, vb[1] - 0.45), vb],
-            "WL_CLK", layer=st["pour"], width=0.15)
+            "WL_CLK", layer=pcbnew.B_Cu, width=0.15)   # over In4 GND (In3 is the VSYS plane, In2 has the QSPI lanes)
     rt.via(vb, "WL_CLK")
     rt.track(vb, p5, "WL_CLK", width=0.15)
 
@@ -1799,7 +1972,43 @@ def main(attempt=0):
     # under them, leaving ~43 signal opens for the finish stage, of which
     # it re-closed all but ~9 (2026-10-18). The post-route pass still
     # handles what is left (vias beside the pad, after routing).
-    gnd_pad_vias(board, rt, design, in_pad_only=True)
+    plane_pad_vias(board, rt, design, in_pad_only=True)
+    # VSYS: the In3 plane is its only route, so every VSYS pad takes vias;
+    # the RM2's VIN (271 mA bursts) two (the flyback diodes have theirs, in
+    # the motor corners' zones)
+    VSYS_VIAS = {("U7", "16"): 2}
+    plane_pad_vias(board, rt, design, in_pad_only=True, net="VSYS", counts=VSYS_VIAS)
+
+    # ---- pre-route: the VBUS trunk, by the grid router ----
+    # From the via beside C10 (the one way into the charger's IN) to D6's
+    # VBUS pad by the receptacle: 22 mm at the Vbus class's 0.6 mm and
+    # 0.7/0.4 vias. Freerouting left it open in 10 of 15 orderings, routed
+    # last into a full board. Routed first instead, on the pre-routes only,
+    # and locked; freerouting does the receptacle side.
+    from finish import preroute
+    d6 = rel(pad_net(fps["D6"], "VBUS").GetPosition())
+    every = list(pcbnew.LSET.AllCuMask(design["board"]["layers"]).Seq())
+    nv = preroute(board, design, "VBUS", (vin, every), (d6, [pcbnew.F_Cu]))
+    assert nv is not None, "no path for the VBUS trunk"
+    print(f"VBUS trunk: {nv} vias")
+    # WL_DATA (gSPI data, R81 -> pin 4): left open by every ordering once
+    # WL_CLK (B.Cu) and WL_CS (In2) left In3 and filled the lane west of
+    # the chip. Routed now and locked: on F.Cu and B.Cu if it can be
+    # (GND-referenced: In2 is over VSYS), else with In2 as well.
+    r81 = rel(pad_net(fps["R81"], "WL_DATA").GetPosition())
+    p4 = rel(pad_of(fps["U1"], 4).GetPosition())
+    nv = preroute(board, design, "WL_DATA", (r81, [pcbnew.F_Cu]), (p4, [pcbnew.F_Cu]),
+                  layers=[pcbnew.F_Cu, pcbnew.B_Cu])
+    if nv is None:
+        nv = preroute(board, design, "WL_DATA", (r81, [pcbnew.F_Cu]), (p4, [pcbnew.F_Cu]))
+    assert nv is not None, "no path for WL_DATA"
+    print(f"WL_DATA: {nv} vias")
+    # GND return vias for the pre-routes' layer changes (USB, WL_CLK, WL_CS,
+    # WL_DATA, the pin escapes), now, while there is room for them
+    # (stitch.py does the routed ones). After the grid-routed nets: a
+    # return via first took pin 4's only way out.
+    from stitch import return_vias
+    print("return vias for the pre-routes: %d placed, %d without room" % return_vias(board, rt))
 
     # ---- edge keepout, for freerouting only ----
     # Freerouting keeps wires a net-clearance (0.127) from the outline,
@@ -1830,8 +2039,9 @@ def main(attempt=0):
     # and the regulator's high-current zones
     # (each zone's own outline: one box over the regulator also shut pin
     # 45 off and the strip between R4 and L1 where USB takes its vias)
+    # (and route.py's own power zones, pwr_*: the charger's OUT and BAT)
     for z in list(board.Zones()):
-        if z.GetIsRuleArea() or not z.GetZoneName().startswith("rp2350_"):
+        if z.GetIsRuleArea() or not z.GetZoneName().startswith(("rp2350_", "pwr_")):
             continue
         ol = z.Outline()
         rule_area(f"{z.GetZoneName()}_tmp", [z.GetLayer()],
@@ -1899,19 +2109,19 @@ def main(attempt=0):
             print(f"dropped {dropped} unused / single-layer vias, "
                   f"{peeled} dangling wires")
         left1, left2 = relayer(board, design)
-        print(f"relayer: {left1} wires left on the GND planes, {left2} on the 3V3 pour")
+        print(f"relayer: {left1} wires left on the planes, {left2} on the inner signal layer")
         if left1:
             # a wire on In1 is a slot in the ground plane. Take them out
             # (and whatever then dangles) and leave the connection open
             # for close_gaps / finish, which route on F.Cu, In2 and B.Cu.
             n = 0
             for tr in list(board.GetTracks()):
-                if (not isinstance(tr, pcbnew.PCB_VIA) and tr.GetLayer() in stackup(design)["gnd"]
+                if (not isinstance(tr, pcbnew.PCB_VIA) and tr.GetLayer() in stackup(design)["planes"]
                         and not tr.IsLocked()):
                     board.Delete(tr)
                     n += 1
             peeled = prune_dangling(board)
-            print(f"removed {n} GND-plane wires and {peeled} dangling wires for the finish stage")
+            print(f"removed {n} plane-layer wires and {peeled} dangling wires for the finish stage")
         # Re-layering moves wires between layers, so a via that changed a
         # layer before it can be flat after: sweep again, or the board
         # ships with what DRC calls a dangling via.
@@ -1925,18 +2135,9 @@ def main(attempt=0):
             if z.GetZoneName().endswith("_tmp"):
                 board.Delete(z)
 
-    # ---- same-net neighbour pins on the QFN charger ----
-    # VBAT is pins 2+3 and VSYS pins 10+11, 0.25 wide at 0.5 pitch. One
-    # 0.4 mm power trace reaches one pad; the neighbour is left hanging.
-    # A pad-to-pad bridge lies entirely inside the pin row (nothing of
-    # another net can legally be there), so it needs no gate.
-    for a, b in ((2, 3), (10, 11)):
-        pa, pb = pad_of(fps["U2"], a), pad_of(fps["U2"], b)
-        rt.track(rel(pa.GetPosition()), rel(pb.GetPosition()), pa.GetNetname(),
-                 pcbnew.F_Cu, width=0.25)
-
     hw, hh = design["board"]["width_mm"] / 2, design["board"]["height_mm"] / 2
-    gnd_pad_vias(board, rt, design, in_pad_only=False)
+    plane_pad_vias(board, rt, design, in_pad_only=False)
+    plane_pad_vias(board, rt, design, in_pad_only=False, net="VSYS", counts=VSYS_VIAS)
 
     # ---- outer pours + stitching (post-route: as DSN planes they stall
     #      freerouting, and it routes better with the outer layers open) ----

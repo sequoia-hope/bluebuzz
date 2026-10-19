@@ -24,9 +24,12 @@ VSYS plane, the phase-7 review's M9).
 4. GND stitching (stackup.md: an edge fence at <= 3 mm pitch, stitching
    through the interior): every point of the edge line 1.2 mm inside the
    outline within 1.6 mm of a GND via (3 mm pitch), and every interior point
-   within 3.0 mm of one; points where no via may go (rule areas that forbid
-   vias, the RF keep-out) are skipped. GND vias here are GND vias and GND
-   through-hole pads.
+   within 3.0 mm of one. Points where no via could go are skipped: within
+   0.6 mm of the outline (copper to edge), within a via's reach of a rule
+   area that forbids vias (the RF keep-out, the sensors' boxes) or of the
+   RP2350 block's and route.py's power zones (pwr_*), or within 0.33 mm of a
+   pad of another net (a module's pad row along the edge). GND vias here
+   are GND vias and GND through-hole pads.
 
 Exits 1 on any FAIL.
 
@@ -76,15 +79,47 @@ def poly_area_mm2(chain):
     return abs(chain.Area()) / 1e12
 
 
+def net_classes():
+    with open(NETS) as f:
+        return {row["net"]: row["class"] for row in csv.DictReader(f)}
+
+
+def layer_change_vias(board, classes=None):
+    """Every signal via, with the reference planes of the layers its net
+    uses there: [(net, x, y, {plane layers})], board mm. Plane nets and
+    POWER nets are left out (they are not signals with a return), and so
+    are the SWITCH_HI motor nodes: their current loop closes through VSYS
+    at the same pad row (J4.1's via array, 2 mm from J4.2 / J4.3), not
+    through an image current in the GND planes."""
+    classes = classes if classes is not None else net_classes()
+    tracks = [t for t in board.GetTracks() if t.Type() != pcbnew.PCB_VIA_T]
+    pads = [(fp, pd) for fp in board.GetFootprints() for pd in fp.Pads()]
+    out = []
+    for v in board.GetTracks():
+        if v.Type() != pcbnew.PCB_VIA_T:
+            continue
+        net = v.GetNetname()
+        if net in PLANES.values() or classes.get(net, "").startswith("POWER") \
+                or classes.get(net) == "SWITCH_HI":
+            continue
+        x, y = T(v.GetPosition().x), T(v.GetPosition().y)
+        refs = set()
+        for t in tracks:
+            if t.GetNetname() == net and t.GetLayerName() in REF:
+                if any(math.hypot(T(e.x) - x, T(e.y) - y) < 0.25 for e in (t.GetStart(), t.GetEnd())):
+                    refs.add(REF[t.GetLayerName()])
+        for fp, pd in pads:
+            if pd.GetNetname() == net and pd.HitTest(vec(x, y)):
+                refs |= {REF[l] for l in ("F.Cu", "B.Cu") if pd.IsOnLayer(board.GetLayerID(l))}
+        out.append((net, x, y, refs))
+    return out
+
+
 def main():
     board = pcbnew.LoadBoard(str(PCB))
     fails = 0
-    fast, classes = {}, {}
-    with open(NETS) as f:
-        for row in csv.DictReader(f):
-            classes[row["net"]] = row["class"]
-            if row["class"] in FAST:
-                fast[row["net"]] = row["class"]
+    classes = net_classes()
+    fast = {n: c for n, c in classes.items() if c in FAST}
     tracks = [t for t in board.GetTracks() if t.Type() != pcbnew.PCB_VIA_T]
     vias = [v for v in board.GetTracks() if v.Type() == pcbnew.PCB_VIA_T]
 
@@ -171,26 +206,13 @@ def main():
     gg = {"fail": 0, "warn": 0, "ok": 0}
     gv = {"warn": 0, "ok": 0}
     lines = []
-    plane_nets = set(PLANES.values())
-    for v in vias:
-        net = v.GetNetname()
-        if net in plane_nets or classes.get(net, "").startswith("POWER"):
-            continue
-        x, y = T(v.GetPosition().x), T(v.GetPosition().y)
-        refs = set()
-        for t in tracks:
-            if t.GetNetname() == net and t.GetLayerName() in REF:
-                if any(math.hypot(T(e.x) - x, T(e.y) - y) < 0.25 for e in (t.GetStart(), t.GetEnd())):
-                    refs.add(REF[t.GetLayerName()])
-        for fp in board.GetFootprints():
-            for pd in fp.Pads():
-                if pd.GetNetname() == net and pd.HitTest(vec(x, y)):
-                    refs |= {REF[l] for l in ("F.Cu", "B.Cu") if pd.IsOnLayer(board.GetLayerID(l))}
+    for net, x, y, refs in layer_change_vias(board, classes):
         nets_ = {PLANES[r] for r in refs}
         is_fast = net in fast
         if refs >= {"In1.Cu", "In4.Cu"}:
             d = float(np.min(np.hypot(gnd_np[:, 0] - x, gnd_np[:, 1] - y)))
             lim = RET_FAST if is_fast else RET_SLOW
+            d = round(d, 2)                   # (a via placed at exactly 1.0 mm read 1.0000x)
             if d > lim:
                 gg["fail"] += 1
                 lines.append(f"  FAIL  {net} via at ({x:.2f},{y:.2f}) In1<->In4: nearest GND via {d:.2f} mm (> {lim})")
@@ -216,10 +238,33 @@ def main():
     # ---- stitching density ----
     print("\nGND stitching:")
     no_via = [z for z in board.Zones() if z.GetIsRuleArea() and z.GetDoNotAllowVias()]
+    # the RP2350 block's planes and route.py's power zones take no GND via
+    # (it would cut them; PGND has one return point)
+    power_zones = [z for z in board.Zones() if not z.GetIsRuleArea()
+                   and z.GetZoneName().startswith(("rp2350_", "pwr_"))]
+    outline0 = pcbnew.SHAPE_POLY_SET()
+    board.GetBoardPolygonOutlines(outline0)
+    via_area = pcbnew.SHAPE_POLY_SET(outline0)
+    via_area.Inflate(-pcbnew.FromMM(0.6), pcbnew.CORNER_STRATEGY_ROUND_ALL_CORNERS, pcbnew.FromMM(0.01))
+    other_pads = []
+    for fp in board.GetFootprints():
+        for pd in fp.Pads():
+            if pd.GetNetname() != "GND":
+                bb = pd.GetBoundingBox()
+                other_pads.append((T(bb.GetLeft()), T(bb.GetTop()), T(bb.GetRight()), T(bb.GetBottom())))
 
     def via_allowed(x, y):
         p = vec(x, y)
-        return not any(z.Outline().Contains(p) for z in no_via)
+        if not via_area.Contains(p):
+            return False
+        if any(z.Outline().Collide(p, pcbnew.FromMM(0.35)) for z in no_via):
+            return False
+        if any(z.Outline().Collide(p, pcbnew.FromMM(0.35)) for z in power_zones):
+            return False
+        # a via centre within 0.33 mm (its radius + clearance) of another
+        # net's pad is impossible
+        return not any(math.hypot(max(x0 - x, 0, x - x1), max(y0 - y, 0, y - y1)) < 0.33
+                       for x0, y0, x1, y1 in other_pads)
     edge = board.GetBoardEdgesBoundingBox()
     ex0, ey0, ex1, ey1 = T(edge.GetLeft()), T(edge.GetTop()), T(edge.GetRight()), T(edge.GetBottom())
     outline = pcbnew.SHAPE_POLY_SET()

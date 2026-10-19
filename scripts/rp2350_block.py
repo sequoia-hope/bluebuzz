@@ -197,7 +197,10 @@ def block():
         vias.append({"net": "1V1", "at": p, "size": ring["size"], "drill": ring["drill"]})
 
     # layer-2 cut-out (s6.3.8.1, figure 27): under the VREG_LX zone and the
-    # inductor's LX pad, with a margin
+    # inductor's LX pad, grown by a margin -- their own outline, not the box
+    # round both (that box was 1.7 x 5.4 mm, the LX zone's thin leg plus the
+    # pad, and opened In1 over In2 wiring the switch node then coupled
+    # into: phase-7 review, M6)
     l1 = b.FindFootprintByReference("L1")
     lx_pad = next(p for p in l1.Pads() if p.GetNetname() == "/VREG_LX")
     bb = lx_pad.GetBoundingBox()
@@ -205,10 +208,17 @@ def block():
     x1, y1 = rel(pcbnew.VECTOR2I(bb.GetRight(), bb.GetBottom()))
     lx_zone = next(z["poly"] for z in zones if z["net"] == "VREG_LX")
     m = 0.25
-    xs = [p[0] for p in lx_zone] + [x0, x1]
-    ys = [p[1] for p in lx_zone] + [y0, y1]
-    cutout = [(min(xs) - m, min(ys) - m), (max(xs) + m, min(ys) - m),
-              (max(xs) + m, max(ys) + m), (min(xs) - m, max(ys) + m)]
+    shape = pcbnew.SHAPE_POLY_SET()
+    for poly in (lx_zone, [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]):
+        shape.NewOutline()
+        for x, y in poly:
+            shape.Append(pcbnew.FromMM(x), pcbnew.FromMM(y))
+    shape.Simplify()
+    shape.Inflate(pcbnew.FromMM(m), pcbnew.CORNER_STRATEGY_CHAMFER_ALL_CORNERS, pcbnew.FromMM(0.02))
+    shape.Simplify()
+    assert shape.OutlineCount() == 1, "LX cut-out: the zone and the pad do not meet"
+    ch = shape.COutline(0)
+    cutout = [(T(ch.CPoint(i).x), T(ch.CPoint(i).y)) for i in range(ch.PointCount())]
     # top layer: nothing but the inductor's own copper between its pads
     a_pad = next(p for p in l1.Pads() if p.GetNetname() == "+1V1").GetBoundingBox()
     gap = [(T(a_pad.GetRight()) - cx, T(a_pad.GetTop()) - cy), (x0, T(a_pad.GetTop()) - cy),

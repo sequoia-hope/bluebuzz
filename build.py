@@ -8,7 +8,7 @@ Usage:
 
 Schematic stages first (schematic / project / erc / netlist), then the
 board (footprints / models / board / place / preview / route / close /
-finish / drc / audit / render / export), then the pcbview site (site). Every stage regenerates its output from circuit.py + design.yaml
+finish / stitch / drc / audit / render / export), then the pcbview site (site). Every stage regenerates its output from circuit.py + design.yaml
 + the placement table; nothing in out/ is hand-edited.
 """
 import argparse
@@ -21,7 +21,7 @@ from pathlib import Path
 ROOT = Path(__file__).parent
 STAGES = ["schematic", "project", "erc", "netlist",
           "footprints", "models", "board", "place", "preview", "route",
-          "close", "finish", "drc", "audit", "render", "export", "site"]
+          "close", "finish", "stitch", "drc", "audit", "render", "export", "site"]
 SCRIPTS = {
     "schematic": "gen_schematic.py",
     "project": "gen_project.py",
@@ -33,6 +33,7 @@ SCRIPTS = {
     "route": "route.py",
     "close": "close_gaps.py",             # the short hops freerouting abandons
     "finish": "finish.py",                # grid router for what close cannot
+    "stitch": "stitch.py",                # GND return vias, edge fence, interior stitching
     "drc": "drc.py",
     "audit": "audit.py",                  # layout rules DRC cannot express (board review)
     "render": "render.py",

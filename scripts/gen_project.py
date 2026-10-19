@@ -27,6 +27,11 @@ ERC_IGNORE = {
     "simulation_model_issue": "ignore",
 }
 
+# Layers a netclass may be routed on (route.py writes them into the DSN as
+# the class's `use_layer`; the finish stage keeps to them too). Classes not
+# listed may use every signal layer.
+LAYER_RULES = {"Motor": ["F.Cu"], "Vbus": ["F.Cu", "In2.Cu", "B.Cu"]}
+
 DEFAULT = {
     "board": {"design_settings": {"defaults": {}, "rules": {}},
               "layer_presets": [], "viewports": []},
@@ -68,6 +73,31 @@ DEFAULT = {
              "line_style": 0, "pcb_color": "rgba(0, 0, 0, 0.000)",
              "schematic_color": "rgba(0, 0, 0, 0.000)", "wire_width": 6,
              "bus_width": 12},
+            # The motor switch nodes, low-side FET drain and flyback diode to
+            # the MOT pad: 1 A per channel (nets.csv), 0.4 mm of 1 oz outer
+            # copper = 1.24 A (stackup.md). F.Cu only (LAYER_RULES): the
+            # parts are on the front and the pad's via array is the only
+            # layer change, so no single routed via can carry the motor.
+            {"name": "Motor", "priority": 0, "clearance": 0.127, "track_width": 0.4,
+             "via_diameter": 0.6, "via_drill": 0.3, "microvia_diameter": 0.2,
+             "microvia_drill": 0.1, "diff_pair_width": 0.2,
+             "diff_pair_gap": 0.25, "diff_pair_via_gap": 0.25,
+             "line_style": 0, "pcb_color": "rgba(0, 0, 0, 0.000)",
+             "schematic_color": "rgba(0, 0, 0, 0.000)", "wire_width": 6,
+             "bus_width": 12},
+            # USB VBUS into the charger, 1 A (ILIM): 0.65 mm, which is 1.06 A
+            # on the 0.5 oz inner layer and 1.76 A outside, and where it
+            # changes layer a 0.7/0.4 via (0.8 A per 0.2 mm of drill / 1.5
+            # = 1.07 A, stackup.md) -- one via that carries the current
+            # instead of a pair freerouting cannot place. Not on the planes
+            # (LAYER_RULES).
+            {"name": "Vbus", "priority": 0, "clearance": 0.127, "track_width": 0.65,
+             "via_diameter": 0.7, "via_drill": 0.4, "microvia_diameter": 0.2,
+             "microvia_drill": 0.1, "diff_pair_width": 0.2,
+             "diff_pair_gap": 0.25, "diff_pair_via_gap": 0.25,
+             "line_style": 0, "pcb_color": "rgba(0, 0, 0, 0.000)",
+             "schematic_color": "rgba(0, 0, 0, 0.000)", "wire_width": 6,
+             "bus_width": 12},
             # The cell's lead: 500 mA of charge current, 0.3 wide so it can
             # pass the charger's thermal vias and the pads behind it.
             {"name": "Battery", "priority": 3, "clearance": 0.127, "track_width": 0.3,
@@ -92,14 +122,14 @@ DEFAULT = {
         "netclass_assignments": None,
         "netclass_patterns": [
             {"netclass": "Power", "pattern": "GND"},
-            {"netclass": "Power", "pattern": "VBUS"},
-            {"netclass": "Power", "pattern": "VSYS"},     # also the In3 pour
+            {"netclass": "Vbus", "pattern": "VBUS"},
+            {"netclass": "Power", "pattern": "VSYS"},     # the In3 plane: via-in-pad, never routed
             {"netclass": "Battery", "pattern": "VBAT"},
             {"netclass": "Supply", "pattern": "3V3_SYS"},
             {"netclass": "Supply", "pattern": "3V3_SENS"},
             {"netclass": "Supply", "pattern": "3V3A"},
             {"netclass": "Supply", "pattern": "VREG_AVDD"},
-            {"netclass": "Power", "pattern": "MOTOR?_SW"},
+            {"netclass": "Motor", "pattern": "MOTOR?_SW"},
             {"netclass": "Supply", "pattern": "1V1"},
             {"netclass": "USB", "pattern": "USB_D?"},
             {"netclass": "USB", "pattern": "USB_D?_C"},

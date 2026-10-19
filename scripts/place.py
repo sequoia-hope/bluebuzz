@@ -90,7 +90,10 @@ PLACEMENT = {
     "U7": (5.9, -13.75, 0),
     "C101": (12.6, -4.15, 0),                # Vin 100n below the module's right column (pin 16)
     "C102": (10.55, -4.15, 0),               # VDDIO 100n below pin 14 (10.4,-6.0), right of the regulator block
-    "C100": (13.1, -2.0, 90),                # Vin 10u at the right edge below pad 16's column
+    # Vin 10u on the BACK, straight under pad 16: its VSYS pad shares pad
+    # 16's vias, its GND pad sits under GND pad 15 (it was 6 mm away at the
+    # right edge below the column: phase-7 review M11, parts/rm2-radio.md)
+    "C100": (12.05, -8.03, 90, "back"),
     "R80": (-3.0, -9.75, 90),          # DOUT 470R spanning pins 6 (-9.0) and 5 (-10.5)
     "R81": (0.6, -4.3, 0),                  # nIRQ 10k below the RM2, left of the RP2350 block's 53/54 cap
 
@@ -138,7 +141,12 @@ PLACEMENT = {
     "R10": (-12.9, -11.3, 0),          # ISET, toward pin 16 (-10.94,-12.75)
     "R11": (-10.5, -16.3, 0),          # ILIM above pin 12 (-10.25,-14.94)
     "C14": (-8.5, -16.3, 0),           # VSYS 100n above pins 10/11 (-9.25..-9.75,-14.94)
-    "C13": (-6.5, -16.3, 0),           # VBUS 100n (the left strip is full; C10 is at the pin)
+    # VBUS 100n on the BACK below the top-left sensor, near the VBUS via
+    # beside C10 (route.py): pin 13 and C10 sit in that sensor's no-via box,
+    # and at (-6.5,-16.3) on the far side of the charger it was 4.5 mm from
+    # its pin and walled in by the OUT copper. (x -12.55: R12 / R10's GND
+    # vias are at x -13.38 on the front.)
+    "C13": (-12.55, -11.9, 90, "back"),
     "C11": (-5.3, -13.9, 0),           # VSYS 10u right of the charger, over the BAT pads
     "R13": (-10.3, -10.8, 0),          # TS 10k below pin 1 (-10.25,-12.06), in the gap above the LDO
     "C15": (-5.0, -12.2, 0),           # VBAT 100n at the cell pad's via (-6.2,-11.2)
@@ -253,7 +261,7 @@ FACING = [
     ("C133", "LED_VDD", (12.1, 13.0)),
     ("C41", "VSYS", (-11.0, 20.4)),
     ("C124", "3V3_SENS", (-2.2, 2.6)),
-    ("C101", "VSYS", (12.65, -9.0)), ("C100", "VSYS", (13.1, -4.0)), ("C102", "3V3_SYS", (10.4, -6.0)),
+    ("C101", "VSYS", (12.65, -9.0)), ("C100", "VSYS", (12.05, -8.8)), ("C102", "3V3_SYS", (10.4, -6.0)),
     ("R80", "WL_DOUT", (-0.85, -9.0)), ("R81", "WL_IRQ", (4.4, -6.0)),
     ("C88", "3V3_SYS", (-4.15, 3.2)), ("R87", "QSPI_SS", (-1.45, 3.2)),
     ("C91", "3V3_SYS", (1.35, 0.7)),
@@ -264,7 +272,7 @@ FACING = [
     ("Y1", "XIN", (2.0, 9.0)),        # XIN pad top-left (pin 21 comes straight down to it)
     ("C86", "XIN", (2.8, 9.5)), ("C87", "XTAL2", (4.4, 11.7)),
     ("C10", "VBUS", (-10.94, -14.25)), ("R12", "TMR", (-10.94, -13.75)), ("R10", "ISET", (-10.94, -12.75)),
-    ("R11", "ILIM", (-10.25, -14.94)), ("C14", "VSYS", (-9.25, -14.94)), ("C13", "VBUS", (-10.94, -14.25)),
+    ("R11", "ILIM", (-10.25, -14.94)), ("C14", "VSYS", (-9.25, -14.94)), ("C13", "VBUS", (-13.42, -14.12)),
     ("C11", "VSYS", (-9.25, -14.94)), ("R13", "TS", (-10.25, -12.06)),
     ("C15", "VBAT", (-6.2, -11.2)), ("C12", "VBAT", (-6.0, -13.5)),
     ("C20", "VSYS", (-10.64, -9.45)), ("C21", "3V3_SYS", (-8.36, -9.45)), ("C22", "3V3_SYS", (-8.36, -9.45)),

@@ -68,6 +68,23 @@ def set_width(w):
     W_GAP = CLEAR + HALF
 
 
+def set_via(netname):
+    """...and the drawn via the class's own (a 0.4/0.2 via on VBUS was the
+    single 0.53 A neck of every routed VBUS path, 2026-10-19)."""
+    import fnmatch
+    from gen_project import DEFAULT
+    global VIA_D, VIA_DR, V_GAP
+    ns = DEFAULT["net_settings"]
+    cls = {c["name"]: c for c in ns["classes"]}
+    c = cls["Default"]
+    for pat in ns["netclass_patterns"]:
+        if fnmatch.fnmatchcase(netname, pat["pattern"]):
+            c = cls[pat["netclass"]]
+            break
+    VIA_D, VIA_DR = c["via_diameter"], c["via_drill"]
+    V_GAP = VIA_D / 2 + CLEAR
+
+
 def class_clearance():
     """The largest netclass clearance, plus a hair for the lattice. KiCad
     applies the LARGER of two nets' clearances, so a wire kept this far
@@ -85,6 +102,7 @@ TRACK_W = 0.15
 HALF = TRACK_W / 2
 CLEAR = class_clearance()
 W_GAP = CLEAR + HALF     # copper margin for a new wire, from the item edge
+VIA_D, VIA_DR = 0.4, 0.2  # the net's class via (set_via)
 V_GAP = 0.2 + CLEAR      # copper margin for a new via's centre (0.4 via)
 
 
@@ -165,7 +183,7 @@ def build_masks(board, design, netcode, grid):
             # hole-to-hole (0.2) applies to SAME-net vias too; other nets
             # need full copper clearance from this via's rim to ours
             mark_disk(via_blocked, vx, vy,
-                      max(rd + 0.1 + 0.2, 0.45) if same else rv + V_GAP)
+                      max(rd + VIA_DR / 2 + 0.2, VIA_D / 2 + 0.25) if same else rv + V_GAP)
             continue
         if same:
             continue
@@ -186,7 +204,7 @@ def build_masks(board, design, netcode, grid):
     # router must not cut, and no zone is in the masks otherwise. Their
     # outlines' boxes, for every other net, on their own layer.
     for z in board.Zones():
-        if z.GetIsRuleArea() or not z.GetZoneName().startswith("rp2350_") \
+        if z.GetIsRuleArea() or not z.GetZoneName().startswith(("rp2350_", "pwr_")) \
                 or z.GetLayer() not in lidx:
             continue
         if z.GetNetCode() == netcode and z.GetNetname() != "GND":
@@ -215,15 +233,15 @@ def build_masks(board, design, netcode, grid):
                     mark_rect(blocked[lidx[ly]], bx0 - HALF, by0 - HALF,
                               bx1 + HALF, by1 + HALF)
         if z.GetDoNotAllowVias():
-            mark_rect(via_blocked, bx0 - 0.225, by0 - 0.225,
-                      bx1 + 0.225, by1 + 0.225)
+            mark_rect(via_blocked, bx0 - VIA_D / 2 - 0.025, by0 - VIA_D / 2 - 0.025,
+                      bx1 + VIA_D / 2 + 0.025, by1 + VIA_D / 2 + 0.025)
 
     # a via wants 0.2 copper-to-edge on its 0.45 annulus: keep centres
     # 0.45 in from every edge (the wire grid is already inset 0.35)
     for i in range(nx):
         for j in range(ny):
             x, y = x0 + i * STEP, y0 + j * STEP
-            if abs(y) > hh - 0.45 or abs(x) > hw - 0.45:
+            if abs(y) > hh - VIA_D / 2 - 0.25 or abs(x) > hw - VIA_D / 2 - 0.25:
                 via_blocked.add((i, j))
             # and a wire 0.2 copper-to-edge on its own half-width: the
             # 0.35 grid inset suits a 0.15 wire only; a 0.4 GND wire was
@@ -231,7 +249,29 @@ def build_masks(board, design, netcode, grid):
             if abs(y) > hh - 0.2 - HALF or abs(x) > hw - 0.2 - HALF:
                 for bl in blocked:
                     bl.add((i, j))
+
+    # the net's class may be held to some layers (gen_project.LAYER_RULES:
+    # the motor switch nodes to F.Cu, VBUS to the outer layers); with one
+    # layer left it may not change layer at all
+    allowed = class_layers(board.FindNet(netcode).GetNetname() if netcode else "")
+    if allowed is not None:
+        every = {(i, j) for i in range(nx) for j in range(ny)}
+        for ly, li in lidx.items():
+            if pcbnew.LayerName(ly) not in allowed:
+                blocked[li] |= every
+        if len(allowed) < 2:
+            via_blocked |= every
     return blocked, via_blocked
+
+
+def class_layers(netname):
+    """The layers netname's class may use (gen_project.LAYER_RULES), or None."""
+    import fnmatch
+    from gen_project import DEFAULT, LAYER_RULES
+    for pat in DEFAULT["net_settings"]["netclass_patterns"]:
+        if fnmatch.fnmatchcase(netname, pat["pattern"]):
+            return LAYER_RULES.get(pat["netclass"])
+    return None
 
 
 def free_anchor(pos, blocked_l, grid):
@@ -387,7 +427,7 @@ def draw(rt, path, netname, grid, true_start, true_goal, blocked=None):
     for k in range(len(nodes) - 1):
         a, b = nodes[k], nodes[k + 1]
         if a[1] != b[1]:
-            rt.via(pts[k], netname)
+            rt.via(pts[k], netname, size=VIA_D, drill=VIA_DR)
             vias += 1
             continue
         if pts[k] == pts[k + 1]:
@@ -532,6 +572,7 @@ def finish_board(design, plane_layers):
                 netname = o1.GetNetname()
                 nc = o1.GetNetCode()
                 set_width(class_width(netname, design))
+                set_via(netname)
                 p1, l1 = endpoint(k1, o1, rel(o1.GetPosition()) if k1 != "track"
                                   else rel(o1.GetStart()))
                 p2, l2 = retarget(board, nc, p1)
@@ -543,6 +584,7 @@ def finish_board(design, plane_layers):
                 netname = o1.GetNetname()
                 nc = o1.GetNetCode()
                 set_width(class_width(netname, design))
+                set_via(netname)
                 p2_guess = rel(o2.GetPosition()) if k2 != "track" else \
                     rel(o2.GetStart())
                 p1, l1 = endpoint(k1, o1, p2_guess)
@@ -750,6 +792,136 @@ def stitch_fragments(board, design):
     return added
 
 
+def mitre(board, cut=0.3):
+    """Cut every right-angle corner between two unlocked wires to two
+    45-degree bends (the routers draw them; the pre-routes are mitred where
+    they are laid). A corner qualifies when exactly two wires of one net,
+    layer and width meet at a point with no pad or via on it; each is
+    shortened by up to `cut` (never more than half its length) and a
+    diagonal joins them, if that diagonal clears every other-net pad,
+    track and via on its layer by the class clearance. Returns the corners
+    cut and the corners left square."""
+    tracks = [t for t in board.GetTracks() if t.Type() == pcbnew.PCB_TRACE_T]
+    ends = {}
+    for t in tracks:
+        for e in (t.GetStart(), t.GetEnd()):
+            ends.setdefault((e.x, e.y, t.GetLayer(), t.GetNetCode()), []).append(t)
+    vias = [v for v in board.GetTracks() if v.Type() == pcbnew.PCB_VIA_T]
+    pads = [pd for fp in board.GetFootprints() for pd in fp.Pads()]
+    cut_n = left = 0
+    for (x, y, ly, nc), ts in ends.items():
+        if len(ts) != 2 or any(t.IsLocked() for t in ts) or ts[0].GetWidth() != ts[1].GetWidth():
+            continue
+        p = pcbnew.VECTOR2I(x, y)
+        if any(v.GetPosition() == p for v in vias) or any(
+                pd.GetNetCode() == nc and pd.HitTest(p) for pd in pads):
+            continue
+        legs = []
+        for t in ts:
+            far = t.GetEnd() if t.GetStart() == p else t.GetStart()
+            legs.append((t, far))
+        (t1, f1), (t2, f2) = legs
+        d1 = (to_mm(f1.x - x), to_mm(f1.y - y))
+        d2 = (to_mm(f2.x - x), to_mm(f2.y - y))
+        l1, l2 = math.hypot(*d1), math.hypot(*d2)
+        if l1 < 1e-3 or l2 < 1e-3 or abs(d1[0] * d2[0] + d1[1] * d2[1]) > 1e-3 * l1 * l2:
+            continue                             # not a right angle
+        hw = to_mm(t1.GetWidth()) / 2
+        done = False
+        for c in (cut, cut / 2):
+            c = min(c, l1 / 2, l2 / 2)
+            if c < 0.05:
+                break
+            a = (to_mm(x) + d1[0] / l1 * c, to_mm(y) + d1[1] / l1 * c)
+            b = (to_mm(x) + d2[0] / l2 * c, to_mm(y) + d2[1] / l2 * c)
+            if not diag_clear(board, a, b, hw, ly, nc, pads, tracks, vias):
+                continue
+            pa = pcbnew.VECTOR2I(pcbnew.FromMM(a[0]), pcbnew.FromMM(a[1]))
+            pb = pcbnew.VECTOR2I(pcbnew.FromMM(b[0]), pcbnew.FromMM(b[1]))
+            for t, q in ((t1, pa), (t2, pb)):
+                if t.GetStart() == p:
+                    t.SetStart(q)
+                else:
+                    t.SetEnd(q)
+            d = pcbnew.PCB_TRACK(board)
+            d.SetStart(pa)
+            d.SetEnd(pb)
+            d.SetLayer(ly)
+            d.SetWidth(t1.GetWidth())
+            d.SetNetCode(nc)
+            board.Add(d)
+            cut_n += 1
+            done = True
+            break
+        left += not done
+    return cut_n, left
+
+
+def diag_clear(board, a, b, hw, ly, nc, pads, tracks, vias):
+    """Does a wire a-b (board mm, half-width hw) on layer ly clear every
+    other-net item there by the class clearance?"""
+    from route import seg_dist
+    gap = CLEAR + hw
+    for pd in pads:
+        if pd.GetNetCode() == nc or not pd.IsOnLayer(ly):
+            continue
+        bb = pd.GetBoundingBox()
+        x0, y0, x1, y1 = to_mm(bb.GetLeft()), to_mm(bb.GetTop()), to_mm(bb.GetRight()), to_mm(bb.GetBottom())
+        for k in range(11):
+            px, py = a[0] + (b[0] - a[0]) * k / 10, a[1] + (b[1] - a[1]) * k / 10
+            if math.hypot(max(x0 - px, 0, px - x1), max(y0 - py, 0, py - y1)) < gap:
+                return False
+    for v in vias:
+        if v.GetNetCode() == nc:
+            continue
+        c = (to_mm(v.GetPosition().x), to_mm(v.GetPosition().y))
+        if seg_dist(a, b, c, c) < gap + to_mm(v.GetWidth(pcbnew.F_Cu)) / 2:
+            return False
+    for t in tracks:
+        if t.GetNetCode() == nc or t.GetLayer() != ly:
+            continue
+        s, e = t.GetStart(), t.GetEnd()
+        if seg_dist(a, b, (to_mm(s.x), to_mm(s.y)), (to_mm(e.x), to_mm(e.y))) < gap + to_mm(t.GetWidth()) / 2:
+            return False
+    return True
+
+
+def preroute(board, design, netname, a, b, layers=None):
+    """Route one net from a to b -- each (position, [copper layers]) -- with
+    the grid router, on the board in memory, before freerouting runs: the
+    class's width, via and layers (route.py uses it for the VBUS trunk,
+    which freerouting left open in most orderings once it was 0.6 mm with
+    0.7/0.4 vias). `layers` narrows the class's layers further. What it
+    draws is locked. Returns the vias used, or None."""
+    global LAYERS
+    from route import stackup
+    st = stackup(design)
+    pour = [] if st["pour"] in st["planes"] else [st["pour"]]
+    LAYERS = [pcbnew.F_Cu] + st["signal"] + pour + [pcbnew.B_Cu]
+    set_width(class_width(netname, design))
+    set_via(netname)
+    nc = board.FindNet(netname).GetNetCode()
+    rt = Router(board, design)
+    for step in (STEP, STEP / 2):
+        grid = grid_of(design, step)
+        blocked, via_blocked = build_masks(board, design, nc, grid)
+        if layers is not None:
+            every = {(i, j) for i in range(grid[2]) for j in range(grid[3])}
+            for li, ly in enumerate(LAYERS):
+                if ly not in layers:
+                    blocked[li] |= every
+        ends = []
+        for pos, lys in (a, b):
+            ends.append([(c, LAYERS.index(ly)) for ly in lys if ly in LAYERS
+                         and (c := free_anchor(pos, blocked[LAYERS.index(ly)], grid)) is not None])
+        if not all(ends):
+            continue
+        path = astar(ends[0], ends[1], blocked, via_blocked, grid)
+        if path is not None:
+            return draw(rt, path, netname, grid, a[0], b[0], blocked)
+    return None
+
+
 def board_score():
     """(error violations, unconnected) for the board on disk."""
     unc = drc_unconnected()
@@ -760,14 +932,20 @@ def board_score():
 
 
 def main():
-    """Close what close_gaps left, with the grid router. In1 is the GND
-    plane and never gets a wire; In2 carries the 3V3_SYS pour and may."""
+    """Close what close_gaps left, with the grid router. The planes (In1
+    and In4 GND, In3 VSYS on six layers) never get a wire."""
     global LAYERS
     design = load_design()
     from route import stackup
     st = stackup(design)
-    LAYERS = [pcbnew.F_Cu] + st["signal"] + [st["pour"], pcbnew.B_Cu]
-    left = finish_board(design, set(st["gnd"]))
+    pour = [] if st["pour"] in st["planes"] else [st["pour"]]
+    LAYERS = [pcbnew.F_Cu] + st["signal"] + pour + [pcbnew.B_Cu]
+    left = finish_board(design, set(st["planes"]))
+    board = pcbnew.LoadBoard(str(PCB))
+    cut, square = mitre(board)
+    pcbnew.ZONE_FILLER(board).Fill(board.Zones())
+    pcbnew.SaveBoard(str(PCB), board)
+    print(f"mitre: {cut} right-angle corners cut to 45 degrees, {square} left (no room)")
     viol, unc = board_score()
     print(f"finish: {unc} unconnected, {viol} DRC errors")
     REPORT.unlink(missing_ok=True)

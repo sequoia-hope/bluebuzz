@@ -165,7 +165,10 @@ def main():
 
         # same layer: straight or one L, whichever is clear
         done = False
-        for layer in [ly for ly in la if ly in lb]:
+        from finish import class_layers       # (the class layer rules: gen_project.LAYER_RULES)
+        allowed = class_layers(net)
+        for layer in [ly for ly in la if ly in lb
+                      and (allowed is None or pcbnew.LayerName(ly) in allowed)]:
             for way in paths(pa, pb):
                 if try_path(obs, way, halfw, net, layer, gap):
                     for a, b in zip(way, way[1:]):

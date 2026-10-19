@@ -1,0 +1,280 @@
+# Parts database for bluebuzz-rm2: every placeable part with its footprint.
+# footprint: "Lib:Name" is a KiCad 9 stock library unless the nickname is
+#            "bluebuzz-rm2", which means library/parts.pretty/ (gen_footprints.py).
+# verified:  yes   = pinout read from the manufacturer datasheet in this or a
+#                    sibling project (../, bike-tracker, servodrive, activity_tracker)
+#            api   = LCSC number, package and stock confirmed through JLCPCB's
+#                    parts-search API on 2026-10-17
+#            none  = not an LCSC part (the RM2: Raspberry Pi resellers only)
+# lcsc:      every number below was resolved through JLCPCB's parts search on
+#            2026-10-17 unless its note says it was inherited verified.
+
+# --- host --------------------------------------------------------------
+mcu:
+  mpn: RP2350A
+  lcsc: C42411118
+  footprint: Package_DFN_QFN:QFN-60-1EP_7x7mm_P0.4mm_EP3.4x3.4mm_ThermalVias
+  verified: yes          # pin map: servodrive tools/schematic.py control(),
+                         # ERC/DRC/netlist-checked there against the RP2350
+                         # datasheet; JLC 2026-10-17: 6,240 in stock, $1.29
+  notes: >
+    QFN-60 7x7 mm, 0.4 mm pitch, 3.4 mm exposed pad (pad 61 = GND).
+    IOVDD on 1, 11, 20, 30, 38, 45, 54; DVDD (1.1 V, from the on-chip
+    buck) on 6, 23, 39 and VREG_FB 50; VREG_VIN 49 and USB_OTP_VDD 53 on
+    3.3 V; ADC_AVDD 44 through 10 R; VREG_AVDD 46 through 33 R; VREG_PGND
+    47 to GND; VREG_LX 48 to the 3.3 uH. XIN 21 / XOUT 22, SWCLK 24 /
+    SWDIO 25 / RUN 26, USB_DM 51 / USB_DP 52, QSPI 55..60. GPIO0..25 on
+    2,3,4,5,7,8,9,10,12..19,27,28,29,31..37; GPIO26..29 (ADC0..3) on 40..43.
+    The core regulator, decoupling and USB series resistors follow
+    Raspberry Pi's RP2350A minimal design (RP-006440).
+
+flash:
+  mpn: W25Q32JVUUIQ
+  lcsc: C2999380
+  footprint: Package_SON:Winbond_USON-8-2EP_3x4mm_P0.8mm_EP0.2x0.8mm
+  verified: api          # JLC 2026-10-17: 2,203 in stock, $2.51. The 16 Mbit
+                         # 2x3 USON (W25Q16JVUXIQ, the pendant's and
+                         # servodrive's) had 0 stock in every listing; the
+                         # SOIC-8 W25Q16JVSSIQ is in stock but 5.3 x 5.3 mm.
+  notes: >
+    32 Mbit QSPI NOR, USON-8 3 x 4 mm, 0.8 mm pitch. Pinout 1=/CS 2=DO
+    3=/WP 4=GND 5=DI 6=CLK 7=/HOLD 8=VCC, the W25Q family's. /WP and
+    /HOLD are QSPI_SD2 / SD3 here (quad mode), so no pull-ups.
+    CHECK the KiCad land against Winbond's drawing before ordering: the
+    footprint is KiCad's for the Winbond UU package by name.
+
+crystal:
+  mpn: ABM8-272-T3
+  lcsc: C20625731
+  footprint: Crystal:Crystal_SMD_3225-4Pin_3.2x2.5mm
+  verified: api          # 12 MHz, CL 10 pF, ESR 50 ohm max, 3225 4-pad;
+                         # 7242 in stock 2026-10-18. The crystal of the
+                         # RP2350 reference design (hardware-design-with-
+                         # rp2350, the only validated circuit) with its
+                         # 15 pF loads and 1k in XOUT.
+  notes: >
+    Replaces the TXM12M0004252 (CL 12 pF, 120 ohm, 18 pF loads): the host
+    audit found that any deviation from the validated crystal circuit needs
+    temperature testing, and the TXM datasheet could not be obtained.
+core_inductor:
+  mpn: AOTA-B201610S3R3-101-T
+  lcsc: C42411119
+  footprint: bluebuzz-rm2:L_pol_2016
+  verified: api          # 3.3 uH, 2.1 A, 115 mohm, 0806 with a polarity dot;
+                         # JLC had 3 in stock 2026-10-18 -> CONSIGNED (user,
+                         # 2026-10-18): order >= 6 from Digi-Key/Mouser.
+  notes: >
+    The RP2350 reference design's own part (hardware-design-with-rp2350
+    p.6): Abracon made it with a polarity dot, all aligned on the reel,
+    because the regulator is sensitive to the inductor's orientation. The
+    footprint (from Raspberry Pi's RP2350_60QFN_minimal) marks pad 1 with
+    the dot. The Sunlord MPL2016S3R3MHT (C98336) fits the same land as a
+    fallback.
+
+# --- radio -------------------------------------------------------------
+radio:
+  mpn: RMC20452T
+  lcsc: ""               # not an LCSC part: Raspberry Pi approved resellers;
+                         # a consigned part at JLCPCB or hand-soldered
+  footprint: bluebuzz-rm2:RM2
+  verified: yes          # footprint from the datasheet drawing (docs/RM2-datasheet.pdf
+                         # fig. 6/7, release 7, 2026-02); pinout from its table 2
+  notes: >
+    Raspberry Pi Radio Module 2: CYW43439, Wi-Fi 4 + Bluetooth 5.2 Classic
+    and LE, PA/LNA, PCB antenna, RF shield, modular FCC/IC/CE. Vin 3.0-4.8 V
+    (RF degrades below 3.2 V) -- fed from VSYS here; VDDIO 3.3 V. TX 271 mA
+    peak, RX 43 mA, power-save ~1.2 mA. gSPI to the RP2350's PIO: pin 3
+    SCLK <- GPIO29, pin 5 DIN <- GPIO24, pin 6 DOUT -> GPIO24 through 470 R,
+    pin 10 nIRQ -> GPIO24 through 10 k, pin 9 CS <- GPIO25, pins 12+13
+    WL_ON/BT_ON <- GPIO23 (the Pico W defaults). Pins 8/17/18 are the
+    module's own GPIO0/2/1, left open. RF keep-out per fig. 6: no metal
+    within the top 5.0 mm of the body, 10.5 mm either side, 13.5 mm beyond.
+    Only works with Raspberry Pi microcontrollers (bespoke firmware loaded
+    by the Pico SDK over gSPI; BTstack for Bluetooth).
+
+# --- power -------------------------------------------------------------
+charger:
+  mpn: BQ24074RGTR
+  lcsc: C54313
+  footprint: Package_DFN_QFN:VQFN-16-1EP_3x3mm_P0.5mm_EP1.6x1.6mm
+  verified: yes
+  notes: >
+    1.5 A linear charger with power path (bike-tracker, SLUS810). VSYS, the
+    power-path output, feeds the LDO, the motors AND the RM2. /PGOOD to
+    GPIO9: the RP2350 has no VBUS detect of its own.
+
+ldo:
+  mpn: TLV75533PDBVR
+  lcsc: C404027
+  footprint: Package_TO_SOT_SMD:SOT-23-5
+  verified: yes
+  notes: >
+    500 mA LDO, 25 uA Iq: 1=IN 2=GND 3=EN 4=NC 5=OUT. Feeds the RP2350
+    (~50 mA busy), the flash, the sensors and the RM2's VDDIO only.
+
+load_switch:
+  mpn: TPS22918DBVR
+  lcsc: C131941
+  footprint: Package_TO_SOT_SMD:SOT-23-6
+  verified: yes
+  notes: >
+    SOT-23-6: 1=VIN 2=GND 3=ON 4=CT 5=QOD 6=VOUT. QOD to VOUT; 470p on CT.
+
+imu:
+  mpn: LSM6DS3TR-C
+  lcsc: C967633
+  footprint: Package_LGA:LGA-14_3x2.5mm_P0.5mm_LayoutBorder3x4y
+  verified: api
+  notes: >
+    ST 6-axis IMU, LGA-14 2.5 x 3 mm, on I2C1 (CS tied high, SA0 to GND:
+    address 0x6A) with INT1/INT2 to GPIO17/18, on the always-on 3.3 V so
+    it can wake the system on motion.
+baro:
+  mpn: DPS368XTSA1
+  lcsc: C3232508
+  footprint: bluebuzz-rm2:DPS368_LGA-8
+  verified: api
+  notes: >
+    Infineon DPS368 barometer, LGA-8 2.0 x 2.5 x 1.1 mm, waterproof (IPx8)
+    with the pressure port on top. 1.7-3.6 V, I2C or SPI (CSB low at
+    power-up = SPI). The tactile array: six of them on the back, cast in
+    elastomer, one chip select each on SPI1.
+
+dual_schottky:
+  mpn: BAT54C,215
+  lcsc: C37704
+  footprint: Package_TO_SOT_SMD:SOT-23
+  verified: api          # 30 V 200 mA common-cathode pair, 295k in stock 2026-10-18
+  notes: "Power latch: the button and PWR_HOLD OR'd onto the LDO's EN (pin 1 A1, 2 A2, 3 K)."
+signal_diode:
+  mpn: 1N4148WS
+  lcsc: C2128
+  footprint: Diode_SMD:D_SOD-323
+  verified: api          # basic part, 2.7M in stock 2026-10-18; pin 1 = cathode
+  notes: "VBUS into the power latch: USB plugged in keeps 3V3 on (user, 2026-10-18)."
+sig_fet:
+  mpn: 2N7002
+  lcsc: C8545
+  footprint: Package_TO_SOT_SMD:SOT-23
+  verified: api          # basic part, 2.6M in stock 2026-10-18
+  notes: "Reads the power button (gate on BTN_RAW, up to 4.4 V) onto GPIO8 (pin 1 G, 2 S, 3 D)."
+motor_fet:
+  mpn: AO3400A
+  lcsc: C20917
+  footprint: Package_TO_SOT_SMD:SOT-23
+  verified: yes
+  notes: SOT-23 1=G 2=S 3=D; 30 V / 5.7 A, logic level. JLC basic.
+
+motor_flyback:
+  mpn: B5819W
+  lcsc: C8598
+  footprint: Diode_SMD:D_SOD-123
+  verified: api
+  notes: 1 A / 40 V Schottky across each motor. Pin 1 = cathode.
+
+usb_esd:
+  mpn: USBLC6-2P6
+  lcsc: C15999
+  footprint: Package_TO_SOT_SMD:SOT-666
+  verified: yes
+  notes: 1=IO1 2=GND 3=IO2 4=IO2 5=VBUS 6=IO1.
+
+rgb_led:
+  mpn: XL-1010RGBC-2812B-S
+  lcsc: C51900942
+  footprint: bluebuzz-rm2:LED_1010_WS2812
+  verified: api          # 1.0 x 1.0 mm WS2812B-type, 3.5-5.5 V, 0.35 mA idle; 119,550 in stock 2026-10-18
+  notes: >
+    Status LED (user: a 1010 addressable LED). Fed from VSYS, switched so it
+    is unpowered when the system is off (its 0.35 mA idle current would
+    otherwise drain the cell): through U11 (TPS22918, ON = 3V3_SYS); DI from GPIO5 through 330 R. Pins: 1 DOUT,
+    2 VDD, 3 GND, 4 DI (EasyEDA C51900942).
+debug_jst:
+  mpn: BM03B-SRSS-TB(LF)(SN)
+  lcsc: ""
+  footprint: Connector_JST:JST_SH_BM03B-SRSS-TB_1x03-1MP_P1.00mm_Vertical
+  verified: api          # C160389, 28,922 in stock 2026-10-18 -- NOT fitted (DNP)
+  notes: >
+    Unstuffed footprint on the back for the Raspberry Pi Debug Probe's
+    3-pin JST-SH cable (Raspberry Pi debug connector specification: 1 SC =
+    SWCLK, 2 GND, 3 SD = SWDIO). Hand-fit a BM03B-SRSS-TB when wanted.
+led:
+  mpn: 19-217/GHC-YR1S2/6T
+  lcsc: C2986059
+  footprint: LED_SMD:LED_0603_1608Metric
+  verified: yes
+  notes: Everlight 0603 green; 330R from 3.3 V. Pin 1 = cathode.
+
+button:
+  mpn: EVQPUC02K
+  lcsc: C79174
+  footprint: Button_Switch_SMD:Panasonic_EVQPUL_EVQPUC
+  verified: yes
+  notes: Side-actuated, plunger on the footprint's -y side, flush with the left edge.
+
+# --- bare copper: the external leads (library/parts.pretty, gen_footprints.py) ---
+usb_conn:
+  mpn: TYPE-C-31-M-12
+  lcsc: C165948
+  footprint: Connector_USB:USB_C_Receptacle_HRO_TYPE-C-31-M-12
+  verified: yes
+  notes: >
+    16-pin USB 2.0 receptacle (the nRF board's). A6/B6 (D+) and A7/B7 (D-)
+    must be tied. On the LEFT edge, mouth facing out: the top edge is the
+    RM2's RF keep-out and a metal shell may not sit there. 3D model offset
+    correction in library/3d/overrides.yaml.
+pads_swd:
+  mpn: PCB
+  lcsc: ""
+  footprint: bluebuzz-rm2:PadRow_5x_pogo
+  verified: yes
+  notes: "SWDIO SWCLK RUN BOOT GND -- a pogo clip; BOOT bridged to GND at power-up enters the UF2 bootloader."
+pads_bat:
+  mpn: PCB
+  lcsc: ""
+  footprint: bluebuzz-rm2:PadRow_3x_solder
+  verified: yes
+  notes: "the cell: + - T. T is the charger's TS pin, for a cell with a 10 k NTC (then R13 is left off)."
+pads_tp:
+  mpn: PCB
+  lcsc: ""
+  footprint: bluebuzz-rm2:PadRow_3x_pogo
+  verified: yes
+  notes: "bring-up test pads (ENIG, no paste): VSYS 3V3 1V1; GND is on the SWD row."
+pads_2:
+  mpn: PCB
+  lcsc: ""
+  footprint: bluebuzz-rm2:PadRow_2x_solder
+  verified: yes
+  notes: "the cell: + -"
+pads_3:
+  mpn: PCB
+  lcsc: ""
+  footprint: bluebuzz-rm2:PadRow_3x_solder
+  verified: yes
+  notes: "the motors: VSYS M1 M2"
+
+# --- passives -----------------------------------------------------------
+r_5k1:  {mpn: 0402WGF5101TCE, lcsc: C25905,  footprint: Resistor_SMD:R_0402_1005Metric, verified: yes}   # 5.1k, basic (CC)
+r_1k:   {mpn: 0402WGF1001TCE, lcsc: C11702,  footprint: Resistor_SMD:R_0402_1005Metric, verified: yes}   # 1k, basic
+r_10:   {mpn: 0402WGF100JTCE, lcsc: C25077,  footprint: Resistor_SMD:R_0402_1005Metric, verified: yes}   # 10R, basic (ADC supply)
+r_27:   {mpn: 0402WGF270JTCE, lcsc: C25100,  footprint: Resistor_SMD:R_0402_1005Metric, verified: api}   # 27R, extended (USB series)
+r_33:   {mpn: 0402WGF330JTCE, lcsc: C25105,  footprint: Resistor_SMD:R_0402_1005Metric, verified: api}   # 33R, basic (VREG_AVDD)
+r_100:  {mpn: 0402WGF1000TCE, lcsc: C25076,  footprint: Resistor_SMD:R_0402_1005Metric, verified: api}   # 100R, basic (gates)
+r_330:  {mpn: 0402WGF3300TCE, lcsc: C25104,  footprint: Resistor_SMD:R_0402_1005Metric, verified: yes}   # 330R, basic (LEDs)
+r_470:  {mpn: 0402WGF4700TCE, lcsc: C25117,  footprint: Resistor_SMD:R_0402_1005Metric, verified: api}   # 470R, basic (RM2 DOUT)
+r_4k7:  {mpn: 0402WGF4701TCE, lcsc: C25900,  footprint: Resistor_SMD:R_0402_1005Metric, verified: api}   # 4.7k, basic (I2C)
+r_10k:  {mpn: 0402WGF1002TCE, lcsc: C25744,  footprint: Resistor_SMD:R_0402_1005Metric, verified: yes}   # 10k, basic
+r_100k: {mpn: 0402WGF1003TCE, lcsc: C25741,  footprint: Resistor_SMD:R_0402_1005Metric, verified: yes}   # 100k, basic
+r_1M:   {mpn: 0402WGF1004TCE, lcsc: C26083,  footprint: Resistor_SMD:R_0402_1005Metric, verified: yes}   # 1M, basic
+r_1k78: {mpn: 0402WGF1781TCE, lcsc: C113478, footprint: Resistor_SMD:R_0402_1005Metric, verified: yes}   # ISET
+r_1k62: {mpn: 0402WGF1621TCE, lcsc: C61897,  footprint: Resistor_SMD:R_0402_1005Metric, verified: yes}   # ILIM
+r_45k3: {mpn: 0402WGF4532TCE, lcsc: C26980,  footprint: Resistor_SMD:R_0402_1005Metric, verified: yes}   # TMR
+c_15p:  {mpn: 0402CG150J500NT, lcsc: C1548,   footprint: Capacitor_SMD:C_0402_1005Metric, verified: api}  # 15p C0G 50V, basic (crystal loads, 1.19M stock 2026-10-18)
+c_470p: {mpn: 0402CG471J500NT, lcsc: C75274,  footprint: Capacitor_SMD:C_0402_1005Metric, verified: yes}  # 470p C0G (CT)
+c_100n: {mpn: CL05B104KO5NNNC, lcsc: C1525,   footprint: Capacitor_SMD:C_0402_1005Metric, verified: yes}  # 100n X7R 16V, basic
+c_1u:   {mpn: CL10A105KB8NNNC, lcsc: C15849,  footprint: Capacitor_SMD:C_0603_1608Metric, verified: yes}  # 1u X5R 50V, basic
+c_4u7:  {mpn: CL05A475MP5NRNC, lcsc: C23733,  footprint: Capacitor_SMD:C_0402_1005Metric, verified: api}  # 4.7u X5R 10V 0402, basic (RP2350 rails)
+c_4u7_sp: {mpn: CL05A475MP5NRNC, lcsc: C23733, footprint: bluebuzz-rm2:C_0402_1005Metric_small_pads, verified: api}  # the same 4.7u on Raspberry Pi's small-pad 0402: CIN/COUT of the RP2350 regulator, as in the reference layout
+c_10u:  {mpn: CL10A106KP8NNNC, lcsc: C19702,  footprint: Capacitor_SMD:C_0603_1608Metric, verified: api}  # 10u X5R 10V 0603, basic
+c_22u:  {mpn: CL10A226MP8NUNE, lcsc: C86295,  footprint: Capacitor_SMD:C_0603_1608Metric, verified: api}  # 22u X5R 10V 0603 (motor bulk)

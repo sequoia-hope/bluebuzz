@@ -1,0 +1,72 @@
+net,class,v_max,i_cont,i_peak,impedance,length_limit,reason
+1V1,POWER,1.1,0.2,0.3,,,RP2350 core from the on-chip buck through L1; DVDD pins 6/23/39 + VREG_FB
+3V3A,ANALOG,3.3,0.001,0.001,,,ADC_AVDD through 10 R / 1 u (hardware-design-with-rp2350)
+3V3_SENS,POWER,3.3,0.005,0.05,,,Switched rail for the four DPS368 (0.3 mA each) plus inrush into 10 u + 4 x 100 n
+3V3_SYS,POWER,3.3,0.25,0.4,,,"LDO output: RP2350 VREG_VIN/IOVDD, flash, RM2 VDDIO, IMU, LEDs (parts/tlv75533-ldo.md)"
+BOOTSEL,SIGNAL,3.3,0,0,,,"Boot pad, bridged to GND at power-up to enter the UF2 loader"
+BTN,SIGNAL,3.3,0,0,,,"Button to GPIO8, internal pull-up"
+CC1,SIGNAL,5.5,0,0,,,"USB-C CC, 5.1 k pull-down"
+CC2,SIGNAL,5.5,0,0,,,"USB-C CC, 5.1 k pull-down"
+CHG_LED,SIGNAL,3.3,0.005,0.005,,,LED cathode side
+CHG_N,SIGNAL,3.3,0.005,0.005,,,Charger /CHG open-drain sinking the LED through 330 R
+CT_SENS,ANALOG,3.3,0,0,,5 mm,"Load switch slew cap node, 470 p; keep short"
+GND,POWER,0,2.5,3.0,,,Return for everything; solid planes In1/In4 plus F/B pours
+ILIM,ANALOG,3.3,0,0,,5 mm,Charger input limit set 1.62 k
+IMU_INT1,SIGNAL,3.3,0,0,,,IMU interrupt to GPIO17
+IMU_INT2,SIGNAL,3.3,0,0,,,IMU interrupt to GPIO18
+ISET,ANALOG,3.3,0,0,,5 mm,Charger current set 1.78 k: keep short
+LED_STAT,SIGNAL,3.3,0.005,0.005,,,GPIO5 to the status LED through 330 R
+LED_STAT_A,SIGNAL,3.3,0.005,0.005,,,Status LED anode
+MOTOR1_G,GATE,3.3,0.012,0.012,,,Q1 gate with 100 k pull-down
+MOTOR1_PWM,GATE,3.3,0.012,0.012,,,GPIO0 to Q1 gate through 100 R; low current but keep away from analog
+MOTOR1_SW,SWITCH_HI,4.4,1.0,1.0,,,"Motor 1 low-side switch node: 1 A, 25 kHz PWM, flyback D3 to VSYS; 0.4 mm copper to the MOT pad"
+MOTOR2_G,GATE,3.3,0.012,0.012,,,Q2 gate with 100 k pull-down
+MOTOR2_PWM,GATE,3.3,0.012,0.012,,,GPIO1 to Q2 gate through 100 R
+MOTOR2_SW,SWITCH_HI,4.4,1.0,1.0,,,"Motor 2 switch node, as above"
+PG_N,SIGNAL,3.3,0,0,,,Charger /PGOOD open-drain to GPIO9 (internal pull-up)
+QSPI_SCLK,SE_HS,3.3,0,0,,20 mm,"QSPI clock to the flash, up to 133 MHz capable; short, over solid GND"
+QSPI_SD0,SE_HS,3.3,0,0,,20 mm,QSPI data
+QSPI_SD1,SE_HS,3.3,0,0,,20 mm,QSPI data
+QSPI_SD2,SE_HS,3.3,0,0,,20 mm,QSPI data
+QSPI_SD3,SE_HS,3.3,0,0,,20 mm,QSPI data
+QSPI_SS,SE_HS,3.3,0,0,,20 mm,QSPI chip select; also the BOOTSEL sense through R87 1k
+RUN,SIGNAL,3.3,0,0,,,Reset: 10 k / 100 n and the pogo pad
+SCL,SIGNAL,3.3,0,0,,,I2C1 clock
+SDA,SIGNAL,3.3,0,0,,,"I2C1 to the IMU, 4.7 k pull-up, 400 kHz"
+SENS_EN,SIGNAL,3.3,0,0,,,"GPIO4 to the load switch ON, 100 k pull-down"
+SWCLK,SIGNAL,3.3,0,0,,,SWD to the pogo pads
+SWDIO,SIGNAL,3.3,0,0,,,SWD to the pogo pads
+TAC_CS1,SIGNAL,3.3,0,0,,,Chip select U20
+TAC_CS2,SIGNAL,3.3,0,0,,,Chip select U21
+TAC_CS3,SIGNAL,3.3,0,0,,,Chip select U22
+TAC_CS4,SIGNAL,3.3,0,0,,,Chip select U23
+TAC_SCK,SIGNAL,3.3,0,0,,,SPI1 clock to the four DPS368 (<= 10 MHz); 25 mm runs to the back are fine at this speed
+TAC_SDI,SIGNAL,3.3,0,0,,,SPI1 TX to the sensors
+TAC_SDO,SIGNAL,3.3,0,0,,,"SPI1 RX from the sensors (shared SDO, tri-stated by CS)"
+TMR,ANALOG,3.3,0,0,,5 mm,Charger timer set 45.3 k
+TS,ANALOG,3.3,0,0,,,"Charger thermistor input, fixed 10 k"
+USB_DM,DIFF_HS,3.3,0,0,90 diff,,USB 2.0 FS; pair with USB_DP
+USB_DM_C,DIFF_HS,3.3,0,0,90 diff,,USB D- after the 27 R; pair with USB_DP_C
+USB_DP,DIFF_HS,3.3,0,0,90 diff,,"USB 2.0 FS, receptacle to ESD array to R3; pair with USB_DM"
+USB_DP_C,DIFF_HS,3.3,0,0,90 diff,,"USB D+ after the 27 R, R3 at the RP2350; pair with USB_DM_C"
+VBAT,POWER_HI,4.35,0.5,2.0,,,"Cell: 500 mA charge, up to 2 A discharge when both motors peak on battery (intent.md)"
+VBAT_SENSE,ANALOG,2.2,0,0,,,"1 M / 1 M divider into ADC0; 500 k source impedance, 100 n filter; keep away from the motor switch nodes"
+VBUS,POWER,5.5,1.0,1.0,,,USB 5 V into the BQ24074; ILIM 1 A (parts/bq24074-charger.md)
+VREG_AVDD,ANALOG,3.3,0.001,0.001,,,Core regulator analog supply through 33 R / 4.7 u
+VREG_LX,SWITCH,3.3,0.2,0.3,,2 mm,"On-chip buck switch node to L1: minimal area, no sensitive traces beside it"
+VSYS,POWER_HI,4.4,1.0,2.3,,,System rail from the power path: two motors (2 A peak) + RM2 TX (0.3 A) + LDO; In3 pour
+WL_CLK,SE_HS,3.3,0,0,,25 mm,"gSPI clock to the RM2 (up to ~50 MHz); keep short, solid GND reference"
+WL_CS,SIGNAL,3.3,0,0,,,gSPI chip select
+WL_DATA,SE_HS,3.3,0,0,,25 mm,"gSPI bidirectional data (RM2 DIN, with DOUT via 470 R and nIRQ via 10 k)"
+WL_DOUT,SE_HS,3.3,0,0,,,RM2 DOUT before the 470 R
+WL_IRQ,SIGNAL,3.3,0,0,,,RM2 nIRQ before the 10 k
+WL_ON,SIGNAL,3.3,0,0,,,RM2 power/reset control
+XIN,CLOCK,3.3,0,0,,5 mm,"12 MHz crystal input; keep under 5 mm, no vias, guard with GND"
+XOUT,CLOCK,3.3,0,0,,5 mm,Crystal drive out through R86 1k
+XTAL2,CLOCK,3.3,0,0,,5 mm,Crystal pin after R86
+BTN_RAW,SIGNAL,4.4,0.0001,0.0001,,,"Power button node: VSYS when pressed; to D5's A1, Q3's gate, R64"
+LDO_EN,SIGNAL,4.4,0,0,,,"LDO enable: D5's common cathode, R63 pull-down; off = the system's off state"
+PWR_HOLD,SIGNAL,3.3,0,0,,,"GPIO19: firmware holds the LDO on through D5's A2"
+VBUS_EN,SIGNAL,5.5,0,0,,,"VBUS through D6 into R66: USB keeps the LDO enabled"
+LED_VDD,POWER,4.4,0.06,0.06,,,"Status LED supply: VSYS through U11 (TPS22918), on while 3V3 is up"
+LED_DIN,SIGNAL,3.3,0,0,,,"GPIO5 through 330 R into the LED's DI"

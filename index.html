@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>bluebuzz — status</title>
+<style>
+:root { --pv-embed-h: 620px; }
+:root {
+  --bg: #f6f7f9; --card: #ffffff; --line: #e2e5ea; --fg: #14171c;
+  --muted: #5f6875; --accent: #2f6feb; --up: #1a9c5b; --warn: #b7791f;
+  --down: #98a1ae; --chip: #eef1f5;
+  --shadow: 0 1px 2px rgba(16,20,28,.06), 0 4px 12px rgba(16,20,28,.05);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1116; --card: #171b22; --line: #262c36; --fg: #e6e9ee;
+    --muted: #8b94a3; --accent: #5b9bff; --up: #35c07d; --warn: #d9a441;
+    --down: #4d5563; --chip: #222833; --shadow: none;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg);
+  font: 15px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; padding: 0 0 3rem; }
+header, main, footer { max-width: 960px; margin: 0 auto; padding: 0 1.25rem; }
+header { padding-top: 1.75rem; padding-bottom: 1rem; }
+.title { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+h1 { font-size: 1.5rem; margin: 0; letter-spacing: -.015em; }
+h2 { font-size: .78rem; margin: 0 0 .6rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 650; }
+.state { display: inline-flex; align-items: center; gap: .4rem; border-radius: 999px; padding: .2rem .65rem; font-size: .76rem; font-weight: 600;
+  background: var(--chip); border: 1px solid var(--line); color: var(--muted); }
+.state .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--down); }
+.state.active { color: var(--up); border-color: color-mix(in srgb, var(--up) 35%, var(--line)); }
+.state.active .dot { background: var(--up); box-shadow: 0 0 0 3px color-mix(in srgb, var(--up) 22%, transparent); }
+.lede { color: var(--muted); font-size: .95rem; margin: .55rem 0 0; }
+main { display: grid; gap: .9rem; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 1rem 1.1rem 1.1rem; box-shadow: var(--shadow); }
+.cols { display: grid; gap: .9rem; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+ul { margin: 0; padding-left: 1.15rem; } li { margin: .25rem 0; }
+ul.checks { list-style: none; padding-left: 0; }
+ul.checks li { display: flex; gap: .55rem; align-items: baseline; }
+ul.checks li::before { content: "○"; color: var(--muted); font-size: .9em; }
+ul.checks li.done { color: var(--muted); } ul.checks li.done::before { content: "●"; color: var(--up); }
+.log { display: grid; gap: .7rem; }
+.entry { display: grid; grid-template-columns: 5.5rem 1fr; gap: .75rem; align-items: baseline; }
+.entry time { color: var(--muted); font-size: .8rem; font-variant-numeric: tabular-nums; }
+code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .9em; background: var(--chip); border: 1px solid var(--line); border-radius: 5px; padding: .06em .35em; }
+a { color: var(--accent); }
+table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+td, th { text-align: left; padding: .3rem .5rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { color: var(--muted); font-weight: 600; width: 9rem; }
+.renders { display: grid; gap: .9rem; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+.renders img { width: 100%; border-radius: 8px; border: 1px solid var(--line); background: #fff; }
+.viewer-card { padding-bottom: 1rem; }
+.renders figcaption { color: var(--muted); font-size: .8rem; text-align: center; margin-top: .3rem; }
+footer { margin-top: 1.5rem; color: var(--muted); font-size: .8rem; }
+@media (max-width: 480px) { .entry { grid-template-columns: 1fr; gap: .1rem; } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="title">
+    <h1>bluebuzz</h1>
+    <span class="state active"><span class="dot"></span>Generated, routed</span>
+  </div>
+  <p class="lede">A small Bluetooth vibrator controller: RP2350A + Raspberry Pi Radio Module 2 (Wi-Fi, Bluetooth Classic + LE),
+  USB-C charging with power path, two PWM motor channels, a tactile array of five DPS368 barometers on the back (four corners
+  and the centre, cast in elastomer) and an IMU. 28 × 44 mm, 6-layer; USB-C on the bottom edge is the only connector, every other lead an SMT pad row
+  on the back. (The earlier nRF52840 board is further down.)</p>
+</header>
+
+<main>
+
+  <section class="card">
+    <h2>Where it stands</h2>
+    <p>The whole design is generated from <code>scripts/circuit.py</code> and <code>design.yaml</code> by the
+    bike-tracker's pipeline (<code>cd rm2 &amp;&amp; python3 build.py</code>): schematic drawn and verified against the netlist,
+    board placed from a table (each passive beside the pin it serves, all on the front), routed by freerouting around a set of
+    hand-laid pre-routes with scripted planes, keepouts and stitching, closed by the grid router, DRC'd, audited and exported
+    for JLCPCB. Routing is being closed; not ordered. See <a href="README.md">README.md</a> for the pipeline and
+    the decisions, and <a href="out/index.html">out/</a> for the latest renders, copper layers and the 3D view. Every component choice, with datasheet and schematic excerpts:
+    <a href="docs/components/index.html">docs/components/</a>.</p>
+    <div class="renders">
+      <figure><img src="out/render_top.png" alt="front render"><figcaption>front: every component</figcaption></figure>
+      <figure><img src="out/render_bottom.png" alt="back render"><figcaption>back: the tactile array and the pad rows</figcaption></figure>
+    </div>
+  </section>
+
+  <section class="card viewer-card">
+    <h2>Board viewer — schematic, copper, 3D</h2>
+    <p class="sub" style="color:var(--muted);font-size:.85rem;margin:0 0 .6rem">Built by <a href="https://github.com/sequoia-hope/pcbview">pcbview</a> from <code>out/bluebuzz-rm2.kicad_pcb</code> and <code>out/bluebuzz-rm2.kicad_sch</code> as they stand (<code>cd rm2 &amp;&amp; python3 build.py --only site</code>). <a href="viewer/index.html">Full-window viewer</a> · <a href="viewer/a.html">the nRF board's viewer</a>.</p>
+<!-- pcbview:begin -->
+<!-- written by pcbview (python3 -m pcbview build pcbview.toml): change the config, not this -->
+<link rel="stylesheet" href="viewer/assets/viewer.css">
+<section class="vw" data-pv-embed aria-label="bluebuzz-rm2 rev A: schematic, PCB and 3D">
+  <div class="vw-bar">
+    <div class="vw-left"><button data-vw="layers" aria-pressed="true"
+      title="show or hide the side panel"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.8 14.2 5 8 8.2 1.8 5z" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><path d="M1.8 8 8 11.2 14.2 8M1.8 11 8 14.2 14.2 11" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg><span>Panel</span></button></div>
+    <div class="vw-tabs" role="tablist" aria-label="view"><button role="tab" data-tab="schematic" aria-controls="schematic" aria-selected="false">SCH</button><button role="tab" data-tab="copper" aria-controls="copper" aria-selected="true">PCB</button><button role="tab" data-tab="board3d" aria-controls="board3d" aria-selected="false">3D</button></div>
+    <div class="vw-tools">
+      <button data-vw="info" title="about this board" aria-label="about this board"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.3" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M8 7.2v4.2M8 4.6v.1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+      <button data-vw="full" title="full screen" aria-label="full screen"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M9.5 2h4.5v4.5M14 2 9 7M6.5 14H2V9.5M2 14l5-5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    </div>
+  </div>
+  
+  <div class="vw-panel" id="schematic" data-dir="viewer/b/sch/" role="tabpanel" hidden>
+    <div class="cu sch">
+      <div class="cu-panel">
+        <p class="cu-head">Sheets</p>
+        <div id="sch-sheets"></div>
+        <div class="cu-row">
+          <button data-sch="out" title="zoom out">&minus;</button>
+          <button data-sch="fit" title="the whole sheet">fit</button>
+          <button data-sch="in" title="zoom in">+</button>
+          <span class="sub" id="sch-zoom">1.0&times;</span>
+        </div>
+        <div class="cu-row"><a class="a3-btn" id="sch-pdf" download hidden><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.8v8.4M4.4 6.8 8 10.4l3.6-3.6M2 12v2.2h12V12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>PDF, every sheet</span></a></div>
+        <p class="sub cu-note" id="sch-cap"></p>
+        <p class="cu-hint">Keys: <b>+</b> and <b>&minus;</b> zoom, <b>0</b> fit.
+        Drag to pan; scroll or double-click to zoom.</p>
+      </div>
+      <div class="cu-canvas">
+        <div class="sch-plate" id="sch-plate">
+          <div class="sch-pan" id="sch-pan"><img id="sch-img" alt="" draggable="false"></div>
+          <p class="b3-msg" id="sch-msg" hidden></p>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="vw-panel" id="copper" data-dir="viewer/b/layers/" data-parts="viewer/b/3d/parts.json" role="tabpanel">
+    <div class="cu">
+      <div class="cu-panel">
+        <div id="cu-layers"></div>
+        <p class="cu-hint" style="margin-top:.3rem">The dot puts a layer on top at full
+        opacity; the box says whether it is drawn at all.</p>
+        <div class="cu-row">
+          <button data-act="all" title="show every layer">all</button>
+          <button data-act="none" title="show only the selected layer">none</button>
+          <button data-act="solo" title="the selected layer and the outline only">solo</button>
+          <button data-act="grid" title="the copper layers side by side">grid</button>
+        </div>
+        <label class="cu-ctl">opacity of the unselected copper
+          <input type="range" id="cu-dim" min="0" max="60" value="16"></label>
+        <label class="cu-ctl"><input type="checkbox" id="cu-mirror">
+          view from the back (mirrored)</label>
+        <div class="cu-row">
+          <button data-act="out" title="zoom out">&minus;</button>
+          <button data-act="fit" title="fit the board">fit</button>
+          <button data-act="in" title="zoom in">+</button>
+          <span class="sub" id="cu-zoom">1.0&times;</span>
+        </div>
+        <p class="cu-note" id="cu-note"></p>
+        <p class="cu-read" id="cu-read"></p>
+        <p class="cu-hint">Keys: <b>1</b>&ndash;<b>9</b> pick a layer, <b>s</b> solo,
+        <b>a</b> all, <b>m</b> mirror, <b>0</b> fit. Click a part for its pane;
+        coordinates are pcbnew&rsquo;s, in millimetres.</p>
+        <p class="cu-hint" id="cu-stats"></p>
+      </div>
+      <div class="cu-canvas">
+        <div class="cu-plate" id="cu-plate">
+          <div class="cu-pan" id="cu-pan"><div class="cu-flip" id="cu-flip"></div></div>
+          <div class="cu-scale"><i id="cu-bar"></i><span id="cu-barlab"></span></div>
+          <div class="cu-back" id="cu-back"></div>
+          <p class="b3-msg" id="cu-fallback" hidden></p>
+        </div>
+        <div class="cu-grid" id="cu-gridbox" hidden></div>
+      </div>
+      <aside class="b3-info pv-pane" id="cu-info" aria-label="the selected part" hidden>
+        <div class="b3-ih"><b class="pv-iref"></b><button class="b3-x" title="close"
+          aria-label="close the part pane">&times;</button></div>
+        <div class="b3-ib pv-ib"></div>
+      </aside>
+    </div>
+  </div>
+  
+  <div class="vw-panel" id="board3d" data-dir="viewer/b/3d/" role="tabpanel" hidden>
+    <div class="b3">
+      <div class="b3-bar">
+        <div class="cu-row" role="group" aria-label="view">
+          <button data-view="front" title="the front face, as pcbnew draws it">front</button>
+          <button data-view="back" title="the back face, turned over left to right">back</button>
+          <button data-view="tilt" title="from the front, tilted towards you">tilted</button>
+          <button data-view="edge" title="edge on: how tall each face stands">edge</button>
+        </div>
+        <div class="b3-layers" id="b3-layers"></div>
+        <label class="b3-find">find <input id="b3-find" list="b3-refs" placeholder="U1"
+          disabled spellcheck="false" autocomplete="off" title="a reference, e.g. U1"></label>
+        <datalist id="b3-refs"></datalist>
+      </div>
+      <div class="b3-body">
+        <div class="b3-stage" id="b3-stage">
+          <p class="b3-msg" id="b3-msg">The model loads when this tab is open.</p>
+          <div class="b3-tag" id="b3-tag" hidden></div>
+        </div>
+        <aside class="b3-info pv-pane" id="b3-info" aria-label="the selected part" hidden>
+          <div class="b3-ih"><b class="pv-iref"></b><button class="b3-x" title="close"
+            aria-label="close the part pane">&times;</button></div>
+          <div class="b3-ib pv-ib"></div>
+        </aside>
+      </div>
+      <p class="b3-facts" id="b3-facts"></p>
+    </div>
+  </div>
+  
+  <div class="vw-panel pv-over" id="overview" role="tabpanel" hidden>
+    <div class="pv-card">
+      <h1>bluebuzz-rm2 rev A</h1>
+      <p class="pv-lede">The RP2350A + Raspberry Pi Radio Module 2 board, 28 x 44 mm, six layers: Wi-Fi and Bluetooth Classic + LE (so it can be an A2DP audio sink) and USB audio over its USB-C on the bottom edge, the only connector; battery, motors and SWD/boot are SMT pad rows on the back. Sensing is five Infineon DPS368 barometers on the back, cast in soft elastomer after Tenzer, Jentoft &amp; Howe 2014, plus an LSM6DS3TR-C IMU. Generated from scripts/circuit.py by the bike-tracker's pipeline.</p>
+      <dl class="pv-facts"><dt>Source</dt><dd><code>out/bluebuzz-rm2.kicad_pcb</code><br><code>out/bluebuzz-rm2.kicad_sch</code></dd><dt>Board</dt><dd>28 &times; 44 mm<small>6 copper layers, 1.6 mm thick</small></dd><dt>Parts</dt><dd>109 footprints<small>91 on the front, 18 on the back</small></dd><dt>Copper</dt><dd>71 nets, 1,103 track segments, 252 vias<small>1,546 mm of routed track</small></dd><dt>Schematic</dt><dd>1 sheet<small>User</small></dd><dt>3D</dt><dd>102 of 109 parts drawn from a model<small>6 name no model (D2, J2&ndash;J5, U7)</small></dd><dt>Drawn as boxes</dt><dd><span class="warn">L1</span><small><code>${KICAD7_3DMODEL_DIR}/Inductor_SMD.3dshapes/AOTA-B201610SR47MT.STEP</code>: no such file</small><small>a box the size of the courtyard stands in for each; a <code>[models]</code> entry in the project file can name a stand-in model</small></dd></dl>
+      <p class="cu-hint">Built 2026-10-18 23:47 by pcbview from the KiCad files above:
+      <code>python3 -m pcbview build pcbview.toml</code>. Nothing here is drawn by hand &mdash; the layer plots, the model and the
+      sheets are KiCad&rsquo;s own exports.</p>
+    </div>
+  </div>
+</section>
+<script src="viewer/assets/parts.js" defer></script>
+<script src="viewer/assets/gesture.js" defer></script>
+<script src="viewer/assets/viewer.js" defer></script>
+<script src="viewer/assets/copper.js" defer></script>
+<script src="viewer/assets/sch.js" defer></script>
+<script type="importmap">{"imports": {"three": "./viewer/assets/vendor/three.module.js"}}</script>
+<script type="module" src="viewer/assets/board3d.js"></script>
+<!-- pcbview:end -->
+    <p class="vw-about" data-pv-note="schematic" style="color:var(--muted);font-size:.85rem;margin:.6rem 0 0">One generated sheet, drawn block by block by <code>scripts/gen_schematic.py</code> and verified against <code>scripts/circuit.py</code> net for net.</p>
+    <p class="vw-about" data-pv-note="copper" style="color:var(--muted);font-size:.85rem;margin:.6rem 0 0">F = every part and its escapes (the QSPI lines to the flash are hand-laid), In1 = solid ground, In2 = signals (the QSPI lanes, PG_N down the left side), In3 = the VSYS pour, In4 = solid ground, B = the pad rows and the wiring between the front parts. The empty strip across the top is the RM2's RF keep-out.</p>
+    <p class="vw-about" data-pv-note="board3d" style="color:var(--muted);font-size:.85rem;margin:.6rem 0 0">Every part wears its LCSC model except the RM2, which has no public model and shows as its pads. Click a part for its LCSC number and pin nets.</p>
+  </section>
+
+  <section class="card">
+    <h2>The earlier board: nRF52840 module, JST connectors (top level)</h2>
+    <p>The first revision used an <strong>EBYTE E73-2G4M08S1C</strong> (nRF52840) with its ceramic antenna at the bottom edge,
+    JST connectors for the battery, motors, load cell and pressure sensor and Tag-Connect SWD pads: 34 × 44 mm, 4 layers,
+    parts on both sides. It is routed, DRC-clean and exported (<code>out/jlcpcb/</code>). Built from the top-level
+    <code>scripts/</code> (<code>python3 build.py</code>).</p>
+    <p><a href="viewer/a.html">Board viewer (schematic / copper / 3D)</a> · <a href="out/index.html">renders and layers</a> ·
+    <a href="README.md">README.md</a></p>
+    <div class="renders">
+      <figure><img src="out/render_top.png" alt="nRF board front render"><figcaption>nRF board, front</figcaption></figure>
+      <figure><img src="out/render_bottom.png" alt="nRF board back render"><figcaption>nRF board, back</figcaption></figure>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>What is on it</h2>
+    <table>
+      <tr><th>MCU + radio</th><td>RP2350A (QFN-60) with W25Q32 QSPI flash, 12 MHz crystal, 3.3 µH core inductor; Raspberry Pi RM2 (CYW43439) on gSPI, antenna end at the top edge, the top 5 mm of the board copper-free on every layer</td></tr>
+      <tr><th>Power</th><td>USB-C on the bottom edge (the only connector) → USBLC6 ESD → BQ24074 (500 mA charge, 1 A input, power path) → VSYS (an inner-layer pour) → TLV75533 3.3 V. TPS22918 switches the sensor rail. Cell on two pads (BAT).</td></tr>
+      <tr><th>Motors</th><td>Two channels: AO3400A low-side FET from VSYS, B5819W flyback, 22 µF bulk each, gate resistor and pull-down at the gate. PWM on GPIO0/1. Three pads (MOT): VSYS M1 M2. 1 A per channel.</td></tr>
+      <tr><th>Touch</th><td>Four Infineon DPS368 barometers on the back in a 2 × 2 grid (6 × 8 mm), to be cast in soft elastomer after <a href="https://doi.org/10.1109/MRA.2014.2310152">Tenzer, Jentoft &amp; Howe 2014</a> (vacuum-degassed so the rubber fills the ports; a load on the surface reads as pressure). SPI1 on GPIO10-12 with one chip select each (GPIO13-16), on the switched rail, 100n at every sensor.</td></tr>
+      <tr><th>Motion</th><td>ST LSM6DS3TR-C 6-axis IMU on I2C1 (GPIO6/7, 4.7k pull-ups), INT1/INT2 on GPIO17/18, on the always-on rail for wake-on-motion.</td></tr>
+      <tr><th>UI / debug</th><td>Side button, status LED, charge LED, 1M/1M battery divider into ADC0, five pogo pads (SWD) on the back under the radio: SWDIO SWCLK RUN BOOT GND. Firmware: pico-sdk, BTstack A2DP sink, TinyUSB audio.</td></tr>
+    </table>
+  </section>
+
+  <div class="cols">
+    <section class="card">
+      <h2>Working</h2>
+      <ul class="checks">
+        <li class="done">Project registered on port 8048</li>
+        <li class="done">rm2 circuit (95 parts, 65 nets) with every part's LCSC number checked against JLCPCB's parts search; schematic verified against the netlist</li>
+        <li class="done">rm2 placed: every part on the front beside the pin it serves except the sensor array on the back, no courtyard overlaps, nothing in the RF keep-out</li>
+        <li>rm2 routing: freerouting plus hand-laid pre-routes for the nets it never closed (QSPI, VBAT, PG_N, PWM, USB, LX, WL_CS); last runs ended within a few open nets</li>
+        <li class="done">nRF board: routed (516 track segments, 212 vias), 0 DRC errors, 0 unconnected, audit clean; gerbers, BOM and pick-and-place in <code>out/jlcpcb/</code></li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>Next up</h2>
+      <ul class="checks">
+        <li>Check the antenna keepout against EBYTE's own E73 keep-out drawing (not retrievable 2026-10-17)</li>
+        <li>Pick the motors and cell; confirm 1 A per channel and the 500 mA charge rate suit them</li>
+        <li>Decide the pressure sensor (analog ratiometric or I2C) and confirm the pinout of its cable</li>
+        <li>Firmware: tristate HX_SCK before gating the sensor rail; UICR as needed</li>
+      </ul>
+    </section>
+  </div>
+
+  <div class="cols">
+    <section class="card">
+      <h2>Open questions</h2>
+      <ul>
+        <li>JST SH 5-way stock at LCSC was 99 pieces; swap to a 4-way (drop I2C) if it stays scarce?</li>
+        <li>Smaller still? The right edge is full of connectors (battery, 4-way motor, pressure, load cell fill 39 of 44 mm) and the width is module + IC column + connector depth; a top-entry JST PH for the motors would buy ~4 mm of height.</li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>Blocked on</h2>
+      <ul><li>Nothing.</li></ul>
+    </section>
+  </div>
+
+  <section class="card">
+    <h2>Log</h2>
+    <div class="log">
+      <div class="entry">
+        <time datetime="2026-10-17">2026-10-17</time>
+        <div>rm2 variant: RP2350A + RM2, USB-C the only connector, pad rows for every other lead. Passives re-placed by the pin
+        each serves, then everything moved to the front; the page's viewer now shows this board. Later the same day: load cell and
+        pressure port dropped for a 2 × 2 DPS368 tactile array on the back, an LSM6DS3TR-C IMU added, USB-C moved to the bottom edge,
+        all trace bends at 45°.</div>
+      </div>
+      <div class="entry">
+        <time datetime="2026-10-17">2026-10-17</time>
+        <div>Pipeline copied from bike-tracker; circuit, parts, schematic, placement (34 × 44, double-sided), routing scripts
+        and audit written for this board. Second motor channel added on a shared 4-way lead.</div>
+      </div>
+      <div class="entry">
+        <time datetime="2026-10-17">2026-10-17</time>
+        <div>Project created and registered with the hub. Status page scaffolded.</div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  Served from <code>~/pcb/bluebuzz</code> on port 8048 —
+  <code>proj up bluebuzz</code> to start, <code>proj down bluebuzz</code> to stop.
+</footer>
+
+</body>
+</html>

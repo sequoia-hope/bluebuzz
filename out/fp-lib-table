@@ -1,0 +1,4 @@
+(fp_lib_table
+  (version 7)
+  (lib (name "bluebuzz-rm2")(type "KiCad")(uri "${KIPRJMOD}/../library/parts.pretty")(options "")(descr "bluebuzz-rm2 generated footprints"))
+)

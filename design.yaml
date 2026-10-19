@@ -1,0 +1,99 @@
+# bluebuzz-rm2 -- single source of truth for the RP2350 + RM2 variant.
+# Edit this file and scripts/circuit.py, then run: python3 build.py
+#
+# The same toy as archive/nrf52840/ (the abandoned nRF52840 board) with the radio and host changed:
+# an RP2350A as the host and a Raspberry Pi Radio Module 2 (CYW43439:
+# Wi-Fi + Bluetooth Classic + LE) as the radio, so a phone can stream
+# audio to it (A2DP sink via BTstack) and it can be a USB audio device
+# (TinyUSB). One connector, USB-C; every other lead -- battery, motors,
+# load cell, pressure sensor, SWD -- lands on SMT pads on the BACK.
+
+revision: A
+rev_date: 2026-10
+
+board:
+  layers: 6              # F = parts + signal, In1 = GND plane, In2 = signal,
+                         # In3 = VSYS pour (the motor current), In4 = GND plane, B = passives,
+                         # pads, signal, GND pour. Four layers were tried
+                         # (26 x 40 and 28 x 42): freerouting left 40-55 of
+                         # the ~500 connections open and the 3V3 pour layer
+                         # ended up carrying 400 wires. The RP2350's 0.4 mm
+                         # QFN-60 with its decoupling on the back wants a
+                         # real inner signal layer.
+  thickness_mm: 1.6
+  width_mm: 28
+  height_mm: 44          # RM2 antenna end at the TOP edge; the top 5 mm of
+                         # the board is the RM2's RF keep-out (no metal on
+                         # any layer, no pads), so the pad groups start below it
+  floorplan_h_mm: 44
+  corner_radius_mm: 2.0
+  mounting_holes: null
+
+power:
+  cell_mah: 1200
+  charge_current_ma: 500 # R_ISET = 890/0.5 = 1.78k
+  input_limit_ma: 1000   # R_ILIM = 1610/1.0 = 1.62k
+  safety_timer_h: 6      # R_TMR = 45.3k
+  sys_rail_v: 3.3        # TLV75533, always on: RP2350 + sensors only
+  radio_rail: VSYS       # the RM2's Vin takes 3.0-4.8 V, so it runs from the
+                         # power-path output like the motors; its 271 mA TX
+                         # peaks never touch the LDO
+  motor_rail: VSYS
+  sensor_rail_gated: true
+
+mcu:
+  part: RP2350A          # QFN-60, internal 1.1 V buck (3.3 uH), 12 MHz crystal,
+                         # 16 Mbit QSPI flash
+  usb: device            # D+/D- on the back pads through 27 R; BOOTSEL via
+                         # a pad bridged to GND while power is applied, or
+                         # from firmware (reset_usb_boot)
+
+radio:
+  module: RM2            # Raspberry Pi RMC20452T, 14.5 x 16.5 x 2.55 mm,
+                         # 21 castellated pads at 1.5 mm pitch (docs/RM2-datasheet.pdf)
+  gpio:                  # WL_ON and CS are the Pico W's; DATA and CLK are on
+    wl_on: 23            # the chip's top-left (circuit.py R2): the board header
+    data: 2              # sets CYW43_DEFAULT_PIN_WL_DATA_OUT/_IN/_HOST_WAKE = 2
+    cs: 25               # and CYW43_DEFAULT_PIN_WL_CLOCK = 3
+    clk: 3
+  keepout_mm:            # datasheet fig. 6: metal-free zone 35.5 wide x 18.5
+    depth: 5.0           # tall, i.e. the top 5.0 mm of the module body, 10.5 mm
+    side: 10.5           # either side of it and 13.5 mm beyond its end
+    beyond: 13.5
+
+motor:
+  channels: 2
+  fet: AO3400A
+  flyback: B5819W
+  max_current_ma: 1000
+
+load_cell:
+  adc: HX711
+  rate_hz: 80
+
+pressure:
+  analog_pin: GPIO27     # ADC1
+  i2c: I2C1              # GPIO6 SDA / GPIO7 SCL
+  i2c_pullup_ohm: 4700
+
+usb: USB-C               # the one connector, bottom edge (the top edge is the RF keep-out)
+
+pads:                    # every other lead: 1.6 x 2.2 mm pads at 2.0 mm pitch
+  bat: [+, -]
+  mot: [VSYS, M1, M2]
+  swd: [SWDIO, SWCLK, RUN, BOOT, GND]
+
+tactile:                 # DPS368 barometers on the BACK, cast in elastomer
+  count: 5              # (after Tenzer, Jentoft & Howe 2014: MPL115A2s under
+  cols: 2               # 4-10 mm of VytaFlex 20; here pressure-pot cast,
+  layout: corners        # not vacuum -- DPS368 p.43). One sensor toward each
+                         # board corner (user, 2026-10-18); positions in place.py
+  bus: SPI1 (GPIO10 SCK, 11 SDI, 12 SDO), CS on GPIO13-16 and GPIO20
+
+jlcpcb:
+  min_track_mm: 0.127
+  min_clearance_mm: 0.127
+  default_track_mm: 0.15
+  power_track_mm: 0.4
+  via_drill_mm: 0.2
+  via_diameter_mm: 0.4

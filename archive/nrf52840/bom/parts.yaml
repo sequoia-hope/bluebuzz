@@ -1,0 +1,240 @@
+# Parts database: every placeable part with its footprint.
+# footprint: "Lib:Name" refers to the KiCad 9 stock libraries unless the
+#            nickname is "bluebuzz", which means library/parts.pretty/.
+# verified:  yes   = pinout read from the manufacturer datasheet in this
+#                    project (or in the bike-tracker / activity_tracker
+#                    projects this one is copied from)
+#            api   = LCSC number, package and stock confirmed through
+#                    JLCPCB's parts-search API on 2026-10-17; a passive
+#                    with no pinout to get wrong
+# lcsc:      LCSC / JLCPCB part number. Every one below was resolved
+#            through JLCPCB's parts search on 2026-10-17 (MPN, package,
+#            stock and basic/extended read back) unless its note says it
+#            was inherited verified from the bike-tracker (2026-08-18).
+#            "" = no part is mounted (bare pads).
+
+mcu_module:
+  mpn: E73-2G4M08S1C
+  lcsc: C356849
+  footprint: bluebuzz:E73-2G4M08S1C
+  verified: yes          # pinout: manual v1.2 pin table, 43 pads, as the
+                         # bike-tracker verified it; footprint: library/
+                         # parts.pretty (gen_footprints.py). C356849 is the
+                         # ONBOARD-ANTENNA variant: JLC search 2026-10-17,
+                         # 1,178 in stock, $7.67 extended.
+  notes: >
+    nRF52840 module, 13.0 x 18.0 x 3.0mm, 43 pads on 1.27mm pitch:
+    28 castellated edge pads + 15 bottom-only interior pads. The C and
+    CX share one PCB; the C carries a ceramic chip antenna where the CX
+    has a u.FL. The antenna is at the pad-free +y end of the body (the
+    footprint's y 8..10.4 band): that end goes to the board edge and
+    nothing conductive sits under it on any layer (route.py keeps a
+    rule area there; design.yaml antenna_keepout_mm). EBYTE's own
+    keep-out drawing was NOT retrievable on 2026-10-17 -- the generic
+    chip-antenna rule is used; check it against the manual before
+    ordering.
+    NO 32.768kHz crystal onboard (only the 32MHz): XL1/XL2 come out on
+    pads 11/13 and Y1 is required. REG1 inductors onboard, DCCH (25)
+    open in normal-voltage mode. The 15 interior pads mean this board
+    needs a stencil and hot air.
+
+charger:
+  mpn: BQ24074RGTR
+  lcsc: C54313
+  footprint: Package_DFN_QFN:VQFN-16-1EP_3x3mm_P0.5mm_EP1.6x1.6mm
+  verified: yes
+  notes: >
+    1.5A linear charger with power path (bike-tracker, SLUS810 verified).
+    Pin 15 is ITERM on the '74 and is left open (10% default). EN2 = 1,
+    EN1 = 0 selects the R_ILIM input limit. ILIM must be populated or
+    charging is disabled. Dissipation up to (VIN - VBAT) x I_CHG = 1.0 W
+    at 500mA into a flat cell: PowerPad to a via-stitched pour.
+    The motor runs from VSYS (the power-path output): when USB is
+    present the charger supplies the load and the cell supplements it
+    (DPPM), so the toy works on the cable with a flat battery.
+
+ldo:
+  mpn: TLV75533PDBVR
+  lcsc: C404027
+  footprint: Package_TO_SOT_SMD:SOT-23-5
+  verified: yes
+  notes: >
+    500mA LDO, 25uA Iq, SOT-23-5: 1=IN 2=GND 3=EN 4=NC 5=OUT.
+
+load_switch:
+  mpn: TPS22918DBVR
+  lcsc: C131941
+  footprint: Package_TO_SOT_SMD:SOT-23-6
+  verified: yes
+  notes: >
+    SOT-23-6: 1=VIN 2=GND 3=ON 4=CT 5=QOD 6=VOUT. QOD only discharges the
+    output if tied to VOUT (bike-tracker E11). CT sets the rise time as
+    SR(us/V) = 0.55*C(pF) + 30: 470p is ~850us. Gates 3V3_SENS -- the
+    HX711 (1.5 mA), the bridge (~9.4 mA for 350 ohm at 3.3 V) and
+    whatever hangs on the pressure port.
+
+hx711:
+  mpn: HX711
+  lcsc: C6705483
+  footprint: Package_SO:SOIC-16_3.9x9.9mm_P1.27mm
+  verified: yes          # pinout: docs/HX711.pdf (Avia, Table 1), read
+                         # 2026-10-17; JLC search: 149,970 in stock, $0.51,
+                         # extended. C43656 is the same part from another
+                         # LCSC listing (6,555, $0.62).
+  notes: >
+    24-bit sigma-delta ADC for a bridge, SOP-16 (150 mil body, 3.9 x
+    9.9 mm). Pinout (Table 1): 1 VSUP, 2 BASE, 3 AVDD, 4 VFB, 5 AGND,
+    6 VBG, 7 INA-, 8 INA+, 9 INB-, 10 INB+, 11 PD_SCK, 12 DOUT, 13 XO,
+    14 XI, 15 RATE, 16 DVDD. Run WITHOUT the internal analog regulator
+    (the datasheet's "Power Supply Options"): VSUP to AVDD, VFB to
+    ground, BASE NC, and the 0.1uF on VBG "is then not needed". XI to
+    ground selects the on-chip oscillator; XO NC. RATE = DVDD gives
+    80 SPS (RATE = 0 is 10 SPS). Full scale is +-0.5*AVDD/gain =
+    +-12.9 mV at gain 128 on 3.3 V -- a 2 mV/V cell gives 6.6 mV, so
+    half the range is used. DVDD "should be the same power supply as
+    the MCU": here it is the SWITCHED 3.3 V rail, so firmware must
+    tristate PD_SCK before gating the rail off, and R55 (1k) caps the
+    current into an unpowered pin if it does not (bike-tracker E12).
+    Common-mode input range AGND+1.2 .. AVDD-1.3: a bridge at AVDD/2 =
+    1.65 V is inside it.
+
+motor_fet:
+  mpn: AO3400A
+  lcsc: C20917
+  footprint: Package_TO_SOT_SMD:SOT-23
+  verified: yes          # activity_tracker verified the pinout; JLC
+                         # search 2026-10-17: 1.1M in stock, basic.
+  notes: >
+    30V/5.7A N-channel, Vgs(th) 1.4V max, Rds(on) ~30mOhm at Vgs 2.5V:
+    fully on from a 3.3V GPIO. At 1 A that is 30 mW -- no heat problem.
+    SOT-23: 1 = G, 2 = S, 3 = D. JLCPCB BASIC part.
+
+motor_flyback:
+  mpn: B5819W
+  lcsc: C8598
+  footprint: Diode_SMD:D_SOD-123
+  verified: api          # JLC search 2026-10-17: SOD-123, 362k in stock,
+                         # basic. 1 A / 40 V Schottky (1N5819 class).
+  notes: >
+    Catches the motor's inductive kick when Q1 turns off, and carries
+    the full motor current during the PWM off-time -- so 1 A, not the
+    activity_tracker's 1N4148WS (200 mA coin motor). Cathode to VSYS,
+    anode to the FET drain. Pin 1 = cathode (banded end, the footprint's
+    silk bracket), pin 2 = anode.
+
+usb_esd:
+  mpn: USBLC6-2P6
+  lcsc: C15999
+  footprint: Package_TO_SOT_SMD:SOT-666
+  verified: yes
+  notes: >
+    SOT-666. Pinout 1=IO1 2=GND 3=IO2 4=IO2 5=VBUS 6=IO1. Protects D+/D-
+    and clamps VBUS; not CC (short-traced, accepted).
+
+usb_conn:
+  mpn: TYPE-C-31-M-12
+  lcsc: C165948
+  footprint: Connector_USB:USB_C_Receptacle_HRO_TYPE-C-31-M-12
+  verified: yes
+  notes: >
+    16-pin USB 2.0 receptacle. A6/B6 (D+) and A7/B7 (D-) must be tied.
+    3D model offset correction in library/3d/overrides.yaml.
+
+batt_conn:
+  mpn: S2B-PH-SM4-TB(LF)(SN)
+  lcsc: C295747
+  footprint: Connector_JST:JST_PH_S2B-PH-SM4-TB_1x02-1MP_P2.00mm_Horizontal
+  verified: yes
+  notes: >
+    JST PH 2.0 mm side entry, 2 circuits: the battery lead (J2).
+
+motor_conn:
+  mpn: S4B-PH-SM4-TB(LF)(SN)
+  lcsc: C265102
+  footprint: Connector_JST:JST_PH_S4B-PH-SM4-TB_1x04-1MP_P2.00mm_Horizontal
+  verified: api          # JLC search 2026-10-17: 20,105 in stock, $0.31
+  notes: >
+    JST PH 2.0 mm side entry, 4 circuits: BOTH motor leads on one
+    connector -- 1 VSYS, 2 M1, 3 VSYS, 4 M2 -- so the second channel
+    costs 4 mm of board edge instead of a second 9.3 mm housing. PH
+    contacts are rated 2 A, so each motor may draw its 1 A. Same
+    housing family as the battery lead; the silkscreen names them.
+
+lc_conn:
+  mpn: SM04B-SRSS-TB(LF)(SN)
+  lcsc: C160404
+  footprint: Connector_JST:JST_SH_SM04B-SRSS-TB_1x04-1MP_P1.00mm_Horizontal
+  verified: api          # JLC search 2026-10-17: 60,436 in stock, $0.21
+  notes: >
+    Load cell port, JST SH 1.0 mm side entry, 4 circuits: E+ A- A+ E-
+    (red, black, white, green on the usual 4-wire cell). Friction
+    retention only; fine inside an enclosure.
+
+press_conn:
+  mpn: SM05B-SRSS-TB(LF)(SN)
+  lcsc: C136657
+  footprint: Connector_JST:JST_SH_SM05B-SRSS-TB_1x05-1MP_P1.00mm_Horizontal
+  verified: api          # JLC search 2026-10-17: 99 in stock, $0.47 --
+                         # LOW STOCK; C20089326 / C5306070 are the same
+                         # part from other listings (0 stock when checked)
+  notes: >
+    Pressure sensor port, JST SH 1.0 mm side entry, 5 circuits:
+    3V3_SENS GND AIN SDA SCL. Takes either an analog ratiometric sensor
+    (0..3.3 V into AIN1 through a 10k/100n filter) or an I2C one (4.7k
+    pull-ups on the switched rail, so nothing is back-powered when the
+    rail is off). Check stock at order time.
+
+swd:
+  mpn: TC2030-IDC-NL
+  lcsc: ""             # pads only -- nothing is mounted
+  footprint: Connector:Tag-Connect_TC2030-IDC-NL_2x03_P1.27mm_Vertical
+  verified: yes
+  notes: >
+    6 pads, no connector. Standard ARM order: 1=VCC 2=SWDIO 3=nRESET
+    4=SWCLK 5=GND 6=spare.
+
+crystal:
+  mpn: ABS07-32.768KHZ-9-T
+  lcsc: C179635
+  footprint: Crystal:Crystal_SMD_3215-2Pin_3.2x1.5mm
+  verified: yes
+  notes: >
+    32.768kHz, CL = 9pF, with 12pF NP0 loads (Nordic's reference).
+
+led:
+  mpn: 19-217/GHC-YR1S2/6T
+  lcsc: C2986059
+  footprint: LED_SMD:LED_0603_1608Metric
+  verified: yes
+  notes: >
+    Everlight 0603 green, Vf 2.7-3.7 V at 20 mA: 330R from 3.3 V.
+    Pin 1 = cathode.
+
+button:
+  mpn: EVQPUC02K
+  lcsc: C79174
+  footprint: Button_Switch_SMD:Panasonic_EVQPUL_EVQPUC
+  verified: yes
+  notes: >
+    Side-actuated light-touch switch, plunger on the footprint's -y
+    side; placed on the LEFT edge with the plunger flush to it.
+
+# --- passives ---------------------------------------------------------
+# "basic" = JLC basic library, no extended-part fee.
+r_5k1:  {mpn: 0402WGF5101TCE, lcsc: C25905,  footprint: Resistor_SMD:R_0402_1005Metric, verified: yes}   # 5.1k 1%, basic
+r_1k:   {mpn: 0402WGF1001TCE, lcsc: C11702,  footprint: Resistor_SMD:R_0402_1005Metric, verified: yes}   # 1k 1%, basic
+r_10k:  {mpn: 0402WGF1002TCE, lcsc: C25744,  footprint: Resistor_SMD:R_0402_1005Metric, verified: yes}   # 10k 1%, basic
+r_1M:   {mpn: 0402WGF1004TCE, lcsc: C26083,  footprint: Resistor_SMD:R_0402_1005Metric, verified: yes}   # 1M 1%, basic
+r_100k: {mpn: 0402WGF1003TCE, lcsc: C25741,  footprint: Resistor_SMD:R_0402_1005Metric, verified: yes}   # 100k 1%, basic (pull-downs)
+r_330:  {mpn: 0402WGF3300TCE, lcsc: C25104,  footprint: Resistor_SMD:R_0402_1005Metric, verified: yes}   # 330R 1%, basic (LED series)
+r_100:  {mpn: 0402WGF1000TCE, lcsc: C25076,  footprint: Resistor_SMD:R_0402_1005Metric, verified: api}   # 100R 1%, basic (gate)
+r_4k7:  {mpn: 0402WGF4701TCE, lcsc: C25900,  footprint: Resistor_SMD:R_0402_1005Metric, verified: api}   # 4.7k 1%, basic (I2C pull-ups)
+r_1k78: {mpn: 0402WGF1781TCE, lcsc: C113478, footprint: Resistor_SMD:R_0402_1005Metric, verified: yes}   # 1.78k 1%, extended (ISET)
+r_1k62: {mpn: 0402WGF1621TCE, lcsc: C61897,  footprint: Resistor_SMD:R_0402_1005Metric, verified: yes}   # 1.62k 1%, extended (ILIM)
+r_45k3: {mpn: 0402WGF4532TCE, lcsc: C26980,  footprint: Resistor_SMD:R_0402_1005Metric, verified: yes}   # 45.3k 1%, extended (TMR)
+c_100n: {mpn: CL05B104KO5NNNC, lcsc: C1525,   footprint: Capacitor_SMD:C_0402_1005Metric, verified: yes}  # 100n X7R 16V, basic
+c_470p: {mpn: 0402CG471J500NT, lcsc: C75274,  footprint: Capacitor_SMD:C_0402_1005Metric, verified: yes}  # 470p C0G 50V 5%, extended (CT)
+c_12p:  {mpn: 0402CG120J500NT, lcsc: C1547,   footprint: Capacitor_SMD:C_0402_1005Metric, verified: yes}  # 12p C0G 50V 5%, basic
+c_1u:   {mpn: CL10A105KB8NNNC, lcsc: C15849,  footprint: Capacitor_SMD:C_0603_1608Metric, verified: yes}  # 1u X5R 50V, basic
+c_10u:  {mpn: CL10A106KP8NNNC, lcsc: C19702,  footprint: Capacitor_SMD:C_0603_1608Metric, verified: api}  # 10u X5R 10V 0603, basic (JLC 2026-10-17, 11M stock)
+c_22u:  {mpn: CL10A226MP8NUNE, lcsc: C86295,  footprint: Capacitor_SMD:C_0603_1608Metric, verified: api}  # 22u X5R 10V 0603, extended (motor bulk; 10 V so it keeps some capacitance at 4.4 V)

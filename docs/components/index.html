@@ -1,0 +1,767 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>bluebuzz-rm2 — component choices</title>
+<style>
+:root {
+  --bg: #f6f7f9; --card: #ffffff; --line: #e2e5ea; --fg: #14171c; --muted: #5f6875;
+  --accent: #2f6feb; --chip: #eef1f5; --warn: #9a5b00; --warn-bg: #fff6e6; --ok: #1a7f4b;
+  --pink: #c8174f; --shadow: 0 1px 2px rgba(16,20,28,.06), 0 4px 12px rgba(16,20,28,.05);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1116; --card: #171b22; --line: #262c36; --fg: #e6e9ee; --muted: #8b94a3;
+    --accent: #5b9bff; --chip: #222833; --warn: #e0a84a; --warn-bg: #2a2214; --ok: #35c07d;
+    --pink: #ff5c8a; --shadow: none; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1116; --card: #171b22; --line: #262c36; --fg: #e6e9ee; --muted: #8b94a3;
+  --accent: #5b9bff; --chip: #222833; --warn: #e0a84a; --warn-bg: #2a2214; --ok: #35c07d;
+  --pink: #ff5c8a; --shadow: none; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg);
+  font: 15px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+.wrap { max-width: 1080px; margin: 0 auto; padding: 1.5rem 1.1rem 4rem; }
+h1 { font-size: 1.6rem; margin: 0 0 .25rem; letter-spacing: -.015em; }
+h2 { font-size: 1.25rem; margin: 0 0 .4rem; letter-spacing: -.01em; }
+h3 { font-size: .98rem; margin: 1.3rem 0 .4rem; }
+p { margin: .5rem 0; }
+.lede { color: var(--muted); margin: .2rem 0 1rem; }
+a { color: var(--accent); }
+code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .88em; background: var(--chip);
+  border: 1px solid var(--line); border-radius: 5px; padding: .04em .32em; }
+nav.toc { display: flex; flex-wrap: wrap; gap: .35rem .5rem; margin: .8rem 0 1.2rem; font-size: .85rem; }
+nav.toc a { text-decoration: none; background: var(--card); border: 1px solid var(--line); border-radius: 999px;
+  padding: .15rem .65rem; color: var(--fg); }
+nav.toc a:hover { border-color: var(--accent); }
+section.card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 1.1rem 1.2rem 1.2rem;
+  box-shadow: var(--shadow); margin: 0 0 1.1rem; scroll-margin-top: 1rem; }
+.badge { display: inline-block; font-size: .72rem; font-weight: 650; letter-spacing: .04em; text-transform: uppercase;
+  color: var(--muted); background: var(--chip); border: 1px solid var(--line); border-radius: 999px; padding: .05rem .55rem;
+  margin-right: .4rem; vertical-align: 2px; }
+.tablewrap { overflow-x: auto; margin: .5rem 0; }
+table { border-collapse: collapse; width: 100%; font-size: .87rem; }
+th, td { text-align: left; padding: .32rem .5rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { color: var(--muted); font-weight: 600; white-space: nowrap; }
+td.ref { font-weight: 650; white-space: nowrap; }
+td.mono, span.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .82rem; }
+ul { margin: .3rem 0; padding-left: 1.2rem; } li { margin: .2rem 0; }
+.note { background: var(--warn-bg); border: 1px solid color-mix(in srgb, var(--warn) 35%, var(--line)); border-radius: 8px;
+  padding: .5rem .75rem; margin: .7rem 0; font-size: .9rem; }
+.note b { color: var(--warn); }
+.figs { display: grid; gap: .9rem; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); margin: .8rem 0 .2rem; }
+.figs.two { grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); }
+figure { margin: 0; display: flex; flex-direction: column; }
+figure a.zoom { display: block; background: #fff; border: 1px solid var(--line); border-radius: 8px; overflow: hidden;
+  cursor: zoom-in; }
+figure img { display: block; width: 100%; height: auto; }
+figure.tall a.zoom { max-height: 520px; }
+figure.tall img { object-fit: contain; object-position: top; max-height: 520px; }
+figcaption { color: var(--muted); font-size: .8rem; margin-top: .35rem; line-height: 1.45; }
+figcaption .src { white-space: nowrap; }
+.kind { font-weight: 650; color: var(--fg); }
+.kind.ds { color: var(--accent); } .kind.sch { color: var(--ok); } .kind.loc { color: var(--pink); }
+.diagram { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: .4rem; overflow-x: auto; }
+.diagram svg { display: block; min-width: 760px; width: 100%; height: auto; }
+.grid2 { display: grid; gap: .9rem; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+.status-ok { color: var(--ok); font-weight: 600; } .status-miss { color: var(--warn); font-weight: 600; }
+#bom td, #bom th { font-size: .82rem; }
+#bom tr.dnp td { color: var(--muted); font-style: italic; }
+#lightbox { position: fixed; inset: 0; background: rgba(10,12,16,.88); display: flex; align-items: flex-start;
+  justify-content: center; overflow: auto; z-index: 10; cursor: zoom-out;
+  padding: calc(env(safe-area-inset-top, 0px) + 1rem) 1rem calc(env(safe-area-inset-bottom, 0px) + 1rem); }
+#lightbox[hidden] { display: none; }
+#lightbox img { max-width: none; width: auto; background: #fff; border-radius: 6px; }
+#lightbox.fit img { max-width: 100%; }
+footer { color: var(--muted); font-size: .8rem; margin-top: 1.5rem; }
+@media (max-width: 520px) { .figs.two { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>bluebuzz-rm2 — component choices</h1>
+<p class="lede">Every part on the board, why it was chosen, what it was chosen over, and the numbers behind its value, with the
+datasheet pages and schematic blocks it comes from. Rev A, 28 × 44 mm, 6 layers, 109 components. Written 2026-10-18 from
+<code>scripts/circuit.py</code>, <code>bom/parts.yaml</code>, the part audits in <code>design/parts/</code> and
+<code>design/decisions.md</code>.</p>
+
+<p style="font-size:.88rem">Elsewhere: <a href="../../../viewer/index.html">board viewer (schematic, copper, 3D)</a> ·
+<a href="../../out/bluebuzz-rm2-schematic.pdf">schematic PDF</a> · <a href="../../out/index.html">renders</a> ·
+<a href="../../design/decisions.md">decision log</a> · <a href="../../../index.html">project page</a></p>
+
+<nav class="toc">
+  <a href="#overview">Overview</a><a href="#rp2350">RP2350A host</a><a href="#flash">Flash, reset, boot</a>
+  <a href="#rm2">RM2 radio</a><a href="#usb">USB-C and ESD</a><a href="#charger">Charger</a><a href="#ldo">3.3 V LDO</a>
+  <a href="#latch">Power button and status LED</a><a href="#vbat">Battery sense</a><a href="#sensrail">Sensor rail</a>
+  <a href="#tactile">Tactile array</a><a href="#imu">IMU</a><a href="#motors">Motors</a><a href="#debug">Debug and test</a>
+  <a href="#passives">Passives</a><a href="#datasheets">Datasheets</a><a href="#open">Open items</a><a href="#bom">Full BOM</a>
+</nav>
+
+<p style="font-size:.85rem;color:var(--muted)">Each block has three kinds of picture. <span class="kind sch">Schematic</span>
+is the block as drawn in the generated sheet. <span class="kind loc">Board</span> shows where its parts sit, front and back (the back is
+seen from behind, so it is mirrored left to right). <span class="kind ds">Datasheet</span> is the page a choice or value comes from.
+Click any picture to see it full size, and click a datasheet caption to open the PDF at that page.</p>
+
+<!-- ================================================================== -->
+<section class="card" id="overview">
+<h2>Overview</h2>
+<p>The board is a Bluetooth vibrator controller that is cast into a soft elastomer body. The parts were picked around four
+requirements:</p>
+<ul>
+  <li><b>Bluetooth Classic audio (A2DP sink) and USB audio.</b> This drove the RP2350A plus the Raspberry Pi Radio Module 2
+  (CYW43439), in place of the nRF52840 of the first board, which is BLE only. The Pico SDK supports this pairing directly.</li>
+  <li><b>No rework after casting.</b> Every value follows a datasheet's reference circuit where one exists. Each
+  part has an audit in <code>design/parts/</code>. The board can be tested bare through pogo pads and USB.</li>
+  <li><b>Small, one connector.</b> USB-C is the only connector. Battery, motors, SWD and test points are SMT pad rows on the back.
+  Passives are 0402, or 0603 where 1 µF and above needs it.</li>
+  <li><b>JLC assembly at quantity 5.</b> Each part is an LCSC stock part where one exists, a JLC <i>basic</i> part where a choice
+  allowed it, and in stock in quantity. Two parts are consigned: the RM2, which is sold only through Raspberry Pi resellers,
+  and the Abracon core inductor, of which JLC had 3.</li>
+</ul>
+
+<h3>Power tree</h3>
+<div class="diagram">
+<svg viewBox="0 0 960 470" xmlns="http://www.w3.org/2000/svg" font-family="ui-sans-serif, system-ui, sans-serif">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#5f6875"/></marker>
+  </defs>
+  <style>
+    .b { fill: #f4f7fb; stroke: #9aa6b6; stroke-width: 1.2; rx: 7; }
+    .bp { fill: #eef6ff; stroke: #6f9ad6; }
+    .bs { fill: #f3faf3; stroke: #79b183; }
+    .t { font-size: 14px; font-weight: 650; fill: #14171c; }
+    .s { font-size: 11.5px; fill: #5f6875; }
+    .w { stroke: #5f6875; stroke-width: 1.6; fill: none; }
+    .bus { stroke-width: 5; stroke-linecap: round; }
+    .bl { font-size: 13px; font-weight: 700; }
+  </style>
+  <!-- input side -->
+  <rect class="b" x="20" y="30" width="160" height="50"/><text class="t" x="32" y="52">USB-C · J1</text><text class="s" x="32" y="70">5 V in, D+/D− to the RP2350</text>
+  <rect class="b" x="20" y="110" width="160" height="50"/><text class="t" x="32" y="132">ESD · U10</text><text class="s" x="32" y="150">USBLC6-2P6, C2 100 n</text>
+  <path class="w" d="M100 80 V108" marker-end="url(#ar)"/>
+  <rect class="b bp" x="220" y="60" width="180" height="70"/><text class="t" x="232" y="84">Charger · U2</text>
+  <text class="s" x="232" y="102">BQ24074, power path</text><text class="s" x="232" y="118">ILIM 1 A · charge 0.5 A</text>
+  <path class="w" d="M180 135 H200 V95 H218" marker-end="url(#ar)"/><text class="s" x="186" y="152">VBUS</text>
+  <rect class="b" x="220" y="170" width="180" height="50"/><text class="t" x="232" y="192">Cell · J2 (back)</text><text class="s" x="232" y="210">1S LiPo, + − T (NTC)</text>
+  <path class="w" d="M310 130 V168" marker-start="url(#ar)" marker-end="url(#ar)"/><text class="s" x="316" y="153">VBAT</text>
+  <rect class="b" x="20" y="185" width="160" height="50"/><text class="t" x="32" y="207">VBAT sense</text><text class="s" x="32" y="225">1 M / 1 M → ADC0</text>
+  <path class="w" d="M218 205 H182" marker-end="url(#ar)"/>
+  <rect class="b" x="220" y="300" width="180" height="84"/><text class="t" x="232" y="323">Power latch</text>
+  <text class="s" x="232" y="341">SW1 press · PWR_HOLD (GPIO19)</text><text class="s" x="232" y="357">· VBUS, OR'd by D5/D6</text>
+  <text class="s" x="232" y="373">→ the LDO's EN</text>
+  <!-- VSYS bus -->
+  <path class="w bus" d="M450 40 V420" stroke="#d07a00"/><text class="bl" x="420" y="440" fill="#d07a00">VSYS 3.0–4.4 V</text>
+  <path class="w" d="M400 95 H447"/>
+  <rect class="b" x="480" y="28" width="200" height="50"/><text class="t" x="492" y="50">Motors · Q1 Q2</text><text class="s" x="492" y="68">AO3400A low side → MOT pads</text>
+  <rect class="b" x="480" y="90" width="200" height="50"/><text class="t" x="492" y="112">Radio Vin · U7</text><text class="s" x="492" y="130">RM2, TX bursts ≈ 0.3 A</text>
+  <rect class="b" x="480" y="152" width="200" height="50"/><text class="t" x="492" y="174">LED switch · U11</text><text class="s" x="492" y="192">TPS22918 → D2 1010 RGB LED</text>
+  <rect class="b" x="480" y="214" width="200" height="50"/><text class="t" x="492" y="236">Charge LED · D1</text><text class="s" x="492" y="254">/CHG, lights while off</text>
+  <rect class="b bp" x="480" y="310" width="200" height="62"/><text class="t" x="492" y="334">LDO · U3</text><text class="s" x="492" y="352">TLV75533, 3.3 V 500 mA</text>
+  <path class="w" d="M450 53 H478" marker-end="url(#ar)"/><path class="w" d="M450 115 H478" marker-end="url(#ar)"/>
+  <path class="w" d="M450 177 H478" marker-end="url(#ar)"/><path class="w" d="M450 239 H478" marker-end="url(#ar)"/>
+  <path class="w" d="M450 330 H478" marker-end="url(#ar)"/>
+  <path class="w" d="M400 360 H478" marker-end="url(#ar)" stroke-dasharray="5 3"/><text class="s" x="412" y="377">EN</text>
+  <!-- 3V3 bus -->
+  <path class="w bus" d="M715 40 V420" stroke="#2f6feb"/><text class="bl" x="690" y="440" fill="#2f6feb">3V3_SYS</text>
+  <path class="w" d="M680 341 H712"/>
+  <rect class="b bp" x="740" y="24" width="200" height="66"/><text class="t" x="752" y="46">RP2350A · U1</text>
+  <text class="s" x="752" y="64">internal buck + L1 → 1V1 core</text><text class="s" x="752" y="80">Y1 12 MHz · ADC via 10 Ω</text>
+  <rect class="b" x="740" y="100" width="200" height="40"/><text class="t" x="752" y="125">Flash · U6 (4 MB)</text>
+  <rect class="b" x="740" y="150" width="200" height="40"/><text class="t" x="752" y="175">Radio VDDIO · U7</text>
+  <rect class="b" x="740" y="200" width="200" height="40"/><text class="t" x="752" y="225">IMU · U30</text>
+  <rect class="b bs" x="740" y="252" width="200" height="50"/><text class="t" x="752" y="274">Sensor switch · U5</text><text class="s" x="752" y="292">TPS22918, ON = GPIO4</text>
+  <rect class="b bs" x="740" y="330" width="200" height="50"/><text class="t" x="752" y="352">Tactile array · U20–U24</text><text class="s" x="752" y="370">5 × DPS368 on 3V3_SENS (back)</text>
+  <path class="w" d="M715 57 H738" marker-end="url(#ar)"/><path class="w" d="M715 120 H738" marker-end="url(#ar)"/>
+  <path class="w" d="M715 170 H738" marker-end="url(#ar)"/><path class="w" d="M715 220 H738" marker-end="url(#ar)"/>
+  <path class="w" d="M715 277 H738" marker-end="url(#ar)"/><path class="w" d="M840 302 V328" marker-end="url(#ar)"/>
+</svg>
+</div>
+<p style="font-size:.85rem;color:var(--muted)">VSYS is the charger's power-path output. When USB is present it is held at 4.4 V; otherwise
+it is the cell through about 50–100 mΩ. Everything that can take the cell's voltage directly does, namely the motors, the radio and the LED.
+That keeps the 500 mA LDO for the logic. When the LDO is off, the board is off: only the charger, the charge LED and the battery
+divider still draw, about 10–15 µA in total.</p>
+
+<div class="grid2">
+<div>
+<h3>RP2350 pin use</h3>
+<div class="tablewrap"><table>
+<tr><th>GPIO</th><th>Net</th><th>Goes to</th></tr>
+<tr><td>2, 3</td><td class="mono">WL_DATA, WL_CLK</td><td>RM2 gSPI (pads 5/6/10, 3)</td></tr>
+<tr><td>4</td><td class="mono">SENS_EN</td><td>U5 ON (sensor rail)</td></tr>
+<tr><td>6, 7</td><td class="mono">SDA, SCL</td><td>I2C1 → IMU</td></tr>
+<tr><td>8</td><td class="mono">BTN</td><td>Q3 drain (button, active low)</td></tr>
+<tr><td>9</td><td class="mono">PG_N</td><td>charger /PGOOD (USB present)</td></tr>
+<tr><td>10–12</td><td class="mono">TAC_SCK/SDI/SDO</td><td>SPI1 → all five DPS368</td></tr>
+<tr><td>0, 14–16, 20</td><td class="mono">TAC_CS1–5</td><td>one chip select per sensor</td></tr>
+<tr><td>13, 17</td><td class="mono">MOTOR1/2_PWM</td><td>gate resistors R40/R42 → Q1/Q2 (bottom pin row, toward the gates; PWM slices 6B and 0B)</td></tr>
+<tr><td>5, 18</td><td class="mono">IMU_INT1/2</td><td>IMU interrupts (INT1 beside SDA/SCL, on the IMU's side)</td></tr>
+<tr><td>19</td><td class="mono">PWR_HOLD</td><td>D5 → LDO EN (power latch)</td></tr>
+<tr><td>22</td><td class="mono">LED_STAT</td><td>R62 → D2 DIN (pin 34, the side facing the LED)</td></tr>
+<tr><td>27, 25</td><td class="mono">WL_ON, WL_CS</td><td>RM2 pads 12+13, 9 (WL_ON on the right-column pin nearest its pads)</td></tr>
+<tr><td>26 (ADC0)</td><td class="mono">VBAT_SENSE</td><td>1 M / 1 M divider</td></tr>
+<tr><td>1, 21, 23, 24, 28, 29</td><td colspan="2">free (24 GPIOs used of 30)</td></tr>
+</table></div>
+</div>
+<div>
+<h3>Rails</h3>
+<div class="tablewrap"><table>
+<tr><th>Rail</th><th>Range</th><th>Source → loads</th></tr>
+<tr><td class="mono">VBUS</td><td>5 V (5.5 max)</td><td>USB-C → U10 → charger IN; D6 → power latch</td></tr>
+<tr><td class="mono">VBAT</td><td>3.0–4.2 V</td><td>cell ↔ charger BAT; battery divider</td></tr>
+<tr><td class="mono">VSYS</td><td>3.0–4.4 V</td><td>charger OUT → LDO, RM2 Vin, motors, U11/LED, D1, SW1</td></tr>
+<tr><td class="mono">3V3_SYS</td><td>3.3 V ±1 %</td><td>U3 → RP2350, flash, RM2 VDDIO, IMU, U5</td></tr>
+<tr><td class="mono">1V1</td><td>1.1 V</td><td>RP2350's own buck via L1 → DVDD</td></tr>
+<tr><td class="mono">3V3_SENS</td><td>3.3 V, switched</td><td>U5 → the five DPS368</td></tr>
+<tr><td class="mono">LED_VDD</td><td>VSYS, switched</td><td>U11 → D2</td></tr>
+<tr><td class="mono">3V3A, VREG_AVDD</td><td>3.3 V, filtered</td><td>10 Ω / 1 µF → ADC; 33 Ω / 4.7 µF → regulator</td></tr>
+</table></div>
+<h3>Current budget</h3>
+<p style="font-size:.88rem">At 10 % vibration duty: motors 2 × 0.2 A × 10 % = 40 mA (18 mA with the 0.09 A motors), RP2350 and
+flash ≈ 30 mA, RM2 streaming A2DP ≈ 40 mA, everything else ≈ 5 mA, about 115 mA in total. A cell of <b>≥ 700 mAh gives 6 h</b>,
+and about 500 mAh gives 4 h. At the 500 mA charge rate a 700 mAh cell charges in about 1.7 h, inside the 6 h safety timer. The peak
+VSYS draw is about 1 A: two motors plus a radio TX burst plus the LDO.</p>
+</div>
+</div>
+<figure style="margin-top:.6rem"><a class="zoom" href="img/sch-all.jpg"><img src="img/sch-all.jpg" alt="whole schematic" loading="lazy"></a>
+<figcaption><span class="kind sch">Schematic</span> — the whole sheet. The numbered blocks are the sections below.</figcaption></figure>
+</section>
+
+<!-- ================================================================== -->
+<section class="card" id="rp2350">
+<h2><span class="badge">Block 9</span>RP2350A host: core regulator, crystal, decoupling, USB</h2>
+<div class="tablewrap"><table>
+<tr><th>Ref</th><th>Part</th><th>Value / MPN</th><th>LCSC</th><th>Why</th></tr>
+<tr><td class="ref">U1</td><td>MCU</td><td>RP2350A, QFN-60 7 × 7</td><td class="mono">C42411118</td><td>The RM2 works only with Raspberry Pi
+microcontrollers. Of those, the RP2350 has 520 KB SRAM and Cortex-M33 cores with FPU and DSP, which suits BTstack plus SBC decoding. The A variant
+(30 GPIO, 7 × 7 mm) rather than the B (48 GPIO, 10 × 10 mm): 24 GPIOs are used. $1.29, 6,240 in stock.</td></tr>
+<tr><td class="ref">L1</td><td>Core buck inductor</td><td>3.3 µH, Abracon AOTA-B201610S3R3-101-T (0806)</td><td class="mono">consigned</td><td>The
+reference design's own part. Abracon made it with a polarity dot, all aligned on the reel, because the regulator is sensitive
+to the coil's orientation. 2.1 A, 115 mΩ. JLC had 3 in stock, so ≥ 6 are bought from Digi-Key or Mouser and consigned. The Sunlord
+MPL2016S3R3MHT (C98336) fits the same land as a fallback, but it has no dot.</td></tr>
+<tr><td class="ref">C80, C83</td><td>Buck COUT, CIN</td><td>4.7 µF X5R 10 V 0402</td><td class="mono">C23733</td><td>As in the datasheet's Figure 25, on Raspberry Pi's own
+small-pad 0402 land and at the reference positions. The 10 V parts keep more capacitance at 3.3 V than the reference's 6.3 V ones (≈ 2.1–2.8 µF effective).</td></tr>
+<tr><td class="ref">R84, C84</td><td>VREG_AVDD filter</td><td>33 Ω + 4.7 µF</td><td class="mono">C25105, C23733</td><td>The datasheet says this RC filter is required
+("must be RC filtered"). VREG_AVDD draws about 200 µA, so the corner is about 1.9 kHz with only a 7 mV drop.</td></tr>
+<tr><td class="ref">C81, C82, C98</td><td>DVDD (1.1 V)</td><td>4.7 µF at pin 23; 100 nF at pins 39 and 6</td><td class="mono">C23733, C1525</td><td>Datasheet
+§6.1.3: 100 nF at the two DVDD pins nearest the regulator, and 4.7 µF at the far one. Each sits at the end of a 1V1 spoke from the ring under the chip
+(see the layout rule below): C82 beside the E spoke's via, C81 on the back under the S spoke's via (the crystal is closer to the chip than on the
+minimal board), C98 on the back off the ring's W via, behind pin 6.</td></tr>
+<tr><td class="ref">C91–C97</td><td>IOVDD, QSPI_IOVDD, USB_OTP_VDD</td><td>7 × 100 nF X7R</td><td class="mono">C1525</td><td>The guide asks for one per power pin; pins 53 and 54
+share one cap (C93), at the reference position. C97 is on the back behind pin 11, where the front lane is the escape for pins 2–13; C91 is on the back under its own via beside pin 1, where the QSPI lines fan out on the front.</td></tr>
+<tr><td class="ref">R85, C85</td><td>ADC_AVDD filter</td><td>10 Ω + 1 µF 0603</td><td class="mono">C25077, C15849</td><td>Stricter than either document asks.
+This keeps the motor PWM off the ADC reference that the battery gauge relies on.</td></tr>
+<tr><td class="ref">Y1</td><td>Crystal</td><td>12 MHz Abracon ABM8-272-T3, 3225</td><td class="mono">C20625731</td><td>The crystal of the reference design, which is the
+only validated circuit. CL 10 pF, ESR ≤ 50 Ω. The first pick (TXM12M, CL 12 pF, 120 Ω) was dropped: its datasheet could not be
+obtained, and the guide says any deviation needs temperature testing.</td></tr>
+<tr><td class="ref">C86, C87</td><td>Load caps</td><td>15 pF C0G</td><td class="mono">C1548</td><td>15 ∥ 15 pF in series = 7.5 pF, plus 3 pF stray = 10.5 pF ≈ CL 10 pF.</td></tr>
+<tr><td class="ref">R86</td><td>XOUT series</td><td>1 kΩ</td><td class="mono">C11702</td><td>Limits the drive level at IOVDD 3.3 V ("tuned for 3.3 V operation").</td></tr>
+<tr><td class="ref">R3, R4</td><td>USB series</td><td>27 Ω</td><td class="mono">C25100</td><td>Required by the RP2350 and placed at the chip; together with the driver they meet the USB 28–44 Ω source impedance.
+No external pull-ups: the RP2350 has them built in.</td></tr>
+</table></div>
+<div class="note"><b>Layout rule:</b> the RP2350's power copper is Raspberry Pi's own. <code>scripts/rp2350_block.py</code> reads the RP2350A
+minimal board's KiCad file (<code>design/reference/</code>) and lays its power block relative to U1, locked, before the autorouter runs:
+<ul>
+  <li><b>Under the chip, on top:</b> a 1V1 ring around the GND pad, inside a 3V3 band that reaches every IOVDD pad.</li>
+  <li><b>1V1 spokes:</b> four 0.6 mm spokes (on In2 here) from the ring to the DVDD pins and to COUT.</li>
+  <li><b>Regulator:</b> the regulator's parts at the reference positions and rotations, and its small high-current zones (LX, 1V1, CIN's 3V3, PGND).</li>
+</ul>
+PGND reaches the GND planes only through its pair of adjacent vias: those pads get no via-in-pad, and a moat keeps the top GND pour out.
+The In1 GND plane is cut away under the LX node (datasheet §6.3.8.1, Fig. 27). L1 sits at the reference rotation, so its dot lands where the
+reference puts it. The audit checks all of this on every build.</div>
+<div class="figs two">
+<figure class="tall"><a class="zoom" href="img/sch-9.png"><img src="img/sch-9.png" alt="" loading="lazy"></a><figcaption><span class="kind sch">Schematic</span> — block 9.</figcaption></figure>
+<figure><a class="zoom" href="img/loc-9.png"><img src="img/loc-9.png" alt="" loading="lazy"></a><figcaption><span class="kind loc">Board</span> — the chip at the centre, with L1 and the
+regulator caps above it, the crystal below it, and C97/C98 on the back.</figcaption></figure>
+</div>
+<div class="figs">
+<figure><a class="zoom" href="img/ds-rp2350-fig25.png"><img src="img/ds-rp2350-fig25.png" alt="" loading="lazy"></a><figcaption><span class="kind ds">Datasheet</span> —
+the regulator's external parts. C80 = COUT, C83 = CIN, R84/C84 = RFILT/CFILT. <a class="src" href="../../design/datasheets/rp2350-datasheet.pdf#page=411">RP2350 datasheet p.410, Fig. 25</a></figcaption></figure>
+<figure><a class="zoom" href="img/ds-rp2350-fig22.png"><img src="img/ds-rp2350-fig22.png" alt="" loading="lazy"></a><figcaption><span class="kind ds">Datasheet</span> —
+DVDD decoupling: 100 nF at the two pins near the regulator, 4.7 µF at the far one. <a class="src" href="../../design/datasheets/rp2350-datasheet.pdf#page=409">RP2350 datasheet p.408, Fig. 22</a></figcaption></figure>
+<figure><a class="zoom" href="img/ds-hdg-inductor.png"><img src="img/ds-hdg-inductor.png" alt="" loading="lazy"></a><figcaption><span class="kind ds">Datasheet</span> —
+why the Abracon inductor, with its polarity dot. <a class="src" href="../../design/datasheets/hardware-design-with-rp2350.pdf#page=8">Hardware design with RP2350 p.7</a></figcaption></figure>
+<figure class="tall"><a class="zoom" href="img/ds-hdg-regulator-layout.png"><img src="img/ds-hdg-regulator-layout.png" alt="" loading="lazy"></a><figcaption><span class="kind ds">Datasheet</span> —
+the reference regulator layout, and how coil orientation affects it. <a class="src" href="../../design/datasheets/hardware-design-with-rp2350.pdf#page=7">Hardware design with RP2350 p.6, Fig. 4</a></figcaption></figure>
+<figure class="tall"><a class="zoom" href="img/ds-hdg-crystal.png"><img src="img/ds-hdg-crystal.png" alt="" loading="lazy"></a><figcaption><span class="kind ds">Datasheet</span> —
+the crystal circuit, the load-cap calculation and the "any deviation" warning. <a class="src" href="../../design/datasheets/hardware-design-with-rp2350.pdf#page=14">Hardware design with RP2350 p.13</a></figcaption></figure>
+<figure><a class="zoom" href="img/ds-abm8-specs.png"><img src="img/ds-abm8-specs.png" alt="" loading="lazy"></a><figcaption><span class="kind ds">Datasheet</span> —
+ABM8-272-T3: CL 10 pF, ESR 50 Ω, C0 3 pF, ±30 ppm. <a class="src" href="../../design/datasheets/abm8-272-t3.pdf#page=1">Abracon ABM8-272-T3 p.2</a></figcaption></figure>
+<figure><a class="zoom" href="img/ds-hdg-decoupling.png"><img src="img/ds-hdg-decoupling.png" alt="" loading="lazy"></a><figcaption><span class="kind ds">Datasheet</span> —
+one 100 nF per power pin. <a class="src" href="../../design/datasheets/hardware-design-with-rp2350.pdf#page=9">Hardware design with RP2350 p.8</a></figcaption></figure>
+<figure><a class="zoom" href="img/ds-hdg-usb.png"><img src="img/ds-hdg-usb.png" alt="" loading="lazy"></a><figcaption><span class="kind ds">Datasheet</span> —
+27 Ω series resistors placed close to the chip. <a class="src" href="../../design/datasheets/hardware-design-with-rp2350.pdf#page=16">Hardware design with RP2350 p.15</a></figcaption></figure>
+</div>
+</section>
+
+<!-- ================================================================== -->
+<section class="card" id="flash">
+<h2><span class="badge">Block 8</span>QSPI flash, reset and boot</h2>
+<div class="tablewrap"><table>
+<tr><th>Ref</th><th>Part</th><th>Value / MPN</th><th>LCSC</th><th>Why</th></tr>
+<tr><td class="ref">U6</td><td>Flash</td><td>Winbond W25Q32JVUUIQ, 32 Mbit, USON-8 3 × 4</td><td class="mono">C2999380</td><td>The W25Q family is the one the RP2350 boot ROM
+and the SDK's boot2 are written for. The 16 Mbit 2 × 3 USON of the other RP2350 boards here had no stock anywhere at LCSC, and the SOIC-8 is 5.3 × 5.3 mm.
+The "Q" suffix fixes QE = 1, which quad mode on /WP and /HOLD needs. It runs at 75 MHz quad I/O (≤ 133 MHz).</td></tr>
+<tr><td class="ref">C88</td><td>Decoupling</td><td>100 nF</td><td class="mono">C1525</td><td>At pin 8.</td></tr>
+<tr><td class="ref">R87</td><td>BOOTSEL strap</td><td>1 kΩ QSPI_SS → BOOT pad</td><td class="mono">C11702</td><td>No BOOTSEL button. Bridge the BOOT pogo pad to GND while powering up to get
+the UF2 bootloader; firmware can also reboot into it. The 1 kΩ lets QSPI_SS overdrive the strap once the chip runs (3.3 mA).</td></tr>
+<tr><td class="ref">R88, C89</td><td>RUN</td><td>10 kΩ + 100 nF</td><td class="mono">C25744, C1525</td><td>A defined pull-up, plus about 1 ms of reset hold-off after 3.3 V rises.
+RUN also goes to a pogo pad, so there is no reset button.</td></tr>
+</table></div>
+<div class="figs two">
+<figure><a class="zoom" href="img/sch-8.png"><img src="img/sch-8.png" alt="" loading="lazy"></a><figcaption><span class="kind sch">Schematic</span> — block 8.</figcaption></figure>
+<figure><a class="zoom" href="img/loc-8.png"><img src="img/loc-8.png" alt="" loading="lazy"></a><figcaption><span class="kind loc">Board</span> — the flash, turned 180° so that SS, SD1 and SD2 face the QSPI pins.</figcaption></figure>
+</div>
+<div class="figs">
+<figure class="tall"><a class="zoom" href="img/ds-hdg-flash.png"><img src="img/ds-hdg-flash.png" alt="" loading="lazy"></a><figcaption><span class="kind ds">Datasheet</span> —
+the reference flash and USB_BOOT circuit, with the 1 kΩ strap and the 10 kΩ pull-up that is not fitted. <a class="src" href="../../design/datasheets/hardware-design-with-rp2350.pdf#page=11">Hardware design with RP2350 p.10</a></figcaption></figure>
+<figure><a class="zoom" href="img/ds-w25q-pins.png"><img src="img/ds-w25q-pins.png" alt="" loading="lazy"></a><figcaption><span class="kind ds">Datasheet</span> —
+USON 4 × 3 pad assignment. <a class="src" href="../../design/datasheets/w25q32jv.pdf#page=6">W25Q32JV p.5</a></figcaption></figure>
+</div>
+</section>
+
+<!-- ================================================================== -->
+<section class="card" id="rm2">
+<h2><span class="badge">Block 10</span>Raspberry Pi Radio Module 2</h2>
+<div class="tablewrap"><table>
+<tr><th>Ref</th><th>Part</th><th>Value / MPN</th><th>LCSC</th><th>Why</th></tr>
+<tr><td class="ref">U7</td><td>Radio module</td><td>RM2, RMC20452T (CYW43439)</td><td class="mono">consigned</td><td>Wi-Fi 4 plus Bluetooth 5.2 Classic and LE in a certified,
+shielded module with a PCB antenna. It is the Pico 2 W's radio, so the SDK's CYW43 driver and BTstack (A2DP) work unchanged. $4 RRP;
+sold through Raspberry Pi resellers only, so it is consigned or hand-soldered.</td></tr>
+<tr><td class="ref">R80</td><td>DOUT → DATA</td><td>470 Ω</td><td class="mono">C25117</td><td>Required by the datasheet (Table 1): DATA_OUT, DATA_IN and HOST_WAKE share one GPIO.</td></tr>
+<tr><td class="ref">R81</td><td>nIRQ → DATA</td><td>10 kΩ</td><td class="mono">C25744</td><td>Required by the same table.</td></tr>
+<tr><td class="ref">C100, C101</td><td>Vin</td><td>10 µF + 100 nF</td><td class="mono">C19702, C1525</td><td>The module has its own regulators, and the datasheet asks for nothing.
+These cover its TX bursts. C100 sits 3 mm from pad 16's column.</td></tr>
+<tr><td class="ref">C102</td><td>VDDIO</td><td>100 nF</td><td class="mono">C1525</td><td>At pad 14.</td></tr>
+</table></div>
+<ul>
+  <li><b>Vin from VSYS, not the LDO.</b> TX peaks of 271 mA (budget 350 mA) would leave too little of the TLV75533's 500 mA. Vin is
+  rated 3.0–4.8 V, with RF degrading below 3.2 V, so firmware cuts off at a 3.5 V cell.</li>
+  <li><b>gSPI on GPIO2/3 instead of the Pico W's 24/29.</b> The module's DIN/DOUT/SCLK pads face the RP2350's top-left, where GPIO2 and 3 are.
+  The datasheet allows any pins ("You can change the default GPIO assignments at build time"). The board header overrides
+  <code>CYW43_DEFAULT_PIN_WL_DATA_*</code>, <code>_WL_CLOCK</code> and <code>_WL_REG_ON</code>: WL_ON is on GPIO27 (pin 41), the right-column
+  pin nearest the module's pads 12/13, because the RP2350's reference regulator block now sits under those pads. CS (25) stays at the default.</li>
+  <li><b>RF keep-out:</b> no copper on any layer within 5 mm of the antenna end, across the full board width. The body will detune the antenna somewhat;
+  measure range in air and when cast before fixing the body's shape.</li>
+</ul>
+<div class="figs two">
+<figure><a class="zoom" href="img/sch-10.png"><img src="img/sch-10.png" alt="" loading="lazy"></a><figcaption><span class="kind sch">Schematic</span> — block 10.</figcaption></figure>
+<figure><a class="zoom" href="img/loc-10.png"><img src="img/loc-10.png" alt="" loading="lazy"></a><figcaption><span class="kind loc">Board</span> — top-right, with the antenna on the top edge.</figcaption></figure>
+</div>
+<div class="figs">
+<figure><a class="zoom" href="img/ds-rm2-gpio.png"><img src="img/ds-rm2-gpio.png" alt="" loading="lazy"></a><figcaption><span class="kind ds">Datasheet</span> —
+the shared DATA pin and its 470 Ω / 10 kΩ resistors. <a class="src" href="../../design/datasheets/rm2-datasheet.pdf#page=6">RM2 datasheet p.5, Table 1</a></figcaption></figure>
+<figure><a class="zoom" href="img/ds-rm2-footprint.png"><img src="img/ds-rm2-footprint.png" alt="" loading="lazy"></a><figcaption><span class="kind ds">Datasheet</span> —
+footprint and RF keep-out. An audit found the side pads 0.2 mm off this drawing; they are now corrected. <a class="src" href="../../design/datasheets/rm2-datasheet.pdf#page=10">RM2 datasheet p.9, Fig. 6</a></figcaption></figure>
+<figure><a class="zoom" href="img/ds-rm2-pins.png"><img src="img/ds-rm2-pins.png" alt="" loading="lazy"></a><figcaption><span class="kind ds">Datasheet</span> —
+pin functions: VDDIO 3.3 V, Vin 3.0–4.8 V. <a class="src" href="../../design/datasheets/rm2-datasheet.pdf#page=11">RM2 datasheet p.10, Table 2</a></figcaption></figure>
+</div>
+</section>
+
+<!-- ================================================================== -->
+<section class="card" id="usb">
+<h2><span class="badge">Block 1</span>USB-C and ESD</h2>
+<div class="tablewrap"><table>
+<tr><th>Ref</th><th>Part</th><th>Value / MPN</th><th>LCSC</th><th>Why</th></tr>
+<tr><td class="ref">J1</td><td>Receptacle</td><td>HRO TYPE-C-31-M-12, 16-pin USB 2.0</td><td class="mono">C165948</td><td>The same part as the first board, and a
+JLC staple. The 16-pin type has no SuperSpeed contacts. It sits centred on the bottom edge, mouth flush; the top edge is the antenna keep-out.
+A6/B6 and A7/B7 are tied so either plug orientation works.</td></tr>
+<tr><td class="ref">R1, R2</td><td>CC pull-downs</td><td>5.1 kΩ each</td><td class="mono">C25905</td><td>The Type-C Rd for a sink, one per CC pin. The source then supplies 5 V even into a dead board,
+so a flat cell can charge.</td></tr>
+<tr><td class="ref">U10</td><td>ESD array</td><td>ST USBLC6-2P6, SOT-666</td><td class="mono">C15999</td><td>The usual low-capacitance (≈ 3.5 pF) rail-to-rail array with a VBUS TVS. The
+USB-C is the only user-touched metal. D+ passes through pins 1→6 and D− through 3→4.</td></tr>
+<tr><td class="ref">C2</td><td>VBUS HF cap</td><td>100 nF X7R 16 V</td><td class="mono">C1525</td><td>Gives the array's VBUS node a local return for the first nanoseconds of a strike.</td></tr>
+</table></div>
+<p style="font-size:.9rem">There is no PD controller and no CC sensing. The charger takes up to 1 A from any 5 V source; phone chargers and
+Type-C sources advertising 1.5 A or more cover that. The shell goes straight to GND as the discharge path. There is no surge protection beyond ESD,
+consistent with a personal device with no formal compliance.</p>
+<div class="figs two">
+<figure><a class="zoom" href="img/sch-1.png"><img src="img/sch-1.png" alt="" loading="lazy"></a><figcaption><span class="kind sch">Schematic</span> — block 1.</figcaption></figure>
+<figure><a class="zoom" href="img/loc-1.png"><img src="img/loc-1.png" alt="" loading="lazy"></a><figcaption><span class="kind loc">Board</span> — bottom edge, with the ESD array above-left of the receptacle;
+R3/R4 sit at the RP2350.</figcaption></figure>
+</div>
+<div class="note"><b>Datasheets missing:</b> the TYPE-C-31-M-12 drawing and the USBLC6-2 datasheet could not be downloaded (LCSC and ST block
+the fetcher). The pin maps come from KiCad's footprint for this exact part and from ST's standard SOT-666 pinout. Please attach both if you can.</div>
+</section>
+
+<!-- ================================================================== -->
+<section class="card" id="charger">
+<h2><span class="badge">Block 2</span>BQ24074 charger with power path</h2>
+<div class="tablewrap"><table>
+<tr><th>Ref</th><th>Part</th><th>Value / MPN</th><th>LCSC</th><th>Why</th></tr>
+<tr><td class="ref">U2</td><td>Charger</td><td>TI BQ24074RGTR, VQFN-16 3 × 3</td><td class="mono">C54313</td><td><b>Power path</b>: the system runs from USB with a flat or missing cell,
+and charge termination is not confused by the system load (simple chargers like the MCP73831 or TP4056 put the load on the cell). Other reasons: 28 V input rating, 10.5 V OVP,
+a programmable input limit and timer, /PGOOD and /CHG outputs. Already proven on the bike-tracker board.</td></tr>
+<tr><td class="ref">R10</td><td>ISET</td><td>1.78 kΩ 1 %</td><td class="mono">C113478</td><td>I<sub>CHG</sub> = 890 / 1780 = <b>500 mA</b> (448–548 mA), 0.7 C for a 700 mAh cell.</td></tr>
+<tr><td class="ref">R11</td><td>ILIM</td><td>1.62 kΩ 1 %</td><td class="mono">C61897</td><td>I<sub>IN</sub> = 1610 / 1620 = <b>0.99 A</b> (0.93–1.06 A).</td></tr>
+<tr><td class="ref">R12</td><td>TMR</td><td>45.3 kΩ</td><td class="mono">C26980</td><td>Fast-charge safety timer 10 × 48 s/kΩ × 45.3 kΩ = <b>6.0 h</b>; pre-charge 36 min.</td></tr>
+<tr><td class="ref">R13</td><td>TS</td><td>10 kΩ</td><td class="mono">C25744</td><td>Holds TS mid-window (0.75 V; trip points 0.3 and 2.1 V), so charging is always allowed. <b>Leave it off</b> if the
+cell has a 10 k NTC on the BAT row's T pad; that gives a 0–50 °C charge window.</td></tr>
+<tr><td class="ref">C10, C13</td><td>IN</td><td>10 µF + 100 nF</td><td class="mono">C19702, C1525</td><td>Datasheet 1–10 µF. About 6 µF after DC bias, under the Type-C sink limit.</td></tr>
+<tr><td class="ref">C11, C14</td><td>OUT (VSYS)</td><td>10 µF + 100 nF</td><td class="mono">C19702, C1525</td><td>Datasheet 4.7–47 µF; about 30 µF effective on the rail with the motor bulk caps.</td></tr>
+<tr><td class="ref">C12, C15</td><td>BAT</td><td>10 µF + 100 nF</td><td class="mono">C19702, C1525</td><td>Datasheet 4.7–47 µF.</td></tr>
+<tr><td class="ref">D1, R14</td><td>Charge LED</td><td>Everlight 0603 green + 330 Ω</td><td class="mono">C2986059, C25104</td><td>Driven from VSYS by /CHG, so it lights while the system is off. A few mA.</td></tr>
+<tr><td class="ref">J2</td><td>BAT pads</td><td>3 pads, back: + − T</td><td>—</td><td>Solder pads for the cell lead. T is TS, for an NTC cell.</td></tr>
+</table></div>
+<ul>
+  <li><b>EN1 = GND, EN2 = VSYS</b> selects the R<sub>ILIM</sub> input limit. EN2 was on 3V3; it moved to VSYS when the power latch was added, so that
+  a switched-off system still charges at the full rate. TI's standalone example ties EN2 to OUT the same way. /CE is tied low.</li>
+  <li><b>/PGOOD → GPIO9</b> tells the firmware that USB is present; the RP2350 has no VBUS detect. There is no external pull-up, so firmware
+  must enable the internal one.</li>
+  <li><b>Thermal:</b> the worst case is a cold cell charging at a 5.5 V input with the system busy: 1.6 W, T<sub>J</sub> ≈ 116 °C on a JEDEC board. The chip only
+  throttles the charge current at 125 °C. Four thermal vias in the PowerPad tie it to both GND planes.</li>
+</ul>
+<div class="figs two">
+<figure class="tall"><a class="zoom" href="img/sch-2.png"><img src="img/sch-2.png" alt="" loading="lazy"></a><figcaption><span class="kind sch">Schematic</span> — block 2.</figcaption></figure>
+<figure><a class="zoom" href="img/loc-2.png"><img src="img/loc-2.png" alt="" loading="lazy"></a><figcaption><span class="kind loc">Board</span> — top-left, with the set resistors in line with their pins.
+The BAT pads are on the back.</figcaption></figure>
+</div>
+<div class="figs">
+<figure><a class="zoom" href="img/ds-bq-front.png"><img src="img/ds-bq-front.png" alt="" loading="lazy"></a><figcaption><span class="kind ds">Datasheet</span> —
+the typical application circuit. <a class="src" href="../../design/datasheets/bq24074.pdf#page=1">BQ24074 p.1</a></figcaption></figure>
+<figure><a class="zoom" href="img/ds-bq-design.png"><img src="img/ds-bq-design.png" alt="" loading="lazy"></a><figcaption><span class="kind ds">Datasheet</span> —
+TI's worked ISET, ILIM, ITERM and TMR calculations, the same equations used above. <a class="src" href="../../design/datasheets/bq24074.pdf#page=34">BQ24074 p.34</a></figcaption></figure>
+</div>
+</section>
+
+<!-- ================================================================== -->
+<section class="card" id="ldo">
+<h2><span class="badge">Block 4</span>3.3 V LDO</h2>
+<div class="tablewrap"><table>
+<tr><th>Ref</th><th>Part</th><th>Value / MPN</th><th>LCSC</th><th>Why</th></tr>
+<tr><td class="ref">U3</td><td>LDO</td><td>TI TLV75533PDBVR, SOT-23-5</td><td class="mono">C404027</td><td>500 mA, 25 µA quiescent, 238 mV max dropout at 500 mA, and stable with 1 µF ceramics.
+Its enable input is what the power latch drives: off draws about 0.1 µA. A buck-boost would hold 3.3 V down to an empty cell, but costs area and
+quiescent current; firmware cuts off at 3.5 V instead.</td></tr>
+<tr><td class="ref">C20</td><td>IN</td><td>1 µF 0603 X5R 50 V</td><td class="mono">C15849</td><td>Datasheet ≥ 1 µF (≥ 0.47 µF effective). A 50 V part loses under 10 % at 4.4 V.</td></tr>
+<tr><td class="ref">C21, C22</td><td>OUT</td><td>1 µF + 10 µF</td><td class="mono">C15849, C19702</td><td>≥ 1 µF required. About 8 µF effective, plus about 28 µF across the whole 3V3 net.</td></tr>
+</table></div>
+<ul>
+  <li><b>Dropout:</b> it regulates down to VSYS ≈ 3.44 V at 250 mA. Below that, 3V3 tracks the cell minus about 75 mV, and the ADC reference falls with it.
+  That is why firmware shuts down at 3.5 V, measured while the reference is still good.</li>
+  <li><b>Heat:</b> the worst case is (4.4 − 3.3) V × 250 mA = 0.28 W, which gives T<sub>J</sub> 73–109 °C at 45 °C depending on the copper. No thermal pad on the DBV package,
+  so GND pin 2 is stitched into the planes.</li>
+  <li><b>EN absolute maximum is 6.0 V.</b> The latch puts VSYS − 0.3 V (≤ 4.1 V) on EN from the button, about 3 V from PWR_HOLD, and about 2.3 V from USB.
+  At the charger's 10.5 V OVP limit, the 2:1 USB divider still keeps EN under 6 V.</li>
+</ul>
+<div class="figs two">
+<figure><a class="zoom" href="img/sch-4.png"><img src="img/sch-4.png" alt="" loading="lazy"></a><figcaption><span class="kind sch">Schematic</span> — block 4.</figcaption></figure>
+<figure><a class="zoom" href="img/loc-4.png"><img src="img/loc-4.png" alt="" loading="lazy"></a><figcaption><span class="kind loc">Board</span> — below the charger on the left.</figcaption></figure>
+</div>
+<div class="figs">
+<figure><a class="zoom" href="img/ds-tlv-front.png"><img src="img/ds-tlv-front.png" alt="" loading="lazy"></a><figcaption><span class="kind ds">Datasheet</span> —
+headline specs and the typical application circuit. <a class="src" href="../../design/datasheets/tlv755p.pdf#page=1">TLV755P p.1</a></figcaption></figure>
+<figure><a class="zoom" href="img/ds-tlv-absmax.png"><img src="img/ds-tlv-absmax.png" alt="" loading="lazy"></a><figcaption><span class="kind ds">Datasheet</span> —
+the 6.0 V absolute maximum on EN, which sizes the USB divider R66/R63. <a class="src" href="../../design/datasheets/tlv755p.pdf#page=4">TLV755P p.4</a></figcaption></figure>
+<figure class="tall"><a class="zoom" href="img/ds-tlv-ec.png"><img src="img/ds-tlv-ec.png" alt="" loading="lazy"></a><figcaption><span class="kind ds">Datasheet</span> —
+dropout (3.3 V rows: 215 mV max at 85 °C), and EN V<sub>HI</sub> 1 V / V<sub>LO</sub> 0.3 V. <a class="src" href="../../design/datasheets/tlv755p.pdf#page=6">TLV755P p.6</a></figcaption></figure>
+</div>
+</section>
+
+<!-- ================================================================== -->
+<section class="card" id="latch">
+<h2><span class="badge">Block 7</span>Power button (soft latch) and status LED</h2>
+<p>What was asked for: a momentary button that powers up the CPU, which then latches power on. The button stays readable, and the CPU can
+switch itself off. USB power also keeps the board on (option 1).</p>
+<div class="tablewrap"><table>
+<tr><th>Ref</th><th>Part</th><th>Value / MPN</th><th>LCSC</th><th>Why</th></tr>
+<tr><td class="ref">SW1</td><td>Button</td><td>Panasonic EVQPUC02K, side-actuated</td><td class="mono">C79174</td><td>Its plunger stands 0.5 mm past the left edge, so it can be found and pressed through the rubber.
+It is low profile, and the same part as the first board. A press puts VSYS on BTN_RAW.</td></tr>
+<tr><td class="ref">D5</td><td>OR diode</td><td>BAT54C, common cathode</td><td class="mono">C37704</td><td>Two Schottky inputs in one SOT-23: BTN_RAW and PWR_HOLD (GPIO19) OR'd onto the LDO's EN. The
+low V<sub>F</sub> keeps EN high from 3.3 V logic.</td></tr>
+<tr><td class="ref">R63</td><td>EN pull-down</td><td>100 kΩ</td><td class="mono">C25741</td><td>Holds the LDO off when nothing drives EN.</td></tr>
+<tr><td class="ref">D6, R66</td><td>USB → EN</td><td>1N4148WS + 100 kΩ</td><td class="mono">C2128, C25741</td><td>USB keeps the board on. Without it, a blank board or the UF2 bootloader (which never drives PWR_HOLD)
+would lose power as soon as the button is released. With R63, R66 forms a 2:1 divider, so EN stays below 6 V even at the charger's 10.5 V OVP.</td></tr>
+<tr><td class="ref">Q3, R64</td><td>Button read</td><td>2N7002 + 100 kΩ</td><td class="mono">C8545, C25741</td><td>The 4.4 V button node must not reach a GPIO, so an N-FET pulls GPIO8 (internal pull-up) low while
+the button is pressed. R64 discharges the gate after release.</td></tr>
+<tr><td class="ref">D2</td><td>Status LED</td><td>XL-1010RGBC-2812B-S, 1.0 × 1.0 mm WS2812B-type</td><td class="mono">C51900942</td><td>The 1010 addressable LED that was asked for, with full RGB
+from one GPIO. It needs 3.5–5.5 V, so it runs from VSYS (≥ 3.5 V above the firmware cutoff). Its DI threshold of 0.7 × VDD ≤ 3.08 V is met by 3.3 V logic.</td></tr>
+<tr><td class="ref">U11</td><td>LED supply switch</td><td>TPS22918DBVR, ON = 3V3_SYS</td><td class="mono">C131941</td><td>The LED idles at 0.35 mA, which would drain the cell while the board is off.
+A second TPS22918 does the switching with one part already on the BOM, in place of a P-FET, an N-FET and a resistor.</td></tr>
+<tr><td class="ref">R62, C133</td><td>DIN series, decoupling</td><td>330 Ω, 100 nF</td><td class="mono">C25104, C1525</td><td>The usual WS2812 series resistor, which damps ringing on DIN, and the LED's supply cap.</td></tr>
+</table></div>
+<p style="font-size:.9rem"><b>Sequence:</b> a press puts VSYS on EN through D5, 3.3 V comes up and the RP2350 boots. Firmware drives GPIO19 high early in boot,
+so the user holds the button only until that point. To switch off, firmware drives GPIO19 low (it can't while USB is in; it can still sleep and turn the LED and motors off).
+The board is designed with no separate user button; SW1 is read on GPIO8 while the board runs.</p>
+<div class="figs two">
+<figure class="tall"><a class="zoom" href="img/sch-7.png"><img src="img/sch-7.png" alt="" loading="lazy"></a><figcaption><span class="kind sch">Schematic</span> — block 7.</figcaption></figure>
+<figure><a class="zoom" href="img/loc-7.png"><img src="img/loc-7.png" alt="" loading="lazy"></a><figcaption><span class="kind loc">Board</span> — SW1 on the left edge with the latch parts between it and the chip;
+the LED and U11 on the right edge.</figcaption></figure>
+</div>
+<div class="figs">
+<figure><a class="zoom" href="img/ds-bat54.png"><img src="img/ds-bat54.png" alt="" loading="lazy"></a><figcaption><span class="kind ds">Datasheet</span> —
+BAT54C: 30 V, 200 mA, common cathode (the third symbol). This is Diodes Inc.'s sheet; the BOM's BAT54C,215 is Nexperia's, with the same pinout. <a class="src" href="../../design/datasheets/bat54-diodes.pdf#page=1">BAT54 p.1</a></figcaption></figure>
+<figure><a class="zoom" href="img/ds-tps-front.png"><img src="img/ds-tps-front.png" alt="" loading="lazy"></a><figcaption><span class="kind ds">Datasheet</span> —
+TPS22918: 1–5.5 V, 52 mΩ, quick output discharge. It is used here as U11, and again as U5 for the sensor rail. <a class="src" href="../../design/datasheets/tps22918.pdf#page=1">TPS22918 p.1</a></figcaption></figure>
+</div>
+<div class="note"><b>Datasheets missing:</b> XL-1010RGBC-2812B-S (LCSC only), 2N7002, 1N4148WS and EVQPUC02K. The pinouts come from the LCSC/EasyEDA
+footprints and the KiCad library, and the electrical needs here are far from the limits of any of these parts.</div>
+</section>
+
+<!-- ================================================================== -->
+<section class="card" id="vbat">
+<h2><span class="badge">Block 3</span>Battery voltage sense</h2>
+<div class="tablewrap"><table>
+<tr><th>Ref</th><th>Part</th><th>Value</th><th>LCSC</th><th>Why</th></tr>
+<tr><td class="ref">R60, R61</td><td>Divider</td><td>1 MΩ / 1 MΩ</td><td class="mono">C26083</td><td>Puts 4.35 V at 2.18 V, under the ADC's 3.3 V range, while drawing only 2.1 µA from the cell all the time.</td></tr>
+<tr><td class="ref">C64</td><td>Reservoir</td><td>100 nF</td><td class="mono">C1525</td><td>Without it, a 500 kΩ source into an ADC input of about 100 kΩ reads badly wrong. With it, each conversion dips the
+node by only about 21 µV. Recovery time is 50 ms; a battery gauge at ≤ 1 S/s doesn't notice.</td></tr>
+</table></div>
+<p style="font-size:.9rem">The ADC reference is 3V3, which falls in LDO dropout below about 3.4 V. The gauge reads a ratio and is trusted above about 3.5 V. The
+1 µA worst-case pin leakage spec would allow a 24 % error on paper; real leakage is in the nA range. Calibrate once against a known cell voltage.</p>
+<div class="figs two">
+<figure><a class="zoom" href="img/sch-3.png"><img src="img/sch-3.png" alt="" loading="lazy"></a><figcaption><span class="kind sch">Schematic</span> — block 3.</figcaption></figure>
+<figure><a class="zoom" href="img/loc-3.png"><img src="img/loc-3.png" alt="" loading="lazy"></a><figcaption><span class="kind loc">Board</span> — down the right edge, away from the buck inductor.</figcaption></figure>
+</div>
+</section>
+
+<!-- ================================================================== -->
+<section class="card" id="sensrail">
+<h2><span class="badge">Block 5</span>Switched sensor rail</h2>
+<div class="tablewrap"><table>
+<tr><th>Ref</th><th>Part</th><th>Value / MPN</th><th>LCSC</th><th>Why</th></tr>
+<tr><td class="ref">U5</td><td>Load switch</td><td>TI TPS22918DBVR, SOT-23-6</td><td class="mono">C131941</td><td>Turns the five barometers fully off in sleep (0.5 µA switch leakage).
+Each power-up is also a clean power-on reset, which the DPS368 needs to select SPI. It has an adjustable slew (CT) and quick output discharge.</td></tr>
+<tr><td class="ref">C50</td><td>CT</td><td>470 pF C0G</td><td class="mono">C75274</td><td>Rise time ≈ 0.85–0.95 ms, inside the DPS368's 0.001–5 ms supply-ramp window. Inrush ≈ 30 mA instead of about 0.3 A.
+Keep it under about 2.7 nF.</td></tr>
+<tr><td class="ref">R50</td><td>ON pull-down</td><td>100 kΩ</td><td class="mono">C25741</td><td>The ON pin must not float while the RP2350 is in reset.</td></tr>
+<tr><td class="ref">C51, C52</td><td>IN, OUT</td><td>1 µF, 10 µF</td><td class="mono">C15849, C19702</td><td>1 µF at VIN as recommended. 10 µF of bulk for the five sensors.</td></tr>
+</table></div>
+<div class="note"><b>Firmware rule:</b> park SCK, SDI and all five CS lines low before dropping SENS_EN, and keep them low until the rail is back.
+A line left high back-powers the sensors into the switch's 25 Ω discharge path.</div>
+<div class="figs two">
+<figure><a class="zoom" href="img/sch-5.png"><img src="img/sch-5.png" alt="" loading="lazy"></a><figcaption><span class="kind sch">Schematic</span> — block 5.</figcaption></figure>
+<figure><a class="zoom" href="img/loc-5.png"><img src="img/loc-5.png" alt="" loading="lazy"></a><figcaption><span class="kind loc">Board</span> — left side, below the LDO.</figcaption></figure>
+</div>
+<div class="figs">
+<figure><a class="zoom" href="img/ds-tps-rise.png"><img src="img/ds-tps-rise.png" alt="" loading="lazy"></a><figcaption><span class="kind ds">Datasheet</span> —
+the rise-time equation and table: 470 pF at 3.3 V gives 850 µs. <a class="src" href="../../design/datasheets/tps22918.pdf#page=14">TPS22918 p.14</a></figcaption></figure>
+</div>
+</section>
+
+<!-- ================================================================== -->
+<section class="card" id="tactile">
+<h2><span class="badge">Block 11</span>Tactile array: five DPS368 barometers</h2>
+<div class="tablewrap"><table>
+<tr><th>Ref</th><th>Part</th><th>Value / MPN</th><th>LCSC</th><th>Why</th></tr>
+<tr><td class="ref">U20–U24</td><td>Barometer</td><td>Infineon DPS368XTSA1, LGA-8 2.0 × 2.5 × 1.1 mm</td><td class="mono">C3232508</td><td>Squeeze sensing after Tenzer, Jentoft and Howe
+(2014): MEMS barometers cast under rubber read contact pressure. The DPS368 is small and waterproof (IPx8), with ±6 Pa relative accuracy and up to 128 Hz per sensor.
+It speaks SPI. $4.21 each.</td></tr>
+<tr><td class="ref">C120–C124</td><td>Decoupling</td><td>100 nF, one per sensor</td><td class="mono">C1525</td><td>The datasheet shows 100 nF on each of VDD and VDDIO. Those pins are adjacent with GND between them and on
+the same rail, so one cap within 1 mm of both serves them (a logged deviation).</td></tr>
+</table></div>
+<ul>
+  <li><b>SPI with one chip select each</b> (GPIO0, 14–16 and 20, mode 3, ≤ 10 MHz): the DPS368 has only two I2C addresses. The IMU stays on I2C so
+  that it is never an unpowered slave on a shared bus.</li>
+  <li><b>Positions:</b> four corners plus the centre, all on the back facing the rubber. Each sits in a no-via area with its cap on the inboard side.</li>
+  <li><b>Land pattern:</b> 0.35 × 0.35 mm solder-mask-defined pads with 0.35 mm paste, as in the datasheet's Fig. 18. The LCSC/EasyEDA land had 2.5 times the paste
+  on this 0.65 mm-pitch LGA, which cannot be reworked after casting.</li>
+  <li><b>Casting:</b> use a pressure pot or pre-degassed rubber, not vacuum over the board. The datasheet says the vent hole must not see vacuum.
+  Test one sensor in rubber first.</li>
+</ul>
+<div class="note"><b>Firmware rule:</b> hold all five CS lines high, raise SENS_EN, wait ≥ 12 ms, then pulse each CS low once (read ID 0x0D = 0x10). Until a
+sensor sees CSB low it is an I2C slave at 0x77 on the shared SCK/SDI lines.</div>
+<div class="figs two">
+<figure class="tall"><a class="zoom" href="img/sch-11.png"><img src="img/sch-11.png" alt="" loading="lazy"></a><figcaption><span class="kind sch">Schematic</span> — block 11.</figcaption></figure>
+<figure><a class="zoom" href="img/loc-11.png"><img src="img/loc-11.png" alt="" loading="lazy"></a><figcaption><span class="kind loc">Board</span> — all on the back: four corners and the centre.</figcaption></figure>
+</div>
+<div class="figs">
+<figure><a class="zoom" href="img/ds-dps-pins.png"><img src="img/ds-dps-pins.png" alt="" loading="lazy"></a><figcaption><span class="kind ds">Datasheet</span> —
+pinout and the SPI 4-wire pin roles. <a class="src" href="../../design/datasheets/dps368.pdf#page=6">DPS368 p.6</a></figcaption></figure>
+<figure><a class="zoom" href="img/ds-dps-spi.png"><img src="img/ds-dps-spi.png" alt="" loading="lazy"></a><figcaption><span class="kind ds">Datasheet</span> —
+the SPI 4-wire application circuit that this block follows. <a class="src" href="../../design/datasheets/dps368.pdf#page=19">DPS368 p.19, Fig. 8</a></figcaption></figure>
+<figure><a class="zoom" href="img/ds-dps-caps.png"><img src="img/ds-dps-caps.png" alt="" loading="lazy"></a><figcaption><span class="kind ds">Datasheet</span> —
+blocking caps, 100 nF "as close to the package pins as possible". <a class="src" href="../../design/datasheets/dps368.pdf#page=20">DPS368 p.20, Table 11</a></figcaption></figure>
+<figure><a class="zoom" href="img/ds-dps-land.png"><img src="img/ds-dps-land.png" alt="" loading="lazy"></a><figcaption><span class="kind ds">Datasheet</span> —
+the recommended pads and stencil the footprint now matches. <a class="src" href="../../design/datasheets/dps368.pdf#page=41">DPS368 p.41, Fig. 18</a></figcaption></figure>
+<figure><a class="zoom" href="img/ds-dps-handling.png"><img src="img/ds-dps-handling.png" alt="" loading="lazy"></a><figcaption><span class="kind ds">Datasheet</span> —
+handling: no vacuum on the vent hole, no blown air, no ultrasonic cleaning. <a class="src" href="../../design/datasheets/dps368.pdf#page=43">DPS368 p.43</a></figcaption></figure>
+</div>
+</section>
+
+<!-- ================================================================== -->
+<section class="card" id="imu">
+<h2><span class="badge">Block 12</span>IMU</h2>
+<div class="tablewrap"><table>
+<tr><th>Ref</th><th>Part</th><th>Value / MPN</th><th>LCSC</th><th>Why</th></tr>
+<tr><td class="ref">U30</td><td>6-axis IMU</td><td>ST LSM6DS3TR-C, LGA-14 2.5 × 3</td><td class="mono">C967633</td><td>$1.67 with 14k in stock, against the BMI270 at $2.76 and the LSM6DSO at $3.90 with 519 in stock. Tap, wake-on-motion
+and activity detection are built in. It runs on I2C1 at 0x6A (CS tied high, SA0 to GND), with INT1/INT2 on GPIO5/18.</td></tr>
+<tr><td class="ref">R130, R131</td><td>I2C pull-ups</td><td>4.7 kΩ</td><td class="mono">C25900</td><td>Fast mode (400 kHz) up to about 75 pF of bus. The bus is a few cm with one device; the datasheet's example uses 10 kΩ.</td></tr>
+<tr><td class="ref">C130, C132</td><td>VDD, VDDIO</td><td>100 nF each</td><td class="mono">C1525</td><td>One per supply pin, as the datasheet asks.</td></tr>
+<tr><td class="ref">C131</td><td>Bulk</td><td>10 µF</td><td class="mono">C19702</td><td>Not required; included because the IMU shares 3V3 with the radio and the RP2350.</td></tr>
+</table></div>
+<ul>
+  <li>The aux-bus pins SDx/SCx (2, 3) are tied to GND. They are inputs with no pull, and the datasheet says "connect to VDDIO or GND".</li>
+  <li>Placed ≥ 1.5 mm in from the board edge, because package stress shifts the offsets. Calibrate the offsets after casting.</li>
+  <li>Motor vibration will trigger the wake and tap detectors while a motor runs, so firmware must ignore them during play.</li>
+</ul>
+<div class="figs two">
+<figure><a class="zoom" href="img/sch-12.png"><img src="img/sch-12.png" alt="" loading="lazy"></a><figcaption><span class="kind sch">Schematic</span> — block 12.</figcaption></figure>
+<figure><a class="zoom" href="img/loc-12.png"><img src="img/loc-12.png" alt="" loading="lazy"></a><figcaption><span class="kind loc">Board</span> — left edge, middle, close to GPIO6/7.</figcaption></figure>
+</div>
+<div class="figs">
+<figure><a class="zoom" href="img/ds-lsm-app.png"><img src="img/ds-lsm-app.png" alt="" loading="lazy"></a><figcaption><span class="kind ds">Datasheet (reference part)</span> —
+mode-1 connections of the LSM6DSO, which has the same package and pin positions. <a class="src" href="../../design/datasheets/lsm6dso-family-reference.pdf#page=35">LSM6DSO p.35, Fig. 21</a></figcaption></figure>
+</div>
+<div class="note"><b>Datasheet missing:</b> the LSM6DS3TR-C datasheet could not be downloaded (ST times out). Every number in its audit comes from
+the LSM6DSO and is marked "verify". The register map and WHO_AM_I differ between the two parts, so firmware must use the DS3TR-C map. Please attach it.</div>
+</section>
+
+<!-- ================================================================== -->
+<section class="card" id="motors">
+<h2><span class="badge">Block 13</span>Motor channels</h2>
+<div class="tablewrap"><table>
+<tr><th>Ref</th><th>Part</th><th>Value / MPN</th><th>LCSC</th><th>Why</th></tr>
+<tr><td class="ref">Q1, Q2</td><td>Low-side switch</td><td>AOS AO3400A, SOT-23</td><td class="mono">C20917</td><td>A JLC basic part. Logic level, 30 V, 5.7 A, with about 21 mΩ typ / 37 mΩ max at V<sub>GS</sub> = 3.3 V (Fig. 5).
+At 0.2 A a channel dissipates about 1 mW, and even at the 1 A design figure only about 70 mW.</td></tr>
+<tr><td class="ref">R40, R42</td><td>Gate series</td><td>100 Ω</td><td class="mono">C25076</td><td>Slows the edges to about 200 ns and damps ringing. The motor leads are antennas a few cm from the radio. That is 0.5 % of a 25 kHz period.</td></tr>
+<tr><td class="ref">R41, R43</td><td>Gate pull-down</td><td>4.7 kΩ</td><td class="mono">C25900</td><td><b>Not 100 kΩ.</b> RP2350 erratum E9: a GPIO configured as an input can leak about 120 µA and float near 2.2 V,
+above V<sub>GS(th)</sub>, which would run the motor uncontrolled at boot or in BOOTSEL mode. The erratum asks for ≤ 8.2 kΩ.</td></tr>
+<tr><td class="ref">D3, D4</td><td>Flyback</td><td>B5819W, SOD-123 Schottky</td><td class="mono">C8598</td><td>1 A, 40 V, V<sub>F</sub> ≤ 0.6 V at 1 A. Clamps the switch node to VSYS when the FET turns off.
+At 0.2 A it dissipates at most about 0.12 W (0.6 V × 0.2 A).</td></tr>
+<tr><td class="ref">C40/C41, C42/C43</td><td>Bulk + HF</td><td>22 µF 0603 + 100 nF per channel</td><td class="mono">C86295, C1525</td><td>Supply the PWM current locally, so it does not pass through the cell lead
+and the charger FET. VSYS ripple is about 0.1 V per channel at 0.2 A. Stagger the two PWM phases by 180° to halve it.</td></tr>
+<tr><td class="ref">J4</td><td>MOT pads</td><td>3 pads, back: VSYS M1 M2</td><td>—</td><td>Each motor goes between VSYS and its Mn pad, and the FET sinks the current.</td></tr>
+</table></div>
+<div class="figs two">
+<figure><a class="zoom" href="img/sch-13.png"><img src="img/sch-13.png" alt="" loading="lazy"></a><figcaption><span class="kind sch">Schematic</span> — block 13.</figcaption></figure>
+<figure><a class="zoom" href="img/loc-13.png"><img src="img/loc-13.png" alt="" loading="lazy"></a><figcaption><span class="kind loc">Board</span> — mirrored either side of the USB-C, each flyback in its corner;
+the MOT pads are on the back between the receptacle's shell pads.</figcaption></figure>
+</div>
+<div class="figs">
+<figure><a class="zoom" href="img/ds-ao-front.png"><img src="img/ds-ao-front.png" alt="" loading="lazy"></a><figcaption><span class="kind ds">Datasheet</span> —
+AO3400A ratings: V<sub>DS</sub> 30 V, V<sub>GS</sub> ±12 V, R<sub>DS(on)</sub> &lt; 48 mΩ at 2.5 V. <a class="src" href="../../design/datasheets/ao3400a.pdf#page=1">AO3400A p.1</a></figcaption></figure>
+<figure><a class="zoom" href="img/ds-ao-rds.png"><img src="img/ds-ao-rds.png" alt="" loading="lazy"></a><figcaption><span class="kind ds">Datasheet</span> —
+R<sub>DS(on)</sub> against V<sub>GS</sub>: about 21 mΩ at the 3.3 V drive. <a class="src" href="../../design/datasheets/ao3400a.pdf#page=3">AO3400A p.3, Fig. 5</a></figcaption></figure>
+<figure><a class="zoom" href="img/ds-b5819w.png"><img src="img/ds-b5819w.png" alt="" loading="lazy"></a><figcaption><span class="kind ds">Datasheet</span> —
+B5819W: 40 V, 1 A, V<sub>F</sub> 0.6 V at 1 A, Tj ≤ 125 °C. This is MCC's sheet; the LCSC part may come from another maker with the same ratings. <a class="src" href="../../design/datasheets/b5819w-mcc.pdf#page=1">B5817W–B5819W p.1</a></figcaption></figure>
+</div>
+</section>
+
+<!-- ================================================================== -->
+<section class="card" id="debug">
+<h2><span class="badge">Block 6</span>Debug and test pads</h2>
+<div class="tablewrap"><table>
+<tr><th>Ref</th><th>Part</th><th>Value / MPN</th><th>LCSC</th><th>Why</th></tr>
+<tr><td class="ref">J3</td><td>SWD pogo row</td><td>5 pads, back: SWDIO SWCLK RUN BOOT GND</td><td>—</td><td>Program and debug before casting with a pogo clip; ENIG finish, no paste. BOOT bridged to GND at power-up
+gives the UF2 bootloader. Placed on the back under the radio, where nothing else lands.</td></tr>
+<tr><td class="ref">J5</td><td>Test pads</td><td>3 pads, back: VSYS 3V3 1V1</td><td>—</td><td>The three rails a first power-up checks. 1V1 under load is also the acceptance test for the core inductor.</td></tr>
+<tr><td class="ref">J6</td><td>Debug Probe connector</td><td>JST SH BM03B-SRSS-TB, <b>not fitted</b></td><td class="mono">(C160389)</td><td>Footprint for the Raspberry Pi Debug Probe's 3-pin
+cable, in its order SC, GND, SD. It is hand-fitted for bench work and left out of the BOM and CPL.</td></tr>
+</table></div>
+<div class="figs two">
+<figure><a class="zoom" href="img/sch-6.png"><img src="img/sch-6.png" alt="" loading="lazy"></a><figcaption><span class="kind sch">Schematic</span> — block 6.</figcaption></figure>
+<figure><a class="zoom" href="img/loc-6.png"><img src="img/loc-6.png" alt="" loading="lazy"></a><figcaption><span class="kind loc">Board</span> — back, under the radio.</figcaption></figure>
+</div>
+<div class="figs">
+<figure><a class="zoom" href="img/ds-jst-sh.png"><img src="img/ds-jst-sh.png" alt="" loading="lazy"></a><figcaption><span class="kind ds">Datasheet</span> —
+SH headers: BM03B-SRSS-TB is the 3-circuit top-entry part. <a class="src" href="../../design/datasheets/jst-sh.pdf#page=3">JST SH p.3</a></figcaption></figure>
+</div>
+</section>
+
+<!-- ================================================================== -->
+<section class="card" id="passives">
+<h2>Passives</h2>
+<ul>
+  <li><b>Sizes:</b> 0402 throughout. 0603 is used for 1 µF (to get a 50 V X5R that keeps its capacitance at 4.4 V) and for 10 µF and 22 µF, which a 10 V
+  0402 cannot give usefully after DC bias. 4.7 µF on the RP2350 rails is a 0402 X5R 10 V, as in the reference design.</li>
+  <li><b>Dielectrics:</b> X7R 16 V for 100 nF. C0G for the crystal loads (15 pF) and the CT timing cap (470 pF), whose values must not drift with voltage.</li>
+  <li><b>DC bias</b> is accounted for in each audit. The 10 µF 0603 10 V parts are about 7 µF at 3.3–4.4 V, and the 22 µF about 9–12 µF at 4.4 V.</li>
+  <li><b>JLC basic parts</b> wherever a choice allowed (C1525, C15849, C19702, C23733, most 0402 resistors). The 27 Ω, the charger's set resistors
+  and the 22 µF are extended parts, accepted for the values the datasheets ask for.</li>
+  <li><b>Placement:</b> every passive sits at the pin it serves, on the same side as its chip. The exceptions are C81, C91, C97 and C98 behind the RP2350, and
+  the sensors' caps on the back.</li>
+</ul>
+</section>
+
+<!-- ================================================================== -->
+<section class="card" id="datasheets">
+<h2>Datasheets in hand</h2>
+<div class="tablewrap"><table>
+<tr><th>Part</th><th>File</th><th>Status</th></tr>
+<tr><td>RP2350 (datasheet + hardware design guide)</td><td class="mono">rp2350-datasheet.pdf, hardware-design-with-rp2350.pdf</td><td class="status-ok">read, audited</td></tr>
+<tr><td>W25Q32JV flash</td><td class="mono">w25q32jv.pdf</td><td class="status-ok">read, audited</td></tr>
+<tr><td>ABM8-272-T3 crystal</td><td class="mono">abm8-272-t3.pdf</td><td class="status-ok">obtained 2026-10-18; matches the audit's assumptions</td></tr>
+<tr><td>RM2 radio module</td><td class="mono">rm2-datasheet.pdf</td><td class="status-ok">read, audited</td></tr>
+<tr><td>BQ24074 charger</td><td class="mono">bq24074.pdf</td><td class="status-ok">read, audited</td></tr>
+<tr><td>TLV755P LDO</td><td class="mono">tlv755p.pdf</td><td class="status-ok">read, audited</td></tr>
+<tr><td>TPS22918 load switch</td><td class="mono">tps22918.pdf</td><td class="status-ok">read, audited</td></tr>
+<tr><td>DPS368 barometer</td><td class="mono">dps368.pdf</td><td class="status-ok">read, audited</td></tr>
+<tr><td>AO3400A MOSFET</td><td class="mono">ao3400a.pdf</td><td class="status-ok">read, audited</td></tr>
+<tr><td>B5819W Schottky</td><td class="mono">b5819w-mcc.pdf</td><td class="status-ok">obtained 2026-10-18 (MCC's sheet)</td></tr>
+<tr><td>BAT54C dual Schottky</td><td class="mono">bat54-diodes.pdf</td><td class="status-ok">obtained 2026-10-18 (Diodes Inc's sheet)</td></tr>
+<tr><td>JST SH connector</td><td class="mono">jst-sh.pdf</td><td class="status-ok">obtained 2026-10-18</td></tr>
+<tr><td>Sunlord MPL2016 inductor (the fallback)</td><td class="mono">inductor-mpl2016.pdf</td><td class="status-ok">read</td></tr>
+<tr><td>LSM6DS3TR-C IMU</td><td>— (LSM6DSO used as reference)</td><td class="status-miss">missing: please attach</td></tr>
+<tr><td>USBLC6-2P6 ESD</td><td>—</td><td class="status-miss">missing: please attach</td></tr>
+<tr><td>TYPE-C-31-M-12 receptacle</td><td>—</td><td class="status-miss">missing: please attach</td></tr>
+<tr><td>XL-1010RGBC-2812B-S LED, 2N7002, 1N4148WS, EVQPUC02K, AOTA-B201610S3R3-101-T</td><td>—</td><td class="status-miss">missing (low risk: basic parts or the reference design's own)</td></tr>
+</table></div>
+</section>
+
+<!-- ================================================================== -->
+<section class="card" id="open">
+<h2>Open items that touch component choices</h2>
+<ul>
+  <li><b>Cell:</b> ≥ 700 mAh, with its own protection PCB. If it has a 10 k NTC, wire it to T and leave R13 off. Set R12 for the capacity if the 6 h timer is too short.</li>
+  <li><b>Inductor orientation:</b> at assembly, confirm the Abracon dot is on pad 1 as in Raspberry Pi's layout.</li>
+  <li><b>Casting tests:</b> cast one DPS368 in rubber first (pressure pot, no vacuum), and measure RM2 range in air and when cast.</li>
+  <li><b>Firmware contracts</b> that the parts depend on: drive GPIO19 high early; cut off at a 3.5 V cell; follow the DPS368 CS order; park the SPI lines before cutting the
+  sensor rail; enable the GPIO9 pull-up; set GPIO13/17 to 12 mA drive; stagger the motor PWM; calibrate the IMU after casting; use the LSM6DS3TR-C register map.</li>
+  <li><b>Datasheets to attach:</b> LSM6DS3TR-C, USBLC6-2, TYPE-C-31-M-12 (see above).</li>
+</ul>
+</section>
+
+<!-- ================================================================== -->
+<section class="card" id="bom">
+<h2>Full component list</h2>
+<p style="font-size:.85rem;color:var(--muted)">Generated from <code>circuit.py</code> and <code>bom/parts.yaml</code> by <code>scripts/doc_images.py</code>
+(<a href="parts.json">parts.json</a>). Click a block number to jump to its section.</p>
+<div class="tablewrap"><table id="bomtable"><thead><tr><th>Ref</th><th>Value</th><th>MPN</th><th>LCSC</th><th>Footprint</th><th>Block</th></tr></thead>
+<tbody><tr><td colspan="6">loading…</td></tr></tbody></table></div>
+</section>
+
+<footer>bluebuzz-rm2 rev A · generated pictures: <code>python3 scripts/doc_images.py</code> · text: this file, written by hand from the audits and the decision log.</footer>
+</div>
+
+<div id="lightbox" hidden><img alt=""></div>
+<script>
+(function () {
+  const lb = document.getElementById('lightbox'), lbImg = lb.querySelector('img');
+  document.addEventListener('click', e => {
+    const a = e.target.closest('a.zoom');
+    if (!a) return;
+    e.preventDefault();
+    lbImg.src = a.getAttribute('href');
+    lb.classList.toggle('fit', window.innerWidth < 900);
+    lb.hidden = false;
+  });
+  lb.addEventListener('click', () => { lb.hidden = true; lbImg.removeAttribute('src'); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') lb.hidden = true; });
+
+  const anchor = {1: 'usb', 2: 'charger', 3: 'vbat', 4: 'ldo', 5: 'sensrail', 6: 'debug', 7: 'latch', 8: 'flash',
+                  9: 'rp2350', 10: 'rm2', 11: 'tactile', 12: 'imu', 13: 'motors'};
+  const dnp = new Set(['J6']);
+  const nat = (a, b) => a.ref.localeCompare(b.ref, undefined, {numeric: true});
+  fetch('parts.json').then(r => r.json()).then(rows => {
+    const tb = document.querySelector('#bomtable tbody');
+    tb.innerHTML = '';
+    rows.sort(nat).forEach(p => {
+      const tr = document.createElement('tr');
+      if (dnp.has(p.ref)) tr.className = 'dnp';
+      const cells = [p.ref, p.value + (dnp.has(p.ref) ? ' (DNP)' : ''), p.mpn, p.lcsc || '—', p.footprint];
+      cells.forEach((v, i) => { const td = document.createElement('td'); td.textContent = v;
+        if (i === 0) td.className = 'ref'; if (i === 2 || i === 3 || i === 4) td.className = 'mono'; tr.appendChild(td); });
+      const td = document.createElement('td'), a = document.createElement('a');
+      a.href = '#' + anchor[p.block]; a.textContent = p.block; td.appendChild(a); tr.appendChild(td);
+      tb.appendChild(tr);
+    });
+  }).catch(() => { document.querySelector('#bomtable tbody').innerHTML = '<tr><td colspan="6">parts.json could not be loaded</td></tr>'; });
+})();
+</script>
+</body>
+</html>

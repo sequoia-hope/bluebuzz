@@ -1,0 +1,131 @@
+(footprint "PadRow_3x_solder"
+	(version 20241229)
+	(generator "pcbnew")
+	(generator_version "9.0")
+	(layer "F.Cu")
+	(descr "3 x 1.6 x 2.2 mm pads, 2.0 mm pitch, for a soldered lead")
+	(tags "pad row wire pogo")
+	(property "Reference" "REF**"
+		(at 0 0 0)
+		(layer "F.Fab")
+		(uuid "7f1025d4-7793-4045-8c08-9d69f1639ef2")
+		(effects
+			(font
+				(size 0.6 0.6)
+				(thickness 0.1)
+			)
+		)
+	)
+	(property "Value" "PadRow_3x_solder"
+		(at 0 0 0)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "c08a1706-7dcf-4065-85cb-3923594ae7e0")
+		(effects
+			(font
+				(size 0.6 0.6)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Datasheet" ""
+		(at 0 0 0)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "cae664bc-398f-495f-a07c-9ff0ab15f37a")
+		(effects
+			(font
+				(size 1.27 1.27)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Description" ""
+		(at 0 0 0)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "45094610-9f69-41e2-83b4-829258a7b20e")
+		(effects
+			(font
+				(size 1.27 1.27)
+				(thickness 0.15)
+			)
+		)
+	)
+	(attr smd exclude_from_pos_files exclude_from_bom)
+	(fp_line
+		(start -3.15 -1.1)
+		(end -3.15 1.1)
+		(stroke
+			(width 0.15)
+			(type default)
+		)
+		(layer "F.SilkS")
+		(uuid "dc86133c-f771-40b8-9ae3-f5d5e29745e5")
+	)
+	(fp_line
+		(start -2.95 -1.25)
+		(end 2.95 -1.25)
+		(stroke
+			(width 0.05)
+			(type default)
+		)
+		(layer "F.CrtYd")
+		(uuid "b0b688ec-ee45-4a8e-9256-755e0907bb1f")
+	)
+	(fp_line
+		(start -2.95 1.25)
+		(end -2.95 -1.25)
+		(stroke
+			(width 0.05)
+			(type default)
+		)
+		(layer "F.CrtYd")
+		(uuid "35e3ec66-c33a-490a-b4a2-479539617125")
+	)
+	(fp_line
+		(start 2.95 -1.25)
+		(end 2.95 1.25)
+		(stroke
+			(width 0.05)
+			(type default)
+		)
+		(layer "F.CrtYd")
+		(uuid "e935f5e3-97b9-4c4c-816c-deed6336b87f")
+	)
+	(fp_line
+		(start 2.95 1.25)
+		(end -2.95 1.25)
+		(stroke
+			(width 0.05)
+			(type default)
+		)
+		(layer "F.CrtYd")
+		(uuid "3bcacc79-cdff-4a09-87fd-fa83713b9c1c")
+	)
+	(pad "1" smd roundrect
+		(at -2 0)
+		(size 1.6 2.2)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(roundrect_rratio 0.15)
+		(thermal_bridge_angle 45)
+		(uuid "3f89dd0d-7010-4c24-bd24-7e54b2aaa835")
+	)
+	(pad "2" smd roundrect
+		(at 0 0)
+		(size 1.6 2.2)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(roundrect_rratio 0.15)
+		(thermal_bridge_angle 45)
+		(uuid "a59a8ab0-6880-4fa6-a0c9-78e9efb8b613")
+	)
+	(pad "3" smd roundrect
+		(at 2 0)
+		(size 1.6 2.2)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(roundrect_rratio 0.15)
+		(thermal_bridge_angle 45)
+		(uuid "f6119599-2dc2-43eb-ab64-c6bde879226c")
+	)
+	(embedded_fonts no)
+)

@@ -1,0 +1,78 @@
+# bluebuzz — single source of truth for the generated design.
+# Edit this file and scripts/circuit.py, then run: python3 build.py
+#
+# A small Bluetooth vibrator controller: an nRF52840 module drives two
+# vibration motors from a LiPo cell through a low-side FET, charges the
+# cell from USB-C, and reads a load cell (HX711) and a pressure sensor
+# (analog or I2C) on two small side-entry connectors.
+#
+# The pipeline, the charger, the USB block and the module footprint are
+# the bike-tracker's (../bike-tracker); the motor driver is the
+# activity_tracker's. Review-finding IDs quoted in circuit.py comments
+# (E1.., D1.., B1..) refer to those projects' reviews.
+
+revision: A            # printed on the back silkscreen (gen_board.py legend)
+rev_date: 2026-10
+
+board:
+  layers: 4              # F = parts + signal, In1 = GND plane, In2 = 3V3_SYS
+                         # pour, B = signal + GND pour. 2 layers would do
+                         # electrically; 4 gives the module's three GND
+                         # pads a real return plane under a 2.4 GHz radio.
+  thickness_mm: 1.6
+  width_mm: 34           # rectangle, x across
+  height_mm: 44          # y down the board; USB at the top edge, the
+                         # module's antenna end at the bottom edge
+  floorplan_h_mm: 44
+  corner_radius_mm: 2.0
+  mounting_holes: null   # none: the enclosure holds the board (compact)
+
+power:
+  cell_mah: 1200         # LiPo, JST PH-2.0
+  charge_current_ma: 500 # R_ISET = 890/0.5 = 1.78k (E96)
+  input_limit_ma: 1000   # R_ILIM = 1610/1.0 = 1.62k (E96), ILIM mode only
+  safety_timer_h: 6      # R_TMR = 45.3k (E96); legal window 18-72k
+  sys_rail_v: 3.3        # TLV75533, always on
+  motor_rail: VSYS       # the motor runs from the charger's power-path
+                         # output, so it works on USB with a flat cell
+  sensor_rail_gated: true  # TPS22918 on 3V3_SYS -> 3V3_SENS: the HX711
+                           # and a 350 ohm bridge draw ~11 mA together,
+                           # which no battery device leaves on
+
+mcu:
+  module: E73-2G4M08S1C  # nRF52840, ONBOARD ceramic antenna (the -X is
+                         # the u.FL variant the bike-tracker used)
+  lfxo: external         # the module has NO 32.768kHz crystal of its own
+  usb: device            # full-speed only; needs VBUS on module pad 27 (E8)
+  antenna_keepout_mm:    # no copper on any layer under the antenna end
+    depth: 3.5           # of the module and out to the board edge: the
+                         # footprint's antenna band is y 8.0..10.4 of a body
+                         # ending at 10.99, and pad 1 starts 3.98 from the end
+    margin: 1.0          # either side of the module body
+
+motor:
+  channels: 2            # two independent PWM channels (P1.11, P0.31)
+  fet: AO3400A           # low side, N-channel, 30 V / 5.7 A, logic level
+  flyback: B5819W        # 1 A Schottky across each motor
+  max_current_ma: 1000   # per channel: what the connector, FET and bulk are sized for
+  connector: JST PH 2.0 4-way   # VSYS M1 VSYS M2 on one housing
+
+load_cell:
+  adc: HX711             # 24-bit, channel A gain 128, internal oscillator
+  excitation: 3V3_SENS   # bridge excitation = the HX711's AVDD = the
+                         # switched 3.3 V rail; no internal regulator
+  rate_hz: 80            # RATE pin tied to DVDD
+  connector: JST SH 1.0  # 4 circuits: E+ A- A+ E-
+
+pressure:
+  connector: JST SH 1.0  # 5 circuits: 3V3_SENS GND AIN SDA SCL -- fits
+  analog_pin: P0.03      # an analog ratiometric sensor (AIN1, RC filtered)
+  i2c_pullup_ohm: 4700   # or an I2C one (pull-ups on the switched rail)
+
+jlcpcb:
+  min_track_mm: 0.127
+  min_clearance_mm: 0.127
+  default_track_mm: 0.15
+  power_track_mm: 0.4
+  via_drill_mm: 0.2
+  via_diameter_mm: 0.4

@@ -1,0 +1,41 @@
+# pcbview.toml -- the SCH / PCB / 3D viewer for bluebuzz, built by pcbview
+# (~/Software/pcbview) into viewer/ and written into index.html between
+# <!-- pcbview:begin --> and <!-- pcbview:end -->:
+#
+#     ~/Software/pcbview/bin/pcbview build pcbview.toml      # what build.py's `site` stage runs
+#     ~/Software/pcbview/bin/pcbview models pcbview.toml     # where each 3D model resolves
+#
+# viewer/index.html is the same viewer on a page of its own, filling the window.
+
+title = "bluebuzz"
+subtitle = "sequoia-hope"
+out = "viewer"
+back = { href = "../index.html", label = "bluebuzz" }
+
+[[boards]]
+id = "b"
+name = "bluebuzz-rm2 rev A"
+pcb = "out/bluebuzz-rm2.kicad_pcb"
+sch = "out/bluebuzz-rm2.kicad_sch"
+embed = "index.html"
+front = "Front"
+back = "Back"
+front_note = "the RM2 (antenna end at the top edge), the RP2350A with its passives around it, flash, crystal, the charger column, the IMU at the left edge, USB-C on the bottom edge, the FETs, button and LEDs"
+back_note = "the five DPS368 tactile sensors (four corners and the centre) with its caps (cast in elastomer), and the pad rows that replace the connectors: BAT, MOT, and the SWD pogo pads under the radio"
+note = "The RP2350A + Raspberry Pi Radio Module 2 board, 28 x 44 mm, six layers: Wi-Fi and Bluetooth Classic + LE (so it can be an A2DP audio sink) and USB audio over its USB-C on the bottom edge, the only connector; battery, motors and SWD/boot are SMT pad rows on the back. Sensing is five Infineon DPS368 barometers on the back, cast in soft elastomer after Tenzer, Jentoft & Howe 2014, plus an LSM6DS3TR-C IMU. Generated from scripts/circuit.py by the bike-tracker's pipeline."
+
+[boards.sheets.root]
+title = "bluebuzz-rm2"
+desc = "one sheet: USB-C and ESD, the BQ24074 charger, the LDO, two motor channels, the switched sensor rail, the DPS368 tactile array on SPI1, the LSM6DS3TR-C IMU on I2C1, the RP2350A with its regulator, crystal, flash and SWD/boot pads, the RM2"
+
+[parts]
+bom = ["out/jlcpcb/bom.csv"]
+
+[layers.notes]
+"F.Cu" = "Front. Every part, the RM2's and RP2350's escapes, the hand-laid QSPI lines, the GND pour. The strip across the top with nothing on any layer is the RM2's RF keep-out."
+"In1.Cu" = "Solid ground, directly under the front: the return for the radio and for every escape. No wires on it."
+"In2.Cu" = "The signal layer: the QSPI lanes to the flash, PG_N down the left side, and whatever would not fit outside."
+"In3.Cu" = "The VSYS pour (the battery/USB power-path rail), with the few wires routed through it."
+"In4.Cu" = "Solid ground under the back."
+"B.Cu" = "Back. The pad rows, the wiring between the front parts, the GND pour."
+"Edge.Cuts" = "28 x 44 mm, 2 mm corners, no mounting holes."

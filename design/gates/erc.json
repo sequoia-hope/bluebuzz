@@ -1,0 +1,19 @@
+{
+    "$schema": "https://schemas.kicad.org/erc.v1.json",
+    "coordinate_units": "mm",
+    "date": "2026-10-18T01:41:36-0700",
+    "included_severities": [
+        "error",
+        "warning",
+        "exclusion"
+    ],
+    "kicad_version": "9.0.8",
+    "sheets": [
+        {
+            "path": "/",
+            "uuid_path": "/b164f453-ac6f-5e00-a7d3-e62e77f3ea3b",
+            "violations": []
+        }
+    ],
+    "source": "bluebuzz-rm2.kicad_sch"
+}

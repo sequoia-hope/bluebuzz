@@ -1,0 +1,147 @@
+(footprint "PadRow_5x_pogo"
+	(version 20241229)
+	(generator "pcbnew")
+	(generator_version "9.0")
+	(layer "F.Cu")
+	(descr "5 x 1.6 x 2.2 mm pads, 2.0 mm pitch, for a pogo pin (no paste, ENIG)")
+	(tags "pad row wire pogo")
+	(property "Reference" "REF**"
+		(at 0 0 0)
+		(layer "F.Fab")
+		(uuid "111dd0f6-d321-48b5-b855-03d35982711e")
+		(effects
+			(font
+				(size 0.6 0.6)
+				(thickness 0.1)
+			)
+		)
+	)
+	(property "Value" "PadRow_5x_pogo"
+		(at 0 0 0)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "d70a5551-dfa9-4a36-9848-d019777328a7")
+		(effects
+			(font
+				(size 0.6 0.6)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Datasheet" ""
+		(at 0 0 0)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "f9c6368d-4d7b-4661-8df1-751bcac343ff")
+		(effects
+			(font
+				(size 1.27 1.27)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Description" ""
+		(at 0 0 0)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "cd83ef09-ee0e-490f-b22e-df631fe4a7b2")
+		(effects
+			(font
+				(size 1.27 1.27)
+				(thickness 0.15)
+			)
+		)
+	)
+	(attr smd exclude_from_pos_files exclude_from_bom)
+	(fp_line
+		(start -5.15 -1.1)
+		(end -5.15 1.1)
+		(stroke
+			(width 0.15)
+			(type default)
+		)
+		(layer "F.SilkS")
+		(uuid "0b12c552-bf1c-44ac-a4e7-4bd3c19742b7")
+	)
+	(fp_line
+		(start -4.95 -1.25)
+		(end 4.95 -1.25)
+		(stroke
+			(width 0.05)
+			(type default)
+		)
+		(layer "F.CrtYd")
+		(uuid "af6d624b-d8a8-40d4-812f-0cea8afa7279")
+	)
+	(fp_line
+		(start -4.95 1.25)
+		(end -4.95 -1.25)
+		(stroke
+			(width 0.05)
+			(type default)
+		)
+		(layer "F.CrtYd")
+		(uuid "a66e0916-9a2a-470b-8a68-0c4b4b682205")
+	)
+	(fp_line
+		(start 4.95 -1.25)
+		(end 4.95 1.25)
+		(stroke
+			(width 0.05)
+			(type default)
+		)
+		(layer "F.CrtYd")
+		(uuid "0b9e6219-531a-458b-8aab-e552c62ea0ff")
+	)
+	(fp_line
+		(start 4.95 1.25)
+		(end -4.95 1.25)
+		(stroke
+			(width 0.05)
+			(type default)
+		)
+		(layer "F.CrtYd")
+		(uuid "31727246-4495-4026-85c9-f6256db63e8f")
+	)
+	(pad "1" smd roundrect
+		(at -4 0)
+		(size 1.6 2.2)
+		(layers "F.Cu" "F.Mask")
+		(roundrect_rratio 0.15)
+		(thermal_bridge_angle 45)
+		(uuid "369e6af9-ba1d-40f1-a9b1-f36050e9c310")
+	)
+	(pad "2" smd roundrect
+		(at -2 0)
+		(size 1.6 2.2)
+		(layers "F.Cu" "F.Mask")
+		(roundrect_rratio 0.15)
+		(thermal_bridge_angle 45)
+		(uuid "1d301c13-6e64-4057-a916-372c7ce45daa")
+	)
+	(pad "3" smd roundrect
+		(at 0 0)
+		(size 1.6 2.2)
+		(layers "F.Cu" "F.Mask")
+		(roundrect_rratio 0.15)
+		(thermal_bridge_angle 45)
+		(uuid "695d4b50-9a94-4cde-8afc-3f0dd5e5885a")
+	)
+	(pad "4" smd roundrect
+		(at 2 0)
+		(size 1.6 2.2)
+		(layers "F.Cu" "F.Mask")
+		(roundrect_rratio 0.15)
+		(thermal_bridge_angle 45)
+		(uuid "d4b94d67-f3b8-4830-8ff0-f1aac2d74f4d")
+	)
+	(pad "5" smd roundrect
+		(at 4 0)
+		(size 1.6 2.2)
+		(layers "F.Cu" "F.Mask")
+		(roundrect_rratio 0.15)
+		(thermal_bridge_angle 45)
+		(uuid "7ddc7daa-f479-4ccc-b461-b63125f65015")
+	)
+	(embedded_fonts no)
+)

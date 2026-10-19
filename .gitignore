@@ -1,0 +1,27 @@
+out/*
+!out/bluebuzz-rm2.kicad_sch
+!out/bluebuzz-rm2.kicad_pro
+!out/bluebuzz-rm2.kicad_pcb
+!out/bluebuzz-rm2.kicad_dru
+!out/bluebuzz-rm2-schematic.pdf
+!out/fp-lib-table
+!out/production/
+out/production/backups/
+logs/
+tools/freerouting.jar
+__pycache__/
+*.pyc
+*.kicad_prl
+*-backups/
+fp-info-cache
+~*.lck
+*.lck
+/tmp/
+# generated or downloaded: rebuilt by build.py (site, models) or fetched
+!out/jlcpcb/
+!out/drc.json
+tools/*.jar
+viewer/
+library/3d/
+archive/nrf52840/library/3d/
+archive/nrf52840/tools/*.jar

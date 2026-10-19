@@ -3,36 +3,55 @@
 
 Each current path -- source pads to load pads, through tracks, vias, pads
 and pours -- is rated as a max-flow: every track carries what its width
-allows on its layer, every via what its drill allows, pads and pours are
-unlimited, and parallel routes add. The path passes when the max-flow
-covers the design current (intent.md: 1 A continuous per motor channel,
-the 1 A USB input limit, ...); the min cut is its narrowest neck and is
-listed. Branches that carry no current (a sense divider, a cap's feed)
-are not on a path and are not judged.
+allows on its layer, every via what its drill allows, pads are unlimited,
+and parallel routes add. The path passes when the max-flow covers the
+design current (intent.md: 1 A continuous per motor channel, the 1 A USB
+input limit, ...); the min cut is its narrowest neck and is listed.
+Branches that carry no current (a sense divider, a cap's feed) are not on
+a path and are not judged.
 
 Ratings (design/stackup.md, IPC-2152 at 10 C rise): a track of width w
 carries (w / 0.3)^(1/1.38) A on 1 oz outer copper (0.3 mm per amp, width
 growing as I^1.38) and (w / 0.6)^(1/1.38) A on the 0.5 oz inner layers; a
 via 0.8 A per 0.2 mm of drill, divided by stackup.md's 1.5 margin. A pad-
 entry neck (<= 1.0 mm, an end on a pad) is not rated: a 0.5 mm-pitch pin
-cannot take a wide track and the pad sinks its heat. Exits 1 on any FAIL.
+cannot take a wide track and the pad sinks its heat.
 
-    python3 scripts/check_current.py
+Pours are rated by their FILL, not taken as unlimited (the phase-7 review
+found the In3 VSYS pour in two pieces joined by 0.24-0.32 mm necks, which
+an unlimited pour hid). Each fill piece is rasterised into CELL x CELL
+cells, each a node that carries CELL mm of copper width, 4-connected to
+its neighbours; the min cut through a fill is then its narrowest neck.
+Width is turned into amps linearly at the IPC-2152 rate for a 2 mm
+conductor (1.19 A/mm inner, 1.98 A/mm outer), which under-rates a neck
+narrower than 2 mm (a 0.3 mm inner neck: 0.36 A against IPC's 0.6 A) and
+a 45-degree neck by up to 1/sqrt(2) (a 4-connected cut runs as a
+staircase) -- conservative, which is the side a check should err on.
+
+Exits 1 on any FAIL.
+
+    python3 scripts/check_current.py [board.kicad_pcb]
 """
 import math
 import sys
+from collections import deque
 from pathlib import Path
 
-import networkx as nx
+import numpy as np
 import pcbnew
+from scipy.sparse import coo_matrix
+from scipy.sparse.csgraph import maximum_flow
 
 ROOT = Path(__file__).resolve().parent.parent
-PCB = ROOT / "out" / "bluebuzz-rm2.kicad_pcb"
+PCB = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "out" / "bluebuzz-rm2.kicad_pcb"
 T = pcbnew.ToMM
 OUTER = ("F.Cu", "B.Cu")
 VIA_A_PER_MM_DRILL = 0.8 / 0.2           # 0.2 mm drill ~0.8 A (stackup.md)
 VIA_MARGIN = 1.5
 W_1A = {True: 0.3, False: 0.6}           # mm for 1 A: outer 1 oz, inner 0.5 oz
+CELL = 0.1                               # mm, pour raster
+MA = 1000                                # capacities in mA (integers for the solver)
+INF = 10 ** 7
 
 # (net, sources, loads, design A, what) -- loads as "REF" (any pad of the net)
 # or "REF.PAD". Currents: intent.md (the fitted motors draw 0.09-0.2 A; the
@@ -60,6 +79,10 @@ def via_amps(drill):
     return VIA_A_PER_MM_DRILL * drill / VIA_MARGIN
 
 
+def fill_amps_per_mm(outer):
+    return track_amps(2.0, outer) / 2.0
+
+
 def seg_dist(p, a, b):
     ax, ay, bx, by = a[0], a[1], b[0], b[1]
     dx, dy = bx - ax, by - ay
@@ -69,11 +92,13 @@ def seg_dist(p, a, b):
 
 
 def vec(p):
-    return pcbnew.VECTOR2I(pcbnew.FromMM(p[0]), pcbnew.FromMM(p[1]))
+    return pcbnew.VECTOR2I(pcbnew.FromMM(float(p[0])), pcbnew.FromMM(float(p[1])))
 
 
 class Net:
-    """The copper of one net as a graph: tracks, vias, pads, zone fills."""
+    """The copper of one net as a flow graph: tracks, vias and pads are
+    items (one node pair each, carrying the item's rating); every zone fill
+    is a raster of cells (one node pair per cell)."""
 
     def __init__(self, board, name):
         self.items, self.adj = [], {}
@@ -96,37 +121,78 @@ class Net:
                     self.items.append(dict(kind="pad", name=f"{fp.GetReference()}.{pd.GetNumber()}",
                                            ref=fp.GetReference(), pos=(T(c.x), T(c.y)), obj=pd,
                                            layers={l for l in cu if pd.IsOnLayer(l)}))
+        n_items = len(self.items)
+        for i in range(n_items):
+            self.adj[i] = set()
+        for i in range(n_items):
+            for j in range(i + 1, n_items):
+                if self.touch(self.items[i], self.items[j]):
+                    self.adj[i].add(j)
+                    self.adj[j].add(i)
+        # pour cells: (layer, piece, ix, iy) -> cell index; cell centres
+        self.cells, self.cell_at, self.cell_adj = [], {}, []
+        self.cell_item = []                   # (cell, item) touching pairs
         for z in board.Zones():
             if z.GetNetname() != name or z.GetIsRuleArea():
                 continue
-            for l in z.GetLayerSet().Seq():
-                if l in cu:
-                    self.items.append(dict(kind="zone", name=z.GetZoneName(), layer=l,
-                                           fill=z.GetFilledPolysList(l)))
-        for i in range(len(self.items)):
-            self.adj[i] = set()
-        for i, p in enumerate(self.items):
-            for j in range(i + 1, len(self.items)):
-                if self.touch(p, self.items[j]):
-                    self.adj[i].add(j)
-                    self.adj[j].add(i)
+            for ly in z.GetLayerSet().Seq():
+                if ly in cu:
+                    self.raster(z, ly)
+
+    def raster(self, z, ly):
+        fill = z.GetFilledPolysList(ly)
+        outer = pcbnew.LayerName(ly) in OUTER
+        for k in range(fill.OutlineCount()):
+            chain = fill.COutline(k)
+            bb = chain.BBox()
+            x0, y0 = T(bb.GetLeft()), T(bb.GetTop())
+            nx, ny = int(T(bb.GetWidth()) / CELL) + 1, int(T(bb.GetHeight()) / CELL) + 1
+            mine = {}
+            for ix in range(nx):
+                for iy in range(ny):
+                    c = (x0 + (ix + 0.5) * CELL, y0 + (iy + 0.5) * CELL)
+                    if chain.PointInside(vec(c)):
+                        key = (ly, z.GetZoneName(), k, ix, iy)
+                        mine[(ix, iy)] = len(self.cells)
+                        self.cell_at[key] = len(self.cells)
+                        self.cells.append(dict(pos=c, layer=ly, outer=outer, zone=z.GetZoneName()))
+            for (ix, iy), ci in mine.items():
+                for nb in ((ix + 1, iy), (ix, iy + 1)):
+                    if nb in mine:
+                        self.cell_adj.append((ci, mine[nb]))
+            # which items touch which cells (item on this layer, cell centre
+            # inside the item's copper)
+            idx = np.array([[c[0], c[1]] for c in (self.cells[ci]["pos"] for ci in mine.values())]) \
+                if mine else np.zeros((0, 2))
+            ids = list(mine.values())
+            for i, it in enumerate(self.items):
+                if not self.on(it, ly) or not len(ids):
+                    continue
+                if it["kind"] == "track":
+                    a, b = np.array(it["a"]), np.array(it["b"])
+                    d = b - a
+                    L2 = float(d @ d)
+                    t = np.zeros(len(ids)) if L2 == 0 else np.clip(((idx - a) @ d) / L2, 0, 1)
+                    dist = np.hypot(*(idx - a - np.outer(t, d)).T)
+                    hit = np.nonzero(dist <= it["w"] / 2 + CELL / 2)[0]
+                elif it["kind"] == "via":
+                    hit = np.nonzero(np.hypot(*(idx - np.array(it["pos"])).T) <= it["r"] + CELL / 2)[0]
+                else:
+                    bbp = it["obj"].GetBoundingBox()
+                    px0, py0, px1, py1 = T(bbp.GetLeft()), T(bbp.GetTop()), T(bbp.GetRight()), T(bbp.GetBottom())
+                    near = np.nonzero((idx[:, 0] > px0 - CELL) & (idx[:, 0] < px1 + CELL)
+                                      & (idx[:, 1] > py0 - CELL) & (idx[:, 1] < py1 + CELL))[0]
+                    hit = [h for h in near if it["obj"].HitTest(vec(idx[h]), pcbnew.FromMM(CELL / 2))]
+                for h in hit:
+                    self.cell_item.append((ids[h], i))
 
     @staticmethod
     def on(item, layer):
         return layer in item["layers"] if "layers" in item else item["layer"] == layer
 
     def touch(self, p, q):
-        if p["kind"] == "zone" and q["kind"] == "zone":
-            return False
-        if q["kind"] == "zone" or (p["kind"] == "track" and q["kind"] != "track"):
+        if p["kind"] == "track" and q["kind"] != "track":
             p, q = q, p
-        if p["kind"] == "zone":
-            ly, fill = p["layer"], p["fill"]
-            if not self.on(q, ly):
-                return False
-            if q["kind"] == "track":
-                return any(fill.Contains(vec(e)) for e in (q["a"], q["b"]))
-            return fill.Collide(vec(q["pos"]), pcbnew.FromMM(0.05))
         if p["kind"] == "track":                      # track - track
             if q["layer"] != p["layer"]:
                 return False
@@ -159,20 +225,58 @@ class Net:
         return track_amps(it["w"], pcbnew.LayerName(it["layer"]) in OUTER)
 
     def maxflow(self, src, dst):
-        """(amps, [items in the min cut]) from the src pads to the dst pads."""
-        g = nx.DiGraph()
-        for i in self.adj:
-            c = self.capacity(i)
-            g.add_edge(("in", i), ("out", i), **({} if c == math.inf else {"capacity": c}))
+        """(amps, [items in the min cut], [cells in the min cut]) from the src
+        pads to the dst pads. Node k: item i -> in 2i, out 2i+1; cell c ->
+        in 2(n+c), out 2(n+c)+1; then S, T."""
+        n, m = len(self.items), len(self.cells)
+        S, Tn = 2 * (n + m), 2 * (n + m) + 1
+        rows, cols, caps = [], [], []
+
+        def edge(a, b, c):
+            rows.append(a)
+            cols.append(b)
+            caps.append(c)
+
+        def amps(c):
+            return INF if c == math.inf else int(c * MA)
+        for i in range(n):
+            edge(2 * i, 2 * i + 1, amps(self.capacity(i)))
             for j in self.adj[i]:
-                g.add_edge(("out", i), ("in", j))
+                edge(2 * i + 1, 2 * j, INF)
+        for c, cell in enumerate(self.cells):
+            k = 2 * (n + c)
+            edge(k, k + 1, int(CELL * fill_amps_per_mm(cell["outer"]) * MA))
+        for a, b in self.cell_adj:
+            ka, kb = 2 * (n + a), 2 * (n + b)
+            edge(ka + 1, kb, INF)
+            edge(kb + 1, ka, INF)
+        for c, i in self.cell_item:
+            kc = 2 * (n + c)
+            edge(kc + 1, 2 * i, INF)
+            edge(2 * i + 1, kc, INF)
         for i in src:
-            g.add_edge("S", ("in", i))
+            edge(S, 2 * i, INF)
         for i in dst:
-            g.add_edge(("out", i), "T")
-        amps, (reach, _) = nx.minimum_cut(g, "S", "T")
-        cut = [i for i in self.adj if ("in", i) in reach and ("out", i) not in reach]
-        return amps, cut
+            edge(2 * i + 1, Tn, INF)
+        N = Tn + 1
+        C = coo_matrix((np.array(caps, dtype=np.int64), (rows, cols)), shape=(N, N)).tocsr()
+        C.sum_duplicates()
+        C = C.astype(np.int32)
+        res = maximum_flow(C, S, Tn, method="dinic")
+        R = (C - res.flow).tocsr()
+        seen = np.zeros(N, bool)
+        seen[S] = True
+        q = deque([S])
+        while q:
+            u = q.popleft()
+            for p in range(R.indptr[u], R.indptr[u + 1]):
+                v = R.indices[p]
+                if R.data[p] > 0 and not seen[v]:
+                    seen[v] = True
+                    q.append(v)
+        cut = [i for i in range(n) if seen[2 * i] and not seen[2 * i + 1]]
+        cut_cells = [c for c in range(m) if seen[2 * (n + c)] and not seen[2 * (n + c) + 1]]
+        return res.flow_value / MA, cut, cut_cells
 
 
 def pick(net, specs):
@@ -193,8 +297,8 @@ def main():
         g = nets.setdefault(net, Net(board, net))
         src, dst = pick(g, srcs), pick(g, loads)
         assert src and dst, (net, srcs, loads)
-        cap, cut = g.maxflow(src, dst)
-        tag = "ok  " if cap >= amps else "FAIL"
+        cap, cut, cut_cells = g.maxflow(src, dst)
+        tag = "ok  " if cap >= amps - 1e-6 else "FAIL"
         fails += tag == "FAIL"
         print(f"\n{tag}  {net}: {what} -- carries {cap:.2f} A, needs {amps:.2f} A")
         for i in cut:
@@ -207,6 +311,14 @@ def main():
                 print(f"        neck: {ly} {it['w']:.2f} mm x {it['len']:.2f} mm "
                       f"({it['a'][0]:.2f},{it['a'][1]:.2f})-({it['b'][0]:.2f},{it['b'][1]:.2f}), "
                       f"{track_amps(it['w'], ly in OUTER):.2f} A")
+        by_zone = {}
+        for c in cut_cells:
+            by_zone.setdefault((g.cells[c]["zone"], g.cells[c]["layer"]), []).append(g.cells[c])
+        for (zn, ly), cs in by_zone.items():
+            xs, ys = [c["pos"][0] for c in cs], [c["pos"][1] for c in cs]
+            a = len(cs) * CELL * fill_amps_per_mm(cs[0]["outer"])
+            print(f"        neck: {pcbnew.LayerName(ly)} fill '{zn}' {len(cs) * CELL:.2f} mm of cut "
+                  f"around ({min(xs):.2f},{min(ys):.2f})-({max(xs):.2f},{max(ys):.2f}), {a:.2f} A")
     print(f"\ncurrent check: {fails} FAIL")
     return 1 if fails else 0
 

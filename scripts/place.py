@@ -48,7 +48,7 @@ from pathlib import Path
 import pcbnew
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from circuit import build_circuit, load_design  # noqa: E402
+from circuit import DNP, build_circuit, load_design  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 PCB = ROOT / "out" / "bluebuzz-rm2.kicad_pcb"
@@ -392,7 +392,7 @@ def main():
             print(f"  {ref}: turned 180 so its {net} pad faces ({tx},{ty})")
     # footprint-only parts (the debug-probe connector): marked DNP so the
     # assembly files and the 3D view leave them out
-    for ref in ("J6",):
+    for ref in sorted(DNP):
         fp = fps[ref]
         fp.SetDNP(True)
         fp.SetExcludedFromBOM(True)

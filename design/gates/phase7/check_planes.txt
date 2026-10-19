@@ -1,0 +1,49 @@
+GND planes:
+  ok    In1.Cu: 1 piece(s), 116 holes, 16 void(s) > 0.8 mm2
+        void  9.18 mm2  (106.40,95.20)-(108.10,100.60)  1.70 x 5.40 mm
+        void  2.37 mm2  (99.46,100.71)-(100.95,104.80)  1.49 x 4.09 mm
+        void  1.58 mm2  (104.57,107.79)-(107.20,108.73)  2.62 x 0.94 mm
+        void  1.05 mm2  (105.30,97.27)-(106.16,98.73)  0.86 x 1.46 mm
+        void  1.05 mm2  (97.70,105.40)-(99.11,106.70)  1.40 x 1.30 mm
+        void  1.05 mm2  (89.05,110.42)-(90.20,111.58)  1.15 x 1.15 mm
+        void  1.02 mm2  (88.30,87.54)-(89.62,88.72)  1.33 x 1.18 mm
+        void  1.02 mm2  (94.14,104.25)-(95.41,105.47)  1.28 x 1.23 mm
+        void  1.00 mm2  (108.71,105.58)-(109.41,107.48)  0.70 x 1.90 mm
+        void  1.00 mm2  (102.07,107.93)-(103.70,109.25)  1.63 x 1.32 mm
+        void  0.94 mm2  (90.07,90.36)-(91.55,91.53)  1.48 x 1.17 mm
+        void  0.94 mm2  (108.67,102.67)-(109.73,104.23)  1.06 x 1.56 mm
+        void  0.93 mm2  (91.39,84.06)-(92.25,85.58)  0.86 x 1.53 mm
+        void  0.87 mm2  (102.36,115.47)-(103.42,116.53)  1.05 x 1.05 mm
+        void  0.87 mm2  (96.58,115.47)-(97.64,116.53)  1.05 x 1.05 mm
+        void  0.80 mm2  (89.35,117.45)-(90.58,118.31)  1.23 x 0.86 mm
+  ok    In4.Cu: 1 piece(s), 115 holes, 15 void(s) > 0.8 mm2
+        void  2.37 mm2  (99.46,100.71)-(100.95,104.80)  1.49 x 4.09 mm
+        void  1.58 mm2  (104.57,107.79)-(107.20,108.73)  2.62 x 0.94 mm
+        void  1.05 mm2  (105.30,97.27)-(106.16,98.73)  0.86 x 1.46 mm
+        void  1.05 mm2  (97.70,105.40)-(99.11,106.70)  1.40 x 1.30 mm
+        void  1.05 mm2  (89.05,110.42)-(90.20,111.58)  1.15 x 1.15 mm
+        void  1.02 mm2  (88.30,87.54)-(89.62,88.72)  1.33 x 1.18 mm
+        void  1.02 mm2  (94.14,104.25)-(95.41,105.47)  1.28 x 1.23 mm
+        void  1.00 mm2  (108.71,105.58)-(109.41,107.48)  0.70 x 1.90 mm
+        void  1.00 mm2  (102.07,107.93)-(103.70,109.25)  1.63 x 1.32 mm
+        void  0.94 mm2  (90.07,90.36)-(91.55,91.53)  1.48 x 1.17 mm
+        void  0.94 mm2  (108.67,102.67)-(109.73,104.23)  1.06 x 1.56 mm
+        void  0.93 mm2  (91.39,84.06)-(92.25,85.58)  0.86 x 1.53 mm
+        void  0.87 mm2  (102.36,115.47)-(103.42,116.53)  1.05 x 1.05 mm
+        void  0.87 mm2  (96.58,115.47)-(97.64,116.53)  1.05 x 1.05 mm
+        void  0.80 mm2  (89.35,117.45)-(90.58,118.31)  1.23 x 0.86 mm
+
+fast nets over their reference plane (16 nets: QSPI_SCLK, QSPI_SD0, QSPI_SD1, QSPI_SD2, QSPI_SD3, QSPI_SS, USB_DM, USB_DM_C, USB_DP, USB_DP_C, WL_CLK, WL_DATA, WL_DOUT, XIN, XOUT, XTAL2):
+  ok    no fast track leaves its reference plane for more than 0.5 mm
+
+fast-net vias that move the return between In1 and In4 (GND via for it):
+  WARN  USB_DM via at (99.11,110.22): nearest GND via 1.27 mm
+  WARN  USB_DM via at (99.25,113.09): nearest GND via 1.49 mm
+  FAIL  USB_DM via at (100.25,113.09): nearest GND via 2.22 mm
+  FAIL  USB_DM via at (104.70,95.59): nearest GND via 2.00 mm
+  WARN  USB_DP via at (99.75,112.44): nearest GND via 1.47 mm
+  WARN  USB_DP via at (103.70,95.59): nearest GND via 1.00 mm
+  FAIL  WL_CLK via at (100.45,102.30): nearest GND via 3.29 mm
+  FAIL  WL_CLK via at (97.00,88.10): nearest GND via 1.55 mm
+
+plane check: 4 FAIL

@@ -141,6 +141,10 @@ ROLE = {
 TACTILE_COUNT, TACTILE_COLS = 5, 2
 TACTILE = [(f"U{20 + k}", f"C{120 + k}") for k in range(TACTILE_COUNT)]
 
+# footprint only, not fitted: out of the BOM and the CPL, marked DNP on the
+# sheet (gen_schematic) and on the board (place.py)
+DNP = {"J6"}
+
 # RM2 pad map -- datasheet release 7, table 2
 RM2 = {
     1: "GND", 2: "", 3: "WL_CLK", 4: "GND", 5: "WL_DATA", 6: "WL_DOUT", 7: "GND",

@@ -39,6 +39,7 @@ Five checks keep the drawing honest:
 Output: out/bluebuzz-rm2.kicad_sch (+ .svg/.pdf).
 Regenerate with `python3 build.py --only schematic`.
 """
+import functools
 import math
 import os
 import subprocess
@@ -49,7 +50,7 @@ from collections import defaultdict
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from circuit import TACTILE, TACTILE_COLS, DVDD_PINS, GPIO_PINS, IOVDD_PINS, ROLE, build_circuit, load_design  # noqa: E402
+from circuit import DNP, TACTILE, TACTILE_COLS, DVDD_PINS, GPIO_PINS, IOVDD_PINS, ROLE, build_circuit, load_design, load_parts  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "out" / "bluebuzz-rm2.kicad_sch"
@@ -611,7 +612,7 @@ class Sch:
         return abs(v / CONN_GRID - round(v / CONN_GRID)) < 1e-4
 
     def place(self, symname, ref, value, x, y, rot=0, footprint="",
-              hide_value=False, ref_off=None):
+              hide_value=False, ref_off=None, in_bom=True, dnp=False):
         d = self.defs[symname]
         assert ref not in self.refs, f"duplicate reference {ref}"
         self.refs.add(ref)
@@ -691,8 +692,9 @@ class Sch:
         tang = 0 if rot in (0, 180) else (360 - rot) % 360
         parts = [f'\t(symbol (lib_id "gen:{esc(symname)}")',
                  f"\t\t(at {x} {y} {rot})",
-                 "\t\t(unit 1) (exclude_from_sim no) (in_bom yes)"
-                 " (on_board yes) (dnp no)",
+                 "\t\t(unit 1) (exclude_from_sim no)"
+                 f" (in_bom {'yes' if in_bom else 'no'})"
+                 f" (on_board yes) (dnp {'yes' if dnp else 'no'})",
                  f'\t\t(uuid "{uid("sym", ref)}")',
                  f'\t\t(property "Reference" "{esc(ref)}" '
                  f"(at {q(rx)} {q(ry)} {tang})\n\t\t\t"
@@ -1171,10 +1173,19 @@ class Book:
                              + ", ".join(missing[:40]))
 
 
+@functools.cache
+def parts_table():
+    return load_parts()
+
+
 def put(s, cir, ref, x, y, rot=0, hide_value=False, ref_off=None):
     c = cir.components[ref]
+    # as on the board: bare-copper pad rows (mpn PCB) are no BOM line, and
+    # a DNP footprint is neither in the BOM nor fitted
+    bare = parts_table()[c.part].get("mpn") == "PCB"
     return s.place(sym_for(c.part), ref, c.value, x, y, rot=rot,
-                   footprint=c.footprint, hide_value=hide_value, ref_off=ref_off)
+                   footprint=c.footprint, hide_value=hide_value, ref_off=ref_off,
+                   in_bom=not (bare or ref in DNP), dnp=ref in DNP)
 
 
 def vdrop(s, cir, bk, ref, x, ytop, rail="GND", drop=3.81, hide_value=False, ref_off=None):

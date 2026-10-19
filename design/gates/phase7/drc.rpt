@@ -1,0 +1,43 @@
+** Drc report for bluebuzz-rm2.kicad_pcb **
+** Created on 2026-10-19T00:40:34-0700 **
+** Report includes: Errors, Warnings, Exclusions **
+
+** Found 9 DRC violations **
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(89.8536 mm, 88.8200 mm): Segment of R13 on F.Silkscreen
+    @(89.7500 mm, 88.6400 mm): Polygon of U2 on F.Silkscreen
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(87.7000 mm, 112.8500 mm): PCB text 'ST' on F.Silkscreen
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(97.4500 mm, 83.7000 mm): Circle of U7 on F.Silkscreen
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(105.9000 mm, 95.0000 mm): Circle of L1 on F.Silkscreen
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(89.7500 mm, 88.6400 mm): Polygon of U2 on F.Silkscreen
+[silk_edge_clearance]: Silkscreen clipped by board edge
+    Rule: board setup constraints silk; warning
+    @(88.0000 mm, 78.0000 mm): Segment on Edge.Cuts
+    @(98.5500 mm, 77.9000 mm): Segment of U7 on F.Silkscreen
+[silk_edge_clearance]: Silkscreen clipped by board edge
+    Rule: board setup constraints silk; warning
+    @(112.0000 mm, 80.0000 mm): Arc on Edge.Cuts
+    @(113.2500 mm, 77.9000 mm): Segment of U7 on F.Silkscreen
+[silk_edge_clearance]: Silkscreen clipped by board edge
+    Rule: board setup constraints silk; warning
+    @(112.0000 mm, 122.0000 mm): Segment on Edge.Cuts
+    @(95.3000 mm, 120.6000 mm): Segment of J1 on F.Silkscreen
+[silk_edge_clearance]: Silkscreen clipped by board edge
+    Rule: board setup constraints silk; warning
+    @(112.0000 mm, 122.0000 mm): Segment on Edge.Cuts
+    @(104.7000 mm, 120.6000 mm): Segment of J1 on F.Silkscreen
+
+** Found 0 unconnected pads **
+
+** Found 0 Footprint errors **
+
+** End of Report **

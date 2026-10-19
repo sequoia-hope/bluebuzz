@@ -1,0 +1,19 @@
+audit:
+  ok    RF keep-out (y < -17.0, full width): 0 items [], 0 filled samples
+  ok    F.Cu tracks under the RM2 body: none
+  ok    motor path tracks under 0.4 mm: none
+  ok    JLC PTH hole -> other-net track: 0.329 mm (>= 0.28)
+  ok    JLC NPTH hole -> track: 0.35 mm (>= 0.20)
+  ok    JLC via hole -> via hole: 0.23 mm (>= 0.20)
+  ok    JLC via hole -> other-net track: 0.23 mm (>= 0.20)
+  ok    RP2350 block zones present (6/6)
+  ok    RP2350 block zones filled
+  ok    nothing but 1V1/3V3 inside the RP2350 ring and band
+  ok    RP2350 1V1 ring and 3V3 band each one piece: {'rp2350_1v1_3': 1, 'rp2350_3v3_sys_1': 1}
+  ok    RP2350 PGND returns to GND at one point: 2 vias in the PGND zone (2)
+  ok    layer-2 copper cut away under the RP2350's LX node
+  ok    L1 at the reference rotation (0): the polarity-marked inductor's field direction
+  info  USB pair: {'USB_DP': {'F.Cu': 9.9, 'B.Cu': 18.5}, 'USB_DM': {'F.Cu': 5.6, 'B.Cu': 20.7, 'In3.Cu': 2.9}}
+  info  GND vias: 102 of 259; wires per layer: {'F.Cu': 495, 'In1.Cu': 0, 'In2.Cu': 202, 'In3.Cu': 136, 'In4.Cu': 0, 'B.Cu': 280}
+  info  decoupling caps more than 4 mm from their pin: ['C12->U2.2 6.6', 'C100->U7.16 6.0', 'C40->J4.1 10.7', 'C42->J4.1 14.6']
+audit: clean

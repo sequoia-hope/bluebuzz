@@ -97,3 +97,10 @@ jlcpcb:
   power_track_mm: 0.4
   via_drill_mm: 0.2
   via_diameter_mm: 0.4
+
+routing:
+  # The freerouting ordering this board is built from (route.py's DSN
+  # permutation seed; ROUTE_FIRST / ROUTE_TRIES override it to search).
+  # 42: of the 48 orderings run on 2026-10-19 the one that closed fully
+  # (0 unconnected, 0 DRC errors) with the current generator.
+  ordering: 42

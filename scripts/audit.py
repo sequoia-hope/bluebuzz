@@ -116,10 +116,20 @@ def main():
 
     # --- motor path width -------------------------------------------------
     # (pad-to-pad bridges inside the charger's pin row are 0.25 and under
-    #  1 mm long; they lie entirely inside the pads' own copper)
+    #  1 mm long; they lie entirely inside the pads' own copper. A wire that
+    #  lies inside a same-net pour -- route.py's pwr_* zones, which carry
+    #  the current; their 0.25 mm wires only tie the vias to copper before
+    #  the zone is filled -- is not on its own either; check_current.py
+    #  rates the fill.)
+    pours = [z for z in board.Zones() if not z.GetIsRuleArea() and z.GetZoneName().startswith("pwr_")]
+
+    def in_pour(t):
+        return any(z.GetNetCode() == t.GetNetCode() and z.IsOnLayer(t.GetLayer())
+                   and z.Outline().Contains(t.GetStart()) and z.Outline().Contains(t.GetEnd())
+                   for z in pours)
     thin = [(t.GetNetname(), round(to_mm(t.GetWidth()), 2)) for t in tracks
             if t.GetNetname() in ("MOTOR1_SW", "MOTOR2_SW", "VSYS") and to_mm(t.GetWidth()) < 0.39
-            and to_mm(t.GetLength()) > 1.0]
+            and to_mm(t.GetLength()) > 1.0 and not in_pour(t)]
     hard(not thin, f"motor path tracks under 0.4 mm: {sorted(set(thin)) or 'none'}")
 
     # --- JLCPCB hole rules (capability table, 2026-08) --------------------

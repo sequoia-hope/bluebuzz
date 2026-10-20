@@ -15,6 +15,9 @@ which judges the result:
 3. Interior. Points more than INNER_GAP mm from any GND via, farthest
    first, until none is left that can take one (M10).
 
+First, though (plane_pads), a via in any GND or VSYS pad the routing
+left cut off from its plane, where one fits.
+
 A via goes only where it clears every copper item on every layer by the
 board's rules (exact pad boxes, tracks and vias, not bounding circles),
 stays out of the rule areas that forbid vias and out of the RP2350 block's
@@ -25,6 +28,7 @@ left is check_planes.py's to report. Zones are refilled at the end.
     python3 scripts/stitch.py
 """
 import math
+import subprocess
 import sys
 from pathlib import Path
 
@@ -45,11 +49,12 @@ EDGE_MIN = 0.6              # via centre to the outline
 
 
 class Space:
-    """Where a GND through-via may go: every non-GND pad as its exact box,
-    every non-GND track and via, the forbidden areas, the GND vias so far."""
+    """Where a through-via of plane net `net` (GND, or VSYS) may go: every
+    pad of another net as its exact box, every other-net track and via,
+    the forbidden areas, and this net's vias so far (`gnd`, for spacing)."""
 
-    def __init__(self, board):
-        self.board = board
+    def __init__(self, board, net="GND"):
+        self.board, self.net = board, net
         self.pads, self.segs, self.vias, self.gnd, self.holes = [], [], [], [], []
         for fp in board.GetFootprints():
             for pd in fp.Pads():
@@ -58,26 +63,27 @@ class Space:
                     # smaller than its hole)
                     d = pd.GetDrillSize()
                     self.holes.append((rel(pd.GetPosition()), max(to_mm(d.x), to_mm(d.y)) / 2))
-                if pd.GetNetname() == "GND" and pd.GetAttribute() != pcbnew.PAD_ATTRIB_PTH:
-                    continue                 # a GND via may land in a GND pad
+                if pd.GetNetname() == net and pd.GetAttribute() != pcbnew.PAD_ATTRIB_PTH:
+                    continue                 # a via may land in a pad of its own net
                 bb = pd.GetBoundingBox()
                 self.pads.append((to_mm(bb.GetLeft()) - CX, to_mm(bb.GetTop()) - CY,
                                   to_mm(bb.GetRight()) - CX, to_mm(bb.GetBottom()) - CY,
                                   to_mm(int(pd.GetLocalClearance() or 0))))
-                if pd.GetNetname() == "GND":
+                if pd.GetNetname() == net:
                     self.gnd.append(rel(pd.GetPosition()))
         for t in board.GetTracks():
             if t.Type() == pcbnew.PCB_VIA_T:
                 p = rel(t.GetPosition())
-                if t.GetNetname() == "GND":
+                if t.GetNetname() == net:
                     self.gnd.append(p)
                 else:
                     self.vias.append((p, to_mm(t.GetWidth(pcbnew.F_Cu)) / 2))
-            elif t.GetNetname() != "GND":
+            elif t.GetNetname() != net:
                 self.segs.append((rel(t.GetStart()), rel(t.GetEnd()), to_mm(t.GetWidth()) / 2))
         self.areas = [z for z in board.Zones()
                       if (z.GetIsRuleArea() and z.GetDoNotAllowVias())
-                      or (not z.GetIsRuleArea() and z.GetZoneName().startswith(("rp2350_", "pwr_")))]
+                      or (not z.GetIsRuleArea() and z.GetZoneName().startswith(("rp2350_", "pwr_"))
+                          and z.GetNetname() != net)]
         self.outline = pcbnew.SHAPE_POLY_SET()
         board.GetBoardPolygonOutlines(self.outline)
         self.inner = pcbnew.SHAPE_POLY_SET(self.outline)
@@ -119,7 +125,7 @@ class Space:
         return True
 
     def place(self, rt, x, y):
-        rt.via((x, y), "GND")
+        rt.via((x, y), self.net)
         self.gnd.append((x, y))
 
 
@@ -168,10 +174,81 @@ def return_vias(board, rt, sp=None, quiet=False, ahead=False, fast_only=False):
     return done, miss
 
 
+def plane_pads(board, rt):
+    """A via inside every GND / VSYS pad that KiCad's DRC reports as
+    unconnected. route.py gives every such pad a via before routing where
+    one fits; a pad that then had no room, or whose neighbours moved, can
+    find a spot once the routing is done (J5's VSYS test pad). Spots on a
+    0.1 mm lattice in the pad, nearest its centre first. Returns (placed,
+    without room)."""
+    from close_gaps import drc_unconnected
+    pcbnew.SaveBoard(str(PCB), board)
+    open_pads = set()
+    for u in drc_unconnected():
+        for it in u["items"]:
+            d = it["description"]
+            if d.startswith("Pad ") and ("[GND]" in d or "[VSYS]" in d):
+                open_pads.add(it["uuid"])
+    placed = miss = 0
+    for net in ("GND", "VSYS"):
+        sp = None
+        for fp in board.GetFootprints():
+            for pd in fp.Pads():
+                if pd.m_Uuid.AsString() not in open_pads or pd.GetNetname() != net:
+                    continue
+                sp = sp or Space(board, net)
+                px, py = rel(pd.GetPosition())
+                bb = pd.GetBoundingBox()
+                hx, hy = to_mm(bb.GetWidth()) / 2 - 0.1, to_mm(bb.GetHeight()) / 2 - 0.1
+                spots = sorted(((px + i * 0.1, py + k * 0.1)
+                                for i in range(-int(hx / 0.1), int(hx / 0.1) + 1)
+                                for k in range(-int(hy / 0.1), int(hy / 0.1) + 1)),
+                               key=lambda q: math.hypot(q[0] - px, q[1] - py))
+                spot = next((q for q in spots if sp.free(*q)), None)
+                if spot:
+                    sp.place(rt, *spot)
+                    placed += 1
+                    print(f"  {fp.GetReference()}.{pd.GetNumber()} ({net}): via at ({spot[0]:.2f},{spot[1]:.2f})")
+                else:
+                    miss += 1
+                    print(f"  {fp.GetReference()}.{pd.GetNumber()} ({net}): open, no room for a via in it")
+    return placed, miss
+
+
+def drop_flat_signal_vias(board):
+    """Last of all, the vias KiCad's DRC calls dangling (connected on one
+    layer only) are dead copper: route.py keeps every locked via while
+    routing, and an escape's via can end up with its net leaving on the
+    same layer it arrived (or relayer can move a locked run off a
+    pre-route's layer). The wires it sat between still meet end to end.
+    DRC is the judge, not a geometric guess: matching wire ends to via
+    centres exactly removed 9 vias that were in use."""
+    import json
+    rep = PCB.with_name("drc_dangling.json")
+    pcbnew.SaveBoard(str(PCB), board)
+    subprocess.run(["kicad-cli", "pcb", "drc", "--format", "json", "--severity-all",
+                    "-o", str(rep), str(PCB)], capture_output=True, text=True)
+    try:
+        viol = json.loads(rep.read_text()).get("violations", [])
+    finally:
+        rep.unlink(missing_ok=True)
+    spots = {(round(i["pos"]["x"], 4), round(i["pos"]["y"], 4))
+             for v in viol if v["type"] == "via_dangling" for i in v["items"]}
+    gone = 0
+    for v in list(board.GetTracks()):
+        if v.Type() == pcbnew.PCB_VIA_T and v.GetNetname() not in ("GND", "VSYS") and \
+                (round(to_mm(v.GetPosition().x), 4), round(to_mm(v.GetPosition().y), 4)) in spots:
+            board.Delete(v)
+            gone += 1
+    return gone
+
+
 def main():
     design = load_design()
     board = pcbnew.LoadBoard(str(PCB))
     rt = Router(board, design)
+    # 0. plane-net pads still cut off from their plane
+    print("plane pads: %d vias placed, %d without room" % plane_pads(board, rt))
     sp = Space(board)
     n0 = len(sp.gnd)
 
@@ -222,6 +299,7 @@ def main():
             inner_n += 1
     print(f"interior: {inner_n} vias")
 
+    print(f"flat signal vias removed: {drop_flat_signal_vias(board)}")
     pcbnew.ZONE_FILLER(board).Fill(board.Zones())
     pcbnew.SaveBoard(str(PCB), board)
     print(f"stitch: {len(sp.gnd) - n0} GND vias added ({done} return, {fence_n} fence, {inner_n} interior)")

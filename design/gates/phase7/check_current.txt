@@ -1,35 +1,39 @@
 
-FAIL  VBUS: USB-C VBUS pads to the charger's IN (ILIM 1 A) -- carries 0.53 A, needs 1.00 A
-        neck: via drill 0.20 at (86.65,85.75), 0.53 A
+ok    VBUS: USB-C VBUS pads to the charger's IN (ILIM 1 A) -- carries 1.06 A, needs 1.00 A
+        neck: In2.Cu 0.65 mm x 1.00 mm (92.65,100.95)-(92.65,101.95), 1.06 A
 
-FAIL  VBAT: charger BAT to the cell pad (both motors on battery) -- carries 0.67 A, needs 2.00 A
-        neck: via drill 0.25 at (93.80,88.80), 0.67 A
+ok    VBAT: charger BAT to the cell pad (both motors on battery) -- carries 2.76 A, needs 2.00 A
+        neck: F.Cu fill 'pwr_vbat' 1.40 mm of cut around (91.05,88.33)-(91.95,89.62), 2.77 A
 
-FAIL  VSYS: charger OUT to the motors' common pad (2 x 1 A) -- carries 0.80 A, needs 2.00 A
-        neck: via drill 0.30 at (96.69,120.18), 0.80 A
+ok    VSYS: charger OUT to the motors' common pad (2 x 1 A) -- carries 2.13 A, needs 2.00 A
+        neck: via drill 0.20 at (97.70,120.60), 0.53 A
+        neck: via drill 0.20 at (97.70,120.00), 0.53 A
+        neck: via drill 0.20 at (98.30,120.60), 0.53 A
+        neck: via drill 0.20 at (98.30,120.00), 0.53 A
 
-ok    VSYS: charger OUT to the RM2's VIN (TX peaks) -- carries 0.53 A, needs 0.35 A
-        neck: via drill 0.20 at (112.65,91.15), 0.53 A
+ok    VSYS: charger OUT to the RM2's VIN (TX peaks) -- carries 1.07 A, needs 0.35 A
+        neck: via drill 0.20 at (112.05,91.20), 0.53 A
+        neck: via drill 0.20 at (112.65,91.20), 0.53 A
 
-ok    VSYS: charger OUT to the LDO's IN -- carries 0.80 A, needs 0.25 A
-        neck: via drill 0.30 at (90.50,90.79), 0.80 A
+ok    VSYS: charger OUT to the LDO's IN -- carries 0.53 A, needs 0.25 A
+        neck: via drill 0.20 at (89.36,90.55), 0.53 A
 
-FAIL  MOTOR1_SW: motor 1 low-side FET drain to its pad -- carries 0.53 A, needs 1.00 A
-        neck: via drill 0.20 at (99.85,120.45), 0.53 A
+ok    MOTOR1_SW: motor 1 low-side FET drain to its pad -- carries 1.23 A, needs 1.00 A
+        neck: F.Cu 0.40 mm x 2.10 mm (91.35,117.25)-(91.35,119.35), 1.23 A
 
-FAIL  MOTOR1_SW: motor 1 flyback diode to its pad -- carries 0.53 A, needs 1.00 A
-        neck: via drill 0.20 at (99.85,120.45), 0.53 A
+ok    MOTOR1_SW: motor 1 flyback diode to its pad -- carries 1.23 A, needs 1.00 A
+        neck: F.Cu 0.40 mm x 0.70 mm (93.05,120.75)-(93.75,120.75), 1.23 A
 
-FAIL  MOTOR2_SW: motor 2 low-side FET drain to its pad -- carries 0.80 A, needs 1.00 A
-        neck: via drill 0.30 at (106.76,120.71), 0.80 A
+ok    MOTOR2_SW: motor 2 low-side FET drain to its pad -- carries 1.23 A, needs 1.00 A
+        neck: F.Cu 0.40 mm x 2.10 mm (108.65,117.25)-(108.65,119.35), 1.23 A
 
-FAIL  MOTOR2_SW: motor 2 flyback diode to its pad -- carries 0.80 A, needs 1.00 A
-        neck: via drill 0.30 at (106.76,120.71), 0.80 A
+ok    MOTOR2_SW: motor 2 flyback diode to its pad -- carries 1.23 A, needs 1.00 A
+        neck: F.Cu 0.40 mm x 0.70 mm (106.95,120.75)-(106.25,120.75), 1.23 A
 
 ok    3V3_SYS: LDO OUT to the RP2350's 3V3 (all its loads) -- carries 0.45 A, needs 0.25 A
-        neck: In2.Cu 0.20 mm x 1.10 mm (102.25,104.97)-(101.15,104.97), 0.45 A
+        neck: In2.Cu 0.20 mm x 3.67 mm (94.14,93.55)-(97.80,93.55), 0.45 A
 
-ok    3V3_SYS: LDO OUT to the RM2's VDDIO -- carries 0.45 A, needs 0.05 A
-        neck: In2.Cu 0.20 mm x 0.47 mm (110.55,97.01)-(110.89,96.68), 0.45 A
+ok    3V3_SYS: LDO OUT to the RM2's VDDIO -- carries 0.39 A, needs 0.05 A
+        neck: F.Cu fill 'rp2350_3v3_sys_1' 0.20 mm of cut around (104.75,106.15)-(104.75,106.25), 0.40 A
 
-current check: 7 FAIL
+current check: 0 FAIL

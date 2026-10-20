@@ -2256,12 +2256,15 @@ if __name__ == "__main__":
     # any of them can be reproduced. Everything up to the DSN export is
     # regenerated from scratch each time (wipe + pre-route). The failure
     # is reported honestly if all tries miss.
-    tries = int(os.environ.get("ROUTE_TRIES", "3"))
+    # The board is built from the ordering design.yaml names (routing:
+    # ordering), one try. ROUTE_FIRST / ROUTE_TRIES search instead: start
+    # at another ordering and try several (to run orderings side by side
+    # in copies of the project and pick the best).
+    chosen = load_design().get("routing", {}).get("ordering", 0)
+    tries = int(os.environ.get("ROUTE_TRIES", "1" if "ROUTE_FIRST" not in os.environ else "3"))
     best_pcb = PCB.with_name("bluebuzz-rm2.best.kicad_pcb")
     rc, best = 2, None
-    # ROUTE_FIRST: start at a later ordering (to run orderings side by side
-    # in copies of the project)
-    first = int(os.environ.get("ROUTE_FIRST", "0"))
+    first = int(os.environ.get("ROUTE_FIRST", str(chosen)))
     for attempt in range(first, first + tries):
         if attempt > first:
             print(f"--- route attempt {attempt + 1}/{tries} ---")

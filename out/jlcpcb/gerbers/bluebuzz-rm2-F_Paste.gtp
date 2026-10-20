@@ -1,12 +1,12 @@
 %TF.GenerationSoftware,KiCad,Pcbnew,9.0.8+dfsg-1*%
-%TF.CreationDate,2026-10-19T00:26:27-07:00*%
+%TF.CreationDate,2026-10-19T20:50:39-07:00*%
 %TF.ProjectId,bluebuzz-rm2,626c7565-6275-47a7-9a2d-726d322e6b69,rev?*%
 %TF.SameCoordinates,Original*%
 %TF.FileFunction,Paste,Top*%
 %TF.FilePolarity,Positive*%
 %FSLAX46Y46*%
 G04 Gerber Fmt 4.6, Leading zero omitted, Abs format (unit mm)*
-G04 Created by KiCad (PCBNEW 9.0.8+dfsg-1) date 2026-10-19 00:26:27*
+G04 Created by KiCad (PCBNEW 9.0.8+dfsg-1) date 2026-10-19 20:50:39*
 %MOMM*%
 %LPD*%
 G01*
@@ -289,11 +289,6 @@ D26*
 X87880000Y-106300000D03*
 X86920000Y-106300000D03*
 %TD*%
-D25*
-%TO.C,C13*%
-X93020000Y-83700000D03*
-X93980000Y-83700000D03*
-%TD*%
 D17*
 %TO.C,C130*%
 X92000000Y-103880000D03*
@@ -407,11 +402,6 @@ D18*
 %TO.C,R50*%
 X87910000Y-96040000D03*
 X86890000Y-96040000D03*
-%TD*%
-D28*
-%TO.C,C100*%
-X113100000Y-97225000D03*
-X113100000Y-98775000D03*
 %TD*%
 D25*
 %TO.C,C102*%

@@ -1,49 +1,131 @@
-GND planes:
-  ok    In1.Cu: 1 piece(s), 116 holes, 16 void(s) > 0.8 mm2
-        void  9.18 mm2  (106.40,95.20)-(108.10,100.60)  1.70 x 5.40 mm
-        void  2.37 mm2  (99.46,100.71)-(100.95,104.80)  1.49 x 4.09 mm
-        void  1.58 mm2  (104.57,107.79)-(107.20,108.73)  2.62 x 0.94 mm
+planes:
+  ok    In1.Cu GND: 1 piece(s), 131 holes, 18 void(s) > 0.8 mm2, 0 wire(s) of other nets
+        void  5.43 mm2  (106.40,95.20)-(108.10,100.60)  1.70 x 5.40 mm
+        void  2.19 mm2  (104.57,107.79)-(107.84,109.19)  3.27 x 1.39 mm
+        void  2.04 mm2  (99.96,100.77)-(100.95,104.53)  0.99 x 3.76 mm
+        void  1.85 mm2  (93.37,86.60)-(94.73,88.33)  1.36 x 1.73 mm
+        void  1.37 mm2  (97.37,119.67)-(98.63,120.93)  1.25 x 1.25 mm
+        void  1.33 mm2  (93.57,107.07)-(95.23,108.03)  1.66 x 0.95 mm
+        void  1.06 mm2  (91.56,101.47)-(93.13,102.43)  1.57 x 0.95 mm
         void  1.05 mm2  (105.30,97.27)-(106.16,98.73)  0.86 x 1.46 mm
-        void  1.05 mm2  (97.70,105.40)-(99.11,106.70)  1.40 x 1.30 mm
         void  1.05 mm2  (89.05,110.42)-(90.20,111.58)  1.15 x 1.15 mm
-        void  1.02 mm2  (88.30,87.54)-(89.62,88.72)  1.33 x 1.18 mm
-        void  1.02 mm2  (94.14,104.25)-(95.41,105.47)  1.28 x 1.23 mm
-        void  1.00 mm2  (108.71,105.58)-(109.41,107.48)  0.70 x 1.90 mm
-        void  1.00 mm2  (102.07,107.93)-(103.70,109.25)  1.63 x 1.32 mm
-        void  0.94 mm2  (90.07,90.36)-(91.55,91.53)  1.48 x 1.17 mm
+        void  1.03 mm2  (99.62,93.09)-(100.89,94.52)  1.27 x 1.43 mm
+        void  1.02 mm2  (109.04,105.97)-(110.30,107.63)  1.26 x 1.65 mm
+        void  1.02 mm2  (102.42,107.82)-(103.72,109.02)  1.30 x 1.20 mm
+        void  1.00 mm2  (109.64,107.92)-(110.78,109.57)  1.14 x 1.65 mm
+        void  0.99 mm2  (101.22,96.12)-(101.93,97.93)  0.70 x 1.80 mm
         void  0.94 mm2  (108.67,102.67)-(109.73,104.23)  1.06 x 1.56 mm
-        void  0.93 mm2  (91.39,84.06)-(92.25,85.58)  0.86 x 1.53 mm
         void  0.87 mm2  (102.36,115.47)-(103.42,116.53)  1.05 x 1.05 mm
         void  0.87 mm2  (96.58,115.47)-(97.64,116.53)  1.05 x 1.05 mm
-        void  0.80 mm2  (89.35,117.45)-(90.58,118.31)  1.23 x 0.86 mm
-  ok    In4.Cu: 1 piece(s), 115 holes, 15 void(s) > 0.8 mm2
-        void  2.37 mm2  (99.46,100.71)-(100.95,104.80)  1.49 x 4.09 mm
-        void  1.58 mm2  (104.57,107.79)-(107.20,108.73)  2.62 x 0.94 mm
+        void  0.83 mm2  (94.50,83.98)-(95.73,85.03)  1.23 x 1.05 mm
+  ok    In3.Cu VSYS: 1 piece(s), 211 holes, 33 void(s) > 0.8 mm2, 0 wire(s) of other nets
+        void  3.31 mm2  (94.37,113.73)-(96.31,116.82)  1.95 x 3.09 mm
+        void  2.62 mm2  (103.69,114.29)-(104.95,116.65)  1.26 x 2.35 mm
+        void  2.19 mm2  (104.57,107.79)-(107.84,109.19)  3.27 x 1.39 mm
+        void  2.14 mm2  (95.17,111.41)-(98.73,112.56)  3.56 x 1.15 mm
+        void  2.04 mm2  (99.96,100.77)-(100.95,104.53)  0.99 x 3.76 mm
+        void  1.99 mm2  (103.69,118.72)-(104.95,120.58)  1.26 x 1.86 mm
+        void  1.99 mm2  (95.05,118.72)-(96.31,120.58)  1.26 x 1.86 mm
+        void  1.85 mm2  (93.37,86.60)-(94.73,88.33)  1.36 x 1.73 mm
+        void  1.74 mm2  (87.86,103.52)-(89.72,105.83)  1.86 x 2.30 mm
+        void  1.42 mm2  (91.56,100.77)-(93.13,102.43)  1.57 x 1.66 mm
+        void  1.40 mm2  (89.05,109.91)-(90.43,111.58)  1.38 x 1.66 mm
+        void  1.39 mm2  (94.67,98.13)-(95.79,100.78)  1.11 x 2.65 mm
+        void  1.36 mm2  (99.77,108.55)-(101.12,110.73)  1.35 x 2.18 mm
+        void  1.35 mm2  (108.87,107.92)-(110.78,109.57)  1.91 x 1.65 mm
+        void  1.34 mm2  (96.12,87.62)-(98.15,89.08)  2.02 x 1.46 mm
+        void  1.33 mm2  (93.57,107.07)-(95.23,108.03)  1.66 x 0.95 mm
+        void  1.29 mm2  (98.45,112.12)-(100.08,113.70)  1.63 x 1.58 mm
+        void  1.25 mm2  (108.67,102.67)-(109.73,104.70)  1.06 x 2.03 mm
+        void  1.05 mm2  (107.47,97.57)-(108.33,99.03)  0.86 x 1.45 mm
         void  1.05 mm2  (105.30,97.27)-(106.16,98.73)  0.86 x 1.46 mm
-        void  1.05 mm2  (97.70,105.40)-(99.11,106.70)  1.40 x 1.30 mm
-        void  1.05 mm2  (89.05,110.42)-(90.20,111.58)  1.15 x 1.15 mm
-        void  1.02 mm2  (88.30,87.54)-(89.62,88.72)  1.33 x 1.18 mm
-        void  1.02 mm2  (94.14,104.25)-(95.41,105.47)  1.28 x 1.23 mm
-        void  1.00 mm2  (108.71,105.58)-(109.41,107.48)  0.70 x 1.90 mm
-        void  1.00 mm2  (102.07,107.93)-(103.70,109.25)  1.63 x 1.32 mm
-        void  0.94 mm2  (90.07,90.36)-(91.55,91.53)  1.48 x 1.17 mm
-        void  0.94 mm2  (108.67,102.67)-(109.73,104.23)  1.06 x 1.56 mm
-        void  0.93 mm2  (91.39,84.06)-(92.25,85.58)  0.86 x 1.53 mm
+        void  1.05 mm2  (104.42,100.92)-(105.72,102.43)  1.29 x 1.50 mm
+        void  1.04 mm2  (105.87,102.67)-(107.38,103.88)  1.50 x 1.20 mm
+        void  1.03 mm2  (99.62,93.09)-(100.89,94.52)  1.27 x 1.43 mm
+        void  1.03 mm2  (101.02,95.22)-(103.03,95.95)  2.01 x 0.73 mm
+        void  1.02 mm2  (109.04,105.97)-(110.30,107.63)  1.26 x 1.65 mm
+        void  1.02 mm2  (102.42,107.82)-(103.72,109.02)  1.30 x 1.20 mm
+        void  1.01 mm2  (104.42,104.57)-(105.43,106.08)  1.00 x 1.50 mm
+        void  1.00 mm2  (103.53,109.50)-(105.33,110.33)  1.80 x 0.83 mm
+        void  0.99 mm2  (101.22,96.12)-(101.93,97.93)  0.70 x 1.80 mm
+        void  0.94 mm2  (107.72,99.22)-(109.08,100.50)  1.36 x 1.28 mm
         void  0.87 mm2  (102.36,115.47)-(103.42,116.53)  1.05 x 1.05 mm
         void  0.87 mm2  (96.58,115.47)-(97.64,116.53)  1.05 x 1.05 mm
-        void  0.80 mm2  (89.35,117.45)-(90.58,118.31)  1.23 x 0.86 mm
+        void  0.83 mm2  (94.50,83.98)-(95.73,85.03)  1.23 x 1.05 mm
+  ok    In4.Cu GND: 1 piece(s), 130 holes, 17 void(s) > 0.8 mm2, 0 wire(s) of other nets
+        void  2.19 mm2  (104.57,107.79)-(107.84,109.19)  3.27 x 1.39 mm
+        void  2.04 mm2  (99.96,100.77)-(100.95,104.53)  0.99 x 3.76 mm
+        void  1.85 mm2  (93.37,86.60)-(94.73,88.33)  1.36 x 1.73 mm
+        void  1.37 mm2  (97.37,119.67)-(98.63,120.93)  1.25 x 1.25 mm
+        void  1.33 mm2  (93.57,107.07)-(95.23,108.03)  1.66 x 0.95 mm
+        void  1.06 mm2  (91.56,101.47)-(93.13,102.43)  1.57 x 0.95 mm
+        void  1.05 mm2  (105.30,97.27)-(106.16,98.73)  0.86 x 1.46 mm
+        void  1.05 mm2  (89.05,110.42)-(90.20,111.58)  1.15 x 1.15 mm
+        void  1.03 mm2  (99.62,93.09)-(100.89,94.52)  1.27 x 1.43 mm
+        void  1.02 mm2  (109.04,105.97)-(110.30,107.63)  1.26 x 1.65 mm
+        void  1.02 mm2  (102.42,107.82)-(103.72,109.02)  1.30 x 1.20 mm
+        void  1.00 mm2  (109.64,107.92)-(110.78,109.57)  1.14 x 1.65 mm
+        void  0.99 mm2  (101.22,96.12)-(101.93,97.93)  0.70 x 1.80 mm
+        void  0.94 mm2  (108.67,102.67)-(109.73,104.23)  1.06 x 1.56 mm
+        void  0.87 mm2  (102.36,115.47)-(103.42,116.53)  1.05 x 1.05 mm
+        void  0.87 mm2  (96.58,115.47)-(97.64,116.53)  1.05 x 1.05 mm
+        void  0.83 mm2  (94.50,83.98)-(95.73,85.03)  1.23 x 1.05 mm
 
 fast nets over their reference plane (16 nets: QSPI_SCLK, QSPI_SD0, QSPI_SD1, QSPI_SD2, QSPI_SD3, QSPI_SS, USB_DM, USB_DM_C, USB_DP, USB_DP_C, WL_CLK, WL_DATA, WL_DOUT, XIN, XOUT, XTAL2):
   ok    no fast track leaves its reference plane for more than 0.5 mm
 
-fast-net vias that move the return between In1 and In4 (GND via for it):
-  WARN  USB_DM via at (99.11,110.22): nearest GND via 1.27 mm
-  WARN  USB_DM via at (99.25,113.09): nearest GND via 1.49 mm
-  FAIL  USB_DM via at (100.25,113.09): nearest GND via 2.22 mm
-  FAIL  USB_DM via at (104.70,95.59): nearest GND via 2.00 mm
-  WARN  USB_DP via at (99.75,112.44): nearest GND via 1.47 mm
-  WARN  USB_DP via at (103.70,95.59): nearest GND via 1.00 mm
-  FAIL  WL_CLK via at (100.45,102.30): nearest GND via 3.29 mm
-  FAIL  WL_CLK via at (97.00,88.10): nearest GND via 1.55 mm
+signal vias where the return changes plane:
+  WARN  BOOTSEL via at (97.73,91.12) In1<->In4: nearest GND via 1.25 mm
+  WARN  BOOTSEL via at (96.80,94.40) In1<->In4: nearest GND via 1.05 mm
+  FAIL  BTN via at (99.90,105.50) In1<->In4: nearest GND via 1.89 mm (> 1.5)
+  WARN  CHG_N via at (91.80,85.25) In1<->In4: nearest GND via 1.24 mm
+  FAIL  CHG_N via at (91.52,91.60) In1<->In4: nearest GND via 1.95 mm (> 1.5)
+  FAIL  IMU_INT1 via at (100.29,103.43) In1<->In4: nearest GND via 3.06 mm (> 1.5)
+  WARN  MOTOR1_PWM via at (94.69,116.49) In1<->In4: nearest GND via 1.20 mm
+  FAIL  MOTOR1_PWM via at (102.75,108.69) In1<->In4: nearest GND via 1.58 mm (> 1.5)
+  FAIL  PWR_HOLD via at (109.37,106.88) In1<->In4: nearest GND via 2.21 mm (> 1.5)
+  WARN  QSPI_SCLK via at (94.55,101.60) GND<->VSYS: nearest VSYS cap C20 13.71 mm
+  WARN  QSPI_SCLK via at (101.60,97.60) GND<->VSYS: nearest VSYS cap C101 11.61 mm
+  WARN  QSPI_SD0 via at (100.80,97.90) GND<->VSYS: nearest VSYS cap C101 12.45 mm
+  WARN  QSPI_SD0 via at (95.00,100.45) GND<->VSYS: nearest VSYS cap C20 13.02 mm
+  WARN  QSPI_SD3 via at (101.60,97.00) GND<->VSYS: nearest VSYS cap C101 11.54 mm
+  WARN  QSPI_SD3 via at (94.60,102.40) GND<->VSYS: nearest VSYS cap C20 14.42 mm
+  FAIL  RUN via at (106.95,108.85) In1<->In4: nearest GND via 2.23 mm (> 1.5)
+  FAIL  RUN via at (106.87,108.36) In1<->In4: nearest GND via 2.44 mm (> 1.5)
+  FAIL  SDA via at (100.29,104.20) In1<->In4: nearest GND via 3.14 mm (> 1.5)
+  FAIL  TAC_CS1 via at (100.50,101.10) In1<->In4: nearest GND via 3.00 mm (> 1.5)
+  FAIL  TAC_CS2 via at (102.75,108.15) In1<->In4: nearest GND via 2.01 mm (> 1.5)
+  WARN  TAC_CS3 via at (103.39,108.55) In1<->In4: nearest GND via 1.35 mm
+  FAIL  TAC_CS4 via at (107.51,108.86) In1<->In4: nearest GND via 1.70 mm (> 1.5)
+  WARN  TAC_SCK via at (100.08,106.35) In1<->In4: nearest GND via 1.15 mm
+  WARN  TAC_SDO via at (96.74,101.72) In1<->In4: nearest GND via 1.30 mm
+  FAIL  USB_DM via at (100.25,113.09) In1<->In4: nearest GND via 1.18 mm (> 1.0)
+  WARN  USB_DM via at (100.25,113.09) GND<->VSYS: nearest VSYS cap C43 11.81 mm
+  WARN  USB_DM via at (99.20,110.35) GND<->VSYS: nearest VSYS cap C41 12.73 mm
+  WARN  USB_DP via at (96.08,112.23) GND<->VSYS: nearest VSYS cap C41 9.12 mm
+  WARN  USB_DP via at (99.75,112.44) GND<->VSYS: nearest VSYS cap C41 12.09 mm
+  FAIL  WL_CLK via at (100.45,102.30) In1<->In4: nearest GND via 2.91 mm (> 1.0)
+  FAIL  WL_DATA via at (96.37,90.37) In1<->In4: nearest GND via 1.45 mm (> 1.0)
+  WARN  WL_DATA via at (100.55,101.75) GND<->VSYS: nearest VSYS cap C101 13.85 mm
+  WARN  WL_DATA via at (99.05,98.35) GND<->VSYS: nearest VSYS cap C11 13.28 mm
+  WARN  WL_IRQ via at (103.75,94.55) In1<->In4: nearest GND via 1.50 mm
+  WARN  WL_IRQ via at (101.35,95.55) In1<->In4: nearest GND via 1.35 mm
+  In1<->In4: 21 with a GND via within 1.0 mm, 9 within 1.5 mm (slow nets), 14 FAIL
+  GND<->VSYS: 81 (12 fast without a VSYS cap within 3.0 mm)
 
-plane check: 4 FAIL
+GND stitching:
+  FAIL  edge line 1.2 mm in: worst 1.99 mm to a GND via (limit 1.6), 1 stretch(es) over
+        (87.20,115.08)-(87.20,114.78): up to 1.99 mm
+  FAIL  interior: 156 GND vias / PTH pads; 6 % of the via-allowed area > 2 mm from one; worst 3.23 mm at (100.20,104.20); 17 points > 3.0 mm
+        (100.20,104.20) 3.23 mm
+        (100.20,102.70) 3.22 mm
+        (100.20,101.45) 3.21 mm
+        (100.20,102.95) 3.20 mm
+        (100.20,103.95) 3.18 mm
+        (101.70,99.20) 3.18 mm
+        (100.20,102.45) 3.18 mm
+        (100.20,101.70) 3.17 mm
+        (100.20,103.20) 3.16 mm
+        (100.20,103.70) 3.16 mm
+
+plane check: 16 FAIL

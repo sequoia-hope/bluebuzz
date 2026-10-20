@@ -1,61 +1,111 @@
 # Gate 7 — routing
 
-Status: **FAILED** (2026-10-19). Independent review: fail, with 5 BLOCKER and 7 MAJOR findings. The board is connected and DRC-clean. It fails on current capacity (single vias on every high-current layer change, and a VSYS pour cut into pieces by signal wiring) and on return-path hygiene.
+Status: **RESUBMITTED, awaiting independent review** (2026-10-19). Submission 1 failed review (5 BLOCKER, 7 MAJOR; kept below). The generator was reworked to its fix plan and the board rerouted. DRC is 0/0, every current path passes, and all three planes are single solid pieces. What fails is the return-via and stitching checks in the RP2350's pin-escape lanes, plus three decisions left to the user (open questions at the end).
 
-Board reviewed: `out/bluebuzz-rm2.kicad_pcb` at commit `6571908` (route ordering `ROUTE_FIRST=5`).
-Note: phases 2, 4, 5 and 6 have no gate files in `design/gates/`, so this gate sits on unreviewed placement and rules.
+Board: `out/bluebuzz-rm2.kicad_pcb` at commit `d37b88d`, from the ordering `design.yaml` names (`routing: ordering: 42`). A plain `build.py` reproduces it: the run was repeated from scratch, with the same result.
+Note: phases 2, 4, 5 and 6 still have no gate files in `design/gates/`, so this gate sits on unreviewed placement and rules.
 
 ## Checklist
 
-- [x] DRC 0 errors, 0 unrouted (`drc.rpt`: 9 violations, all silkscreen warnings; 0 unconnected pads)
-- [ ] Parity 0 differences. Connectivity: **0 differences** (`check_parity.txt`). KiCad's own parity: 85 `net_conflict`, all name-only (24 nets renamed one to one) or unconnected-pin placeholders (`drc_parity.rpt`). The 6 BOM/DNP flag mismatches are fixed (`DNP` set in `circuit.py`, written to the schematic by `gen_schematic.py`).
-- [ ] Current capacity: **FAIL**. `check_current.txt` shows 7 FAILs, and the review found the VSYS pour is two pieces joined by 0.24–0.32 mm necks (finding B1), which the check could not see.
-- [ ] Plane integrity: **FAIL**. In1 and In4 are each one piece, and no fast track leaves its plane. Four fast-net vias change between In1 and In4 with no GND via within 1.5 mm. The review found the In2/In3 reference model is wrong (M9).
-- [ ] Every warning explained: the 9 silk warnings are listed below and deferred to phase 9.
-- [x] Per-layer renders reviewed (`copper_*.png`, about 64 px/mm, every layer viewed from the front).
-- [ ] PCB view regenerated (after the fixes).
+- [x] DRC 0 errors, 0 unrouted. `drc.rpt`: 9 violations, all silkscreen warnings (the same 9 as submission 1, deferred to phase 9); 0 unconnected pads.
+- [ ] Parity. Connectivity: **0 differences** (`check_parity.txt`). KiCad's own parity (`drc_parity.rpt`): the 24 name-only nets and unconnected-pin placeholders as before. Waiver, or labelling the nets, is the user's call (open question 1).
+- [x] Current capacity: **0 FAIL** (`check_current.txt`). Pours are now rated by their fill, and the fill necks are listed.
+- [ ] Plane integrity:
+  - [x] In1 GND, In3 VSYS and In4 GND are each one piece, with no wire of another net.
+  - [x] No fast track leaves its reference plane.
+  - [ ] **14 return-via FAILs**: 3 fast-net vias over 1.0 mm, 11 slow-net vias over 1.5 mm, all in the RP2350's pin-escape lanes (see residuals).
+  - [ ] Edge fence: one 0.4 mm overshoot.
+  - [ ] Interior stitching: worst 3.23 mm against 3.0, in the same lane.
+- [x] Every warning explained: the 9 silk warnings (below, phase 9). The 12 GND↔VSYS reference changes on fast nets are listed in the residuals.
+- [x] Per-layer renders reviewed (`copper_*.png`, regenerated).
+- [x] PCB view regenerated (`build.py --only site`).
 
 ## Evidence
 
 Commands (from the project root):
 
 ```
+python3 build.py                      # ordering 42; or ROUTE_FIRST=k ROUTE_TRIES=1 to search
 kicad-cli pcb drc --severity-all --all-track-errors --format report -o design/gates/phase7/drc.rpt out/bluebuzz-rm2.kicad_pcb
 kicad-cli pcb drc --schematic-parity --severity-all --format report -o design/gates/phase7/drc_parity.rpt out/bluebuzz-rm2.kicad_pcb
 python3 scripts/check_parity.py   > design/gates/phase7/check_parity.txt    # exit 0
-python3 scripts/check_current.py  > design/gates/phase7/check_current.txt   # exit 1
+python3 scripts/check_current.py  > design/gates/phase7/check_current.txt   # exit 0
 python3 scripts/check_planes.py   > design/gates/phase7/check_planes.txt    # exit 1
 python3 scripts/audit.py          > design/gates/phase7/audit.txt           # exit 0
+kicad-cli sch erc --severity-all -o design/gates/phase7/erc.rpt out/bluebuzz-rm2.kicad_sch   # 0 errors, 0 warnings
 ```
 
 ```
-** Found 9 DRC violations **          (drc.rpt; 1 silk_overlap, 4 silk_over_copper, 4 silk_edge_clearance)
-** Found 0 unconnected pads **
-connectivity differences: 0           (check_parity.txt; 24 nets renamed only)
-FAIL  VBUS  USB-C -> U2 IN        0.53 A of 1.00 A  neck: one 0.2 via at (86.65,85.75)
-FAIL  VBAT  U2 BAT -> cell pad    0.67 A of 2.00 A  neck: one 0.25 via at (93.80,88.80)
-FAIL  VSYS  U2 OUT -> J4.1 (MOT)  0.80 A of 2.00 A  neck: one 0.3 via at (96.69,120.18)
-FAIL  MOTOR1_SW Q1/D3 -> J4.2     0.53 A of 1.00 A  neck: one 0.2 via at (99.85,120.45)
-FAIL  MOTOR2_SW Q2/D4 -> J4.3     0.80 A of 1.00 A  neck: one 0.3 via at (106.76,120.71)
-ok    VSYS -> U7 (0.35 A), VSYS -> U3 (0.25 A), 3V3_SYS -> U1 / U7
-In1.Cu / In4.Cu: 1 piece each; no fast track off its plane > 0.5 mm
-FAIL  USB_DM (100.25,113.09) 2.22 mm, USB_DM (104.70,95.59) 2.00 mm, WL_CLK (100.45,102.30) 3.29 mm,
-      WL_CLK (97.00,88.10) 1.55 mm to the nearest GND via
-audit: clean
+** Found 9 DRC violations **        ** Found 0 unconnected pads **      (all 9: silkscreen warnings)
+ok VBUS      USB-C -> U2 IN        1.06 A of 1.00   neck In2.Cu 0.65 mm
+ok VBAT      U2 BAT -> cell pad    2.76 A of 2.00   neck F.Cu fill pwr_vbat 1.40 mm
+ok VSYS      U2 OUT -> J4.1 (MOT)  2.13 A of 2.00   neck J4.1's 4 vias
+ok VSYS      U2 OUT -> RM2 VIN     1.07 A of 0.35   neck U7.16's 2 vias (C100 under it on the back)
+ok MOTOR1_SW / MOTOR2_SW           1.23 A of 1.00 each (FET and diode)   neck 0.4 mm F.Cu
+ok 3V3_SYS   LDO -> RP2350 / RM2   0.45 / 0.39 A of 0.25 / 0.05
+planes: In1 GND 1 piece, In3 VSYS 1 piece (0 foreign wires), In4 GND 1 piece; no fast track off its reference
+return vias In1<->In4: 21 within 1.0 mm, 9 within 1.5 mm (slow nets), 14 FAIL
+edge fence: worst 1.99 mm (limit 1.6), one stretch at (87.20,114.8-115.1)
+interior: 6 % of via-allowed area > 2 mm from a GND via; worst 3.23 mm (limit 3.0) at (100.20,104.20)
+audit: clean        parity: 0 connectivity differences        ERC: 0
 ```
 
-The 9 silkscreen warnings (deferred to phase 9; none involves copper):
-- U2 / R13 silk overlap.
-- Silk clipped by mask:
-  - the "ST" text at (87.7,112.85)
-  - U7's pin-1 circle
-  - L1's dot
-  - U2's polygon
-- Silk past the board edge:
-  - U7's outline (×2), because the module's silk is drawn beyond its body at the top edge
-  - J1's outline (×2), because the receptacle overhangs the bottom edge
+Method, in short (decisions.md parts 1–3 carry the reasoning):
+- In3 is a solid VSYS plane, and VSYS is a plane net like GND.
+- Every power transfer is a via array sized by the check's rating, or an F.Cu power zone with its vias.
+- The motor nets are F.Cu only; VBUS is 0.65 mm with 0.7/0.4 vias.
+- The nets freerouting kept stranding are routed first by the grid router (`finish.preroute`): VBUS, WL_DATA, TAC_CS1/2, WL_IRQ, the motor nodes, IMU_INT1.
+- `stitch.py` adds return vias, the edge fence and interior stitching. The finish stage has transactional rip-up.
+- 48 orderings were searched in slim copies. Ordering 42 closed fully.
 
-## Independent review (fresh context; artifacts and this checklist only)
+## Submission-1 findings: status
+
+| # | Finding | Status |
+|---|---|---|
+| B1 | In3 VSYS pour in 2 pieces under 312 mm of wiring | **fixed**: In3 has no wires; one piece |
+| B2 | Motor VSYS feed through single vias | **fixed**: charger OUT zone + 4 × 0.6/0.3; J4.1 4 vias; 2.13 A |
+| B3 | MOTORx_SW one via into J4 | **fixed**: 3 vias in each pad + F.Cu bar, F.Cu-only class; 1.23 A |
+| B4 | VBUS through one 0.2 via, 33 mm on In3 | **fixed**: Vbus class 0.65 mm / 0.7/0.4 vias, trunk grid-routed on In2 over VSYS; 1.06 A |
+| B5 | VBAT one 0.25 via, 0.3 mm | **fixed**: F.Cu VBAT zone + 4 × 0.5/0.25 in the cell pad; 2.76 A |
+| M6 | LX cut-out 1.7 × 5.4 mm; VBAT_SENSE under it | **fixed**: cut-out follows the LX copper (+0.25 mm); In2 keep-out under it |
+| M7 | Return vias missing | **partly**: 21 + 9 now meet the rule; 14 do not (residuals) |
+| M8 | WL_CLK on In3 under In2 traffic | **fixed**: WL_CLK on B.Cu over In4, WL_DATA beside it |
+| M9 | In2 references the cut-up In3 | **fixed**: In3 solid, so In2's reference is continuous. GND↔VSYS reference changes listed (open question 2) |
+| M10 | Stitching far below "2 mm" | **mostly**: edge fence and interior stitching added (45 vias); stackup.md now states the real targets; 1 edge stretch and the escape lane remain |
+| M11 | RM2 VIN one via; C100 6 mm away | **fixed**: U7.16 2 vias; C100 on the back directly under pad 16 |
+| M12 | Check-script gaps | **fixed**: fill-rated pours, VSYS plane checked, In2 → In3 reference, all return vias, stitching density |
+| m13 | Right-angle bends | finish mitres them where there is room. Pre-routes are laid at 45° |
+| m14 | B.Cu GND pour pieces | island removal is on; DRC finds no unconnected pour |
+| m15 | USB_DM through 4 vias + In3 hop | **partly**: no In3. The ESD taps run 5–9 mm on In2 over VSYS (freerouting's) |
+| m16 | XIN 5.2 mm against 5 mm | open: 5.2 mm includes the load-cap stub to C86. Placement, phase 6 |
+| m17 | C12 6.6 mm from U2.2; C100 6 mm | C100 fixed. C12 open (it shares the VBAT zone's copper with C15 at the cell pad) |
+| m18 | Silk warnings not explained | explained, phase 9 |
+| m19 | MOTOR1_SW under the USB-C body | accepted: J4 is directly under J1, so the motor bars and arrays cannot avoid the body |
+
+## Residuals (open)
+
+1. **Return vias in the pin-escape lanes.** 14 signal vias move the return between In1 and In4 with no GND via within the limit.
+   - Fast nets (limit 1.0 mm): WL_CLK's lower via at 2.91 mm, USB_DM at the receptacle at 1.18 mm, WL_DATA at 1.45 mm.
+   - Slow nets (limit 1.5 mm): BTN, CHG_N, IMU_INT1, MOTOR1_PWM, PWR_HOLD, RUN ×2, SDA, TAC_CS1, TAC_CS2 and TAC_CS4, between 1.58 and 3.14 mm.
+
+   Every one sits in the lane between the flash and the RP2350's left pin column, or under its bottom row. `stitch.py` finds no legal spot for a via there: the escapes' own vias and wires fill it. WL_CLK's via, for example, sits in a 0.65 mm band between WL_DATA (F.Cu) and WL_CLK (B.Cu). Closing these needs more room around U1's escape lanes, which is a placement change (phase 6), or a waiver.
+2. **Stitching**:
+   - Interior: 17 grid points between 3.0 and 3.23 mm from a GND via, in the same lane.
+   - Edge fence: one stretch of 0.3 mm at the left edge by SW1, 1.99 mm from a GND via against 1.6 mm.
+3. **Fast nets that change reference between GND and VSYS**: the QSPI lanes on In2, USB's ESD taps on In2, and WL_DATA's fallback hop. 12 vias, with the nearest VSYS–GND cap 9–14 mm away. A 100 nF VSYS–GND cap by the flash (the QSPI and WL_DATA ones) is a schematic change: open question 2.
+
+## Follow-ups (generator; each changes routing, so each needs a new ordering search)
+
+- `relayer` re-layers locked wires: it moved part of WL_CS's In2 pre-route onto B.Cu. It should skip locked groups. `stitch.py` now sweeps the dangling via this leaves.
+- A `USB` entry in `LAYER_RULES` (F.Cu, B.Cu) would keep the ESD taps off In2.
+
+## Open questions for the user
+
+1. Parity names: label the 24 block-internal nets in the schematic (`SCH_NAME_LOCAL_NETS`, reverses an earlier schematic decision) or keep the waiver?
+2. Add a 100 nF VSYS–GND cap by the flash for the In2 QSPI lanes' reference change?
+3. The return-via and stitching residuals: waive them for slow nets in the escape lanes, or reopen placement (phase 6) to free room around U1?
+
+## Submission 1: independent review (fresh context; artifacts and checklist only)
 
 Findings as reported, each with its status. B = BLOCKER, M = MAJOR, m = MINOR.
 
@@ -85,7 +135,7 @@ Reviewer's notes (no action): parity differences are name-only; RF keep-out clea
 
 Verdict (reviewer): **fail**. In3 must become a power layer again, every power transition needs a via array, and the check methods must be corrected before resubmission.
 
-## Fix plan (proposed, not started)
+### Fix plan (submission 1)
 
 1. **In3 carries VSYS only** (B1, M8, M9, part of B4): forbid signal routing on In3 in the DSN. In2 then takes the overflow over In1, and the In3 pour becomes a solid VSYS plane. WL_CLK's In3 pre-route moves to In2 or F.Cu.
 2. **Via arrays at every power transition** (B2–B5, M11), sized from stackup.md (0.2 mm drill ≈ 0.8 A, × 1.5 margin):

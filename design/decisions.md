@@ -171,3 +171,8 @@ Running log. Newest at the bottom. Format: date, decision, reasoning, alternativ
   - **R61's and C64's GND pads (the battery divider) get a locked link down the edge side and a via below C64.** They sit on F.Cu over J5's test pads on the back, so they can take no via, and VBAT_SENSE walled them in.
   - **`route.py` reserves return vias before freerouting for fast nets only.** Reserved for slow nets too, their GND vias took the next pin's escape (SWCLK, RUN, SDA, SCL and TAC_CS3 went open in every ordering). Slow nets get theirs from `stitch.py` after routing, within their 1.5 mm.
   - **`stitch.py` and the finish stage keep 0.2 mm from hole to copper on NPTHs** (KiCad's hole_clearance runs from the hole to the via's copper). An NPTH's pad box is smaller than its hole.
+  - **Also grid-routed first:**
+    - TAC_CS1, from pin 2's escape via to the top-left sensor. It is kept off B.Cu between that sensor's pad columns, where it shut in 3V3_SENS and TAC_SDO in all 16 orderings.
+    - C13's VBUS pad, to the entry via.
+    - Both motor switch nodes (FET to diode to the MOT pad's bar, on F.Cu): power first, since an F.Cu-only net left to freerouting could be shut in.
+    - IMU_INT1, from pin 8's escape via to the IMU.

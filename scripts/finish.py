@@ -895,13 +895,14 @@ def diag_clear(board, a, b, hw, ly, nc, pads, tracks, vias):
     return True
 
 
-def preroute(board, design, netname, a, b, layers=None):
+def preroute(board, design, netname, a, b, layers=None, avoid=()):
     """Route one net from a to b -- each (position, [copper layers]) -- with
     the grid router, on the board in memory, before freerouting runs: the
     class's width, via and layers (route.py uses it for the VBUS trunk,
     which freerouting left open in most orderings once it was 0.6 mm with
-    0.7/0.4 vias). `layers` narrows the class's layers further. What it
-    draws is locked. Returns the vias used, or None."""
+    0.7/0.4 vias). `layers` narrows the class's layers further; `avoid`
+    lists (layer, x0, y0, x1, y1) boxes it may not cross. What it draws is
+    locked. Returns the vias used, or None."""
     global LAYERS
     from route import stackup
     st = stackup(design)
@@ -919,6 +920,11 @@ def preroute(board, design, netname, a, b, layers=None):
             for li, ly in enumerate(LAYERS):
                 if ly not in layers:
                     blocked[li] |= every
+        gx0, gy0, gnx, gny, gst = grid
+        for ly, bx0, by0, bx1, by1 in avoid:
+            li = LAYERS.index(ly)
+            blocked[li] |= {(i, j) for i in range(max(0, int((bx0 - gx0) / gst)), min(gnx, int((bx1 - gx0) / gst) + 1))
+                            for j in range(max(0, int((by0 - gy0) / gst)), min(gny, int((by1 - gy0) / gst) + 1))}
         ends = []
         for pos, lys in (a, b):
             ends.append([(c, LAYERS.index(ly)) for ly in lys if ly in LAYERS

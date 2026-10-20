@@ -2050,6 +2050,38 @@ def main(attempt=0):
     u710 = rel(pad_of(fps["U7"], 10).GetPosition())
     nv = preroute(board, design, "WL_IRQ", (r81i, [pcbnew.F_Cu]), (u710, [pcbnew.F_Cu]))
     print(f"WL_IRQ: {'no path' if nv is None else f'{nv} vias'}")
+    # TAC_CS1 (pin 2's escape via -> the top-left sensor U20): WL_CLK and
+    # WL_DATA box the via in on B.Cu and the QSPI lanes on In2; open in 11
+    # of 16 orderings left to freerouting
+    # (not between the sensor's pad columns on B.Cu: through there it shut
+    # in the right column's 3V3_SENS and TAC_SDO, in all 16 orderings)
+    u20 = rel(pad_net(fps["U20"], "TAC_CS1").GetPosition())
+    cols = sorted({round(rel(pd.GetPosition())[0], 2) for pd in fps["U20"].Pads()})
+    ys = [rel(pd.GetPosition())[1] for pd in fps["U20"].Pads()]
+    gap = (pcbnew.B_Cu, cols[0] + 0.3, min(ys) - 0.6, cols[-1] - 0.3, max(ys) + 0.6)
+    nv = preroute(board, design, "TAC_CS1", (v2u, every), (u20, [pcbnew.B_Cu]), avoid=[gap])
+    print(f"TAC_CS1: {'no path' if nv is None else f'{nv} vias'}")
+    # C13 (VBUS 100 nF on the back) to the trunk beside it on In2: a 0.5 mm
+    # hop that needs a via, which neither freerouting nor finish added
+    c13v = rel(pad_net(fps["C13"], "VBUS").GetPosition())
+    nv = preroute(board, design, "VBUS", (c13v, [pcbnew.B_Cu]), (vin, every))
+    print(f"C13 -> VBUS: {'no path' if nv is None else f'{nv} vias'}")
+    # the motor switch nodes (Motor class: 0.4 mm, F.Cu only): FET drain ->
+    # flyback diode -> the MOT pad's F.Cu bar. Power first: left to
+    # freerouting, an F.Cu-only net could be shut in (MOTOR2_SW, 2026-10-19)
+    for q, dd, n in (("Q1", "D3", 2), ("Q2", "D4", 3)):
+        net = f"MOTOR{n - 1}_SW"
+        qp = rel(pad_net(fps[q], net).GetPosition())
+        dp = rel(pad_net(fps[dd], net).GetPosition())
+        bar = (q4[n][0], q4[n][1] + 0.6)
+        for a_, b_ in ((qp, dp), (dp, bar)):
+            nv = preroute(board, design, net, (a_, [pcbnew.F_Cu]), (b_, [pcbnew.F_Cu]))
+            print(f"{net}: {'no path' if nv is None else 'routed'}")
+    # IMU_INT1 (pin 8's escape via -> the IMU, U30): the last open in the
+    # best ordering of 16
+    p30 = rel(pad_net(fps["U30"], "IMU_INT1").GetPosition())
+    nv = preroute(board, design, "IMU_INT1", (v8, every), (p30, [pcbnew.F_Cu]))
+    print(f"IMU_INT1: {'no path' if nv is None else f'{nv} vias'}")
     # GND return vias for the pre-routes' layer changes (USB, WL_CLK, WL_CS,
     # WL_DATA, the pin escapes), now, while there is room for them
     # (stitch.py does the routed ones). After the grid-routed nets: a

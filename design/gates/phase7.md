@@ -1,6 +1,6 @@
 # Gate 7 — routing
 
-Status: **RESUBMITTED, awaiting independent review** (2026-10-19). Submission 1 failed review (5 BLOCKER, 7 MAJOR; kept below). The generator was reworked to its fix plan and the board rerouted. DRC is 0/0, every current path passes, and all three planes are single solid pieces. What fails is the return-via and stitching checks in the RP2350's pin-escape lanes, plus three decisions left to the user (open questions at the end).
+Status: **PASS WITH CONDITIONS** (independent review of submission 2, 2026-10-19; conditions below, open). Submission 1 failed review (5 BLOCKER, 7 MAJOR; kept below). The generator was reworked to its fix plan and the board rerouted. DRC is 0/0, every current path passes, and all three planes are single solid pieces. What fails is the return-via and stitching checks in the RP2350's pin-escape lanes, plus three decisions left to the user (open questions at the end).
 
 Board: `out/bluebuzz-rm2.kicad_pcb` at commit `d37b88d`, from the ordering `design.yaml` names (`routing: ordering: 42`). A plain `build.py` reproduces it: the run was repeated from scratch, with the same result.
 Note: phases 2, 4, 5 and 6 still have no gate files in `design/gates/`, so this gate sits on unreviewed placement and rules.
@@ -78,7 +78,7 @@ Method, in short (decisions.md parts 1–3 carry the reasoning):
 | m14 | B.Cu GND pour pieces | island removal is on; DRC finds no unconnected pour |
 | m15 | USB_DM through 4 vias + In3 hop | **partly**: no In3. The ESD taps run 5–9 mm on In2 over VSYS (freerouting's) |
 | m16 | XIN 5.2 mm against 5 mm | open: 5.2 mm includes the load-cap stub to C86. Placement, phase 6 |
-| m17 | C12 6.6 mm from U2.2; C100 6 mm | C100 fixed. C12 open (it shares the VBAT zone's copper with C15 at the cell pad) |
+| m17 | C12 6.6 mm from U2.2; C100 6 mm | C100 fixed. C12 open: it is fed by a 0.3 mm track and an In2 hop from the zone corner (the review corrected an earlier claim here that it shares the zone with C15; only C15 does) |
 | m18 | Silk warnings not explained | explained, phase 9 |
 | m19 | MOTOR1_SW under the USB-C body | accepted: J4 is directly under J1, so the motor bars and arrays cannot avoid the body |
 
@@ -104,6 +104,37 @@ Method, in short (decisions.md parts 1–3 carry the reasoning):
 1. Parity names: label the 24 block-internal nets in the schematic (`SCH_NAME_LOCAL_NETS`, reverses an earlier schematic decision) or keep the waiver?
 2. Add a 100 nF VSYS–GND cap by the flash for the In2 QSPI lanes' reference change?
 3. The return-via and stitching residuals: waive them for slow nets in the escape lanes, or reopen placement (phase 6) to free room around U1?
+
+## Submission 2: independent review (fresh context; artifacts and checklist only)
+
+The reviewer re-ran DRC and every check, and measured the copper with pcbnew. Their measurements match the gate:
+- DRC 0 errors / 0 unconnected.
+- In1, In3 and In4 each one piece with no tracks.
+- Every power transfer is a via array, with the counts and drills verified.
+- PGND single-point; the 1V1 ring and 3V3 band one piece each.
+- Return-via distances match to 0.01 mm, and the residual list is complete.
+
+They judged the 1.0 / 1.5 mm limits reasonable. Verdict: **pass with conditions**.
+
+| # | Finding | Status |
+|---|---|---|
+| M1 | WL_CLK via (100.45,102.30) 2.91 mm from GND. It is in a 6-via chain (TAC_CS1, WL_DATA, WL_CLK, SENS_EN, IMU_INT1, SDA) whose anti-pads merge into a ~1.0 × 3.8 mm slot on In1/In3/In4 at (99.96–100.95, 100.77–104.53). U24's no-via box ends 0.2 mm west; the pin column starts 0.6 mm east. Fix: shift U24 ~1 mm (phase 6) to free a GND via spot near (99.9,102.3), or a user waiver | open: user decision |
+| M2 | QSPI_SCLK/SD0/SD3 (8–13 mm on In2) and WL_DATA's In2 hop change reference GND↔VSYS at both ends, with no VSYS–GND cap within 11.5–14.4 mm and no GND via within 1.3–2.5 mm. Fix: **two** 100 nF VSYS–GND caps, one at each end (near (101.6,97.3) by C91 and near (94.6,101.5) west of U6), or move the three lanes to B.Cu | open: user decision (schematic change, or a re-route) |
+| m1 | VBUS entry via (86.56,85.88) 0.205 mm copper-to-edge, at the 0.2 mm fab limit | open: pull ≥ 0.1 mm inboard with the next re-route |
+| m2 | RP2350 pin 1 IOVDD stub touches the 3V3 band over 0.026 mm² (pin 11: 0.055 mm²) | open: extend the stubs ≥ 0.3 mm into the band (next re-route) |
+| m3 | check_current.py exempts tracks ≤ 1 mm on ANY pad, not only fine-pitch ones. Without it: VBUS 0.88 A, VBAT 0.79 A, VSYS-OUT 1.18 A, all at the 0.25 mm QFN pin tips; the pwr_ zones overlap the pins by only 0.12–0.15 mm | open: tighten the exemption to FINE_PAD and extend the zones over the full pins (next re-route) |
+| m4 | C12 6.6 mm from U2.2 (m17) | open, phase 6 |
+| m5 | 71 right-angle joints; hairpin RUN (106.87,108.23); doubled stubs VBUS (93.90,106.80), VBAT (94.00,86.50), (94.88,84.36) | open: clean-up pass |
+| m6 | USB ESD taps 5.5 / 9.1 mm on In2 over VSYS | open: USB LAYER_RULES (follow-up) |
+| N | TAC_CS5 8.3 mm on In2 at x 113.65, outside the planes, 0.275 mm from the edge; XIN 5.2 mm; stitching residuals waivable; motor bars under USB-C acceptable; parity names cheap to label; outer GND pours have no orphans | noted |
+
+Reviewer's conditions before fab:
+1. Two VSYS–GND 100 nF caps at the ends of the In2 QSPI lanes, or the lanes moved to B.Cu.
+2. A GND via spot beside WL_CLK's via, freed by a small U24 shift, or a user-signed waiver.
+3. The pin-1 / pin-11 3V3 stubs extended into the band.
+4. The VBUS entry via moved off the 0.2 mm edge limit, and the pad-entry exemption tightened.
+
+Items 1–3 change routing: re-run DRC and the three checks after them, but no full re-review is needed.
 
 ## Submission 1: independent review (fresh context; artifacts and checklist only)
 

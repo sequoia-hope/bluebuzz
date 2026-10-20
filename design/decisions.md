@@ -161,3 +161,13 @@ Running log. Newest at the bottom. Format: date, decision, reasoning, alternativ
   - **The motor switch nodes (SWITCH_HI) are exempt from the GND return-via rule**, as POWER nets already were. Their loop closes through VSYS at J4.1's array, 2 mm from J4.2 / J4.3, not through an image current in the GND planes. J4.2's bottom via can never have a GND via within 1.5 mm anyway: the pad row fills that space.
   - **The stitching check counts only points where a GND via could go**: at least 0.6 mm in from the outline, clear of no-via rule areas and of the RP2350 / `pwr_` power zones by a via's reach, and at least 0.33 mm from another net's pad. Without that, the RM2's and J5's pad rows along the right edge read as fence gaps that no via could close.
   - **`finish.py` mitres right-angle corners between unlocked wires** (m13), where the diagonal clears everything.
+- 2026-10-19 — **Phase-7 fixes, part 3: closing what the batches left open.**
+  - **More nets routed first by the grid router (`finish.preroute`), each logged and skipped if it finds no path:**
+    - the receptacle's two VBUS pad stubs to D6;
+    - TAC_CS2 (pin 18 to the top-right sensor, 25 mm, open in 6 of 8 orderings once In3 was gone);
+    - WL_IRQ (R81 to RM2 pad 10, cut off by WL_CS's locked F.Cu L, open in 3 of 8).
+  - **TAC_CS1 (U1 pin 2) gets a locked escape to a via in the lane.** WL_DATA's grid route comes down that lane to pin 4 and closed pin 2 in, in all 8 orderings, when it went first.
+  - **WL_CLK's B.Cu run steps to x 0.15 past C91.** C91's GND pad at x −0.28 had no room for its via over the run's old x 0.0. C91 also gets a locked GND via 0.5 mm above the pad: the QSPI lanes run under the pad on In2, and WL_DATA now takes the F.Cu space it used to reach the pour by.
+  - **R61's and C64's GND pads (the battery divider) get a locked link down the edge side and a via below C64.** They sit on F.Cu over J5's test pads on the back, so they can take no via, and VBAT_SENSE walled them in.
+  - **`route.py` reserves return vias before freerouting for fast nets only.** Reserved for slow nets too, their GND vias took the next pin's escape (SWCLK, RUN, SDA, SCL and TAC_CS3 went open in every ordering). Slow nets get theirs from `stitch.py` after routing, within their 1.5 mm.
+  - **`stitch.py` and the finish stage keep 0.2 mm from hole to copper on NPTHs** (KiCad's hole_clearance runs from the hole to the via's copper). An NPTH's pad box is smaller than its hole.

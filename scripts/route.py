@@ -1736,7 +1736,10 @@ def main(attempt=0):
     va, vb = (p3[0] - 2.15, p3[1] + 1.4), (p5[0] - 0.9, p5[1])
     rt.path([p3, (p3[0] - 1.15, p3[1]), (va[0], p3[1] + 1.0), va], "WL_CLK", width=0.15, chamfer=0.0)
     rt.via(va, "WL_CLK")
-    rt.path([va, (va[0], -8.8), (0.0, -8.8 + (0.0 - va[0])), (0.0, vb[1] - 0.45), vb],
+    # (x 0.15 past C91, whose GND pad at x -0.28 takes its via over the
+    # run's old x 0.0, then back to x 0.0 clear of TAC_CS1's escape via)
+    xc = 0.15
+    rt.path([va, (va[0], -8.8), (xc, -8.8 + (xc - va[0])), (xc, 0.2), (0.0, 0.35), (0.0, vb[1] - 0.45), vb],
             "WL_CLK", layer=pcbnew.B_Cu, width=0.15)   # over In4 GND (In3 is the VSYS plane, In2 has the QSPI lanes)
     rt.via(vb, "WL_CLK")
     rt.track(vb, p5, "WL_CLK", width=0.15)
@@ -1761,6 +1764,13 @@ def main(attempt=0):
     v24 = (p24[0] + 0.44, p24[1] + 1.17)     # east of the 1V1 spoke via below pin 23
     rt.path([p24, (p24[0], p24[1] + 0.73), v24], "SWCLK", width=0.15, chamfer=0.0)
     rt.via(v24, "SWCLK")
+    # TAC_CS1 (pin 2): west to a via in the lane. WL_DATA (grid-routed
+    # below) comes down that lane to pin 4 and shut pin 2 in, in all 8
+    # orderings, when it went first.
+    p2u = rel(pad_of(fps["U1"], 2).GetPosition())
+    v2u = (p2u[0] - 0.85, p2u[1])
+    rt.track(p2u, v2u, "TAC_CS1", width=0.15)
+    rt.via(v2u, "TAC_CS1")
     # pins 25-29 (SWDIO, RUN, TAC_CS4, MOTOR2_PWM, IMU_INT2) as one
     # staircase: each down, 45 degrees south-east parallel to the last, to
     # its own via. A lone SWDIO diagonal passed under pin 27 and walled
@@ -1896,6 +1906,25 @@ def main(attempt=0):
     rt.track((c10g[0] - 0.25, c10g[1] - 0.33), vg, "GND", width=0.2)
     rt.via(vg, "GND")
 
+    # ---- GND pads that can take no via and get walled in ----
+    # C91 (a 3V3 100 nF by the RP2350): the QSPI lanes run under its GND
+    # pad on In2, so it reached the F.Cu pour only round the side WL_DATA
+    # now takes; a via 0.5 above the pad, laid before WL_DATA is routed.
+    c91g = rel(pad_net(fps["C91"], "GND").GetPosition())
+    vg = (c91g[0] - 0.12, c91g[1] - 0.5)
+    rt.track(c91g, vg, "GND", width=0.25)
+    rt.via(vg, "GND")
+    # R61 / C64 (the battery divider's GND end and its filter cap) sit on
+    # F.Cu over J5's test pads on the back, and VBAT_SENSE walls them in:
+    # R61's GND down the edge side into C64's, and C64's to a via below.
+    r61g = rel(pad_net(fps["R61"], "GND").GetPosition())
+    c64g = rel(pad_net(fps["C64"], "GND").GetPosition())
+    xe = max(r61g[0], c64g[0]) + 0.6
+    rt.path([r61g, (xe, r61g[1]), (xe, c64g[1]), c64g], "GND", width=0.25, chamfer=0.2)
+    vg = (c64g[0] - 0.1, c64g[1] + 0.62)
+    rt.track(c64g, vg, "GND", width=0.25)
+    rt.via(vg, "GND")
+
     # ---- debug-probe connector J6 (DNP): pin 2 GND to its mounting pad ----
     # Pin 2 sits on the back right under the RM2's WL_ON pad on the front,
     # so it cannot take a via; the finish stage found no path either. The
@@ -1991,6 +2020,18 @@ def main(attempt=0):
     nv = preroute(board, design, "VBUS", (vin, every), (d6, [pcbnew.F_Cu]))
     assert nv is not None, "no path for the VBUS trunk"
     print(f"VBUS trunk: {nv} vias")
+    # ...and the receptacle side: each VBUS pad pair's stub to D6 (open in
+    # 5 of 8 orderings left to freerouting). The ESD array's and C2's taps
+    # stay with freerouting.
+    for n in ("A4", "A9"):
+        nv = preroute(board, design, "VBUS", (inb(P[n], 0.8), [pcbnew.F_Cu]), (d6, [pcbnew.F_Cu]))
+        print(f"VBUS {n} -> D6: {'no path' if nv is None else f'{nv} vias'}")
+    # TAC_CS2 (pin 18 -> the top-right sensor U21, 25 mm): open in 6 of 8
+    # orderings once In3 was gone; routed first if there is a path
+    t18 = rel(pad_of(fps["U1"], 18).GetPosition())
+    u21 = rel(pad_net(fps["U21"], "TAC_CS2").GetPosition())
+    nv = preroute(board, design, "TAC_CS2", (t18, [pcbnew.F_Cu]), (u21, [pcbnew.B_Cu]))
+    print(f"TAC_CS2: {'no path' if nv is None else f'{nv} vias'}")
     # WL_DATA (gSPI data, R81 -> pin 4): left open by every ordering once
     # WL_CLK (B.Cu) and WL_CS (In2) left In3 and filled the lane west of
     # the chip. Routed now and locked: on F.Cu and B.Cu if it can be
@@ -2003,12 +2044,19 @@ def main(attempt=0):
         nv = preroute(board, design, "WL_DATA", (r81, [pcbnew.F_Cu]), (p4, [pcbnew.F_Cu]))
     assert nv is not None, "no path for WL_DATA"
     print(f"WL_DATA: {nv} vias")
+    # WL_IRQ (R81 -> RM2 pad 10, 4 mm): WL_CS's locked F.Cu L from pad 9
+    # stands between them; open in 3 of 8 orderings left to freerouting
+    r81i = rel(pad_net(fps["R81"], "WL_IRQ").GetPosition())
+    u710 = rel(pad_of(fps["U7"], 10).GetPosition())
+    nv = preroute(board, design, "WL_IRQ", (r81i, [pcbnew.F_Cu]), (u710, [pcbnew.F_Cu]))
+    print(f"WL_IRQ: {'no path' if nv is None else f'{nv} vias'}")
     # GND return vias for the pre-routes' layer changes (USB, WL_CLK, WL_CS,
     # WL_DATA, the pin escapes), now, while there is room for them
     # (stitch.py does the routed ones). After the grid-routed nets: a
     # return via first took pin 4's only way out.
     from stitch import return_vias
-    print("return vias for the pre-routes: %d placed, %d without room" % return_vias(board, rt))
+    print("return vias for the pre-routes: %d placed, %d without room"
+          % return_vias(board, rt, ahead=True, fast_only=True))
 
     # ---- edge keepout, for freerouting only ----
     # Freerouting keeps wires a net-clearance (0.127) from the outline,

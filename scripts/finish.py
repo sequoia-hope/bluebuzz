@@ -169,6 +169,15 @@ def build_masks(board, design, netcode, grid):
                 mark_rect(blocked[li], px0 - w, py0 - w, px1 + w, py1 + w)
             v = V_GAP + extra
             mark_rect(via_blocked, px0 - v, py0 - v, px1 + v, py1 + v)
+            if pd.HasHole():
+                # hole to copper 0.2 mm on every layer: an NPTH peg's pad
+                # box is smaller than its hole (a TAC_CS2 wire 0.15 mm from
+                # J1's peg, 2026-10-19)
+                hx, hy = rel(pd.GetPosition())
+                hr = max(to_mm(pd.GetDrillSize().x), to_mm(pd.GetDrillSize().y)) / 2
+                for bl in blocked:
+                    mark_disk(bl, hx, hy, hr + 0.2 + HALF + 0.01)
+                mark_disk(via_blocked, hx, hy, hr + 0.2 + VIA_D / 2 + 0.01)
 
     # tracks and vias: sampled disks (they are thin; circles are honest)
     for t in board.GetTracks():

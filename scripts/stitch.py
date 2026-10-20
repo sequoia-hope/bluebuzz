@@ -54,8 +54,8 @@ class Space:
         for fp in board.GetFootprints():
             for pd in fp.Pads():
                 if pd.HasHole():
-                    # hole to hole 0.2 mm (an NPTH's pad box can be smaller
-                    # than its hole)
+                    # hole to copper 0.2 mm (an NPTH's pad box can be
+                    # smaller than its hole)
                     d = pd.GetDrillSize()
                     self.holes.append((rel(pd.GetPosition()), max(to_mm(d.x), to_mm(d.y)) / 2))
                 if pd.GetNetname() == "GND" and pd.GetAttribute() != pcbnew.PAD_ATTRIB_PTH:
@@ -101,7 +101,8 @@ class Space:
             if math.hypot(max(x0 - x, 0, x - x1), max(y0 - y, 0, y - y1)) < VIA_R + max(CLR, lc):
                 return False
         for (hx, hy), r in self.holes:
-            if math.hypot(hx - x, hy - y) < r + 0.1 + 0.2 + 0.02:
+            # hole to the via's COPPER 0.2 mm (KiCad's hole_clearance)
+            if math.hypot(hx - x, hy - y) < r + VIA_R + 0.2 + 0.02:
                 return False
         for (vx, vy), r in self.vias:
             if math.hypot(vx - x, vy - y) < VIA_R + r + CLR:
@@ -129,16 +130,26 @@ def ring(x, y, radii, step=15):
             yield x + r * math.cos(a), y + r * math.sin(a)
 
 
-def return_vias(board, rt, sp=None, quiet=False):
+def return_vias(board, rt, sp=None, quiet=False, ahead=False, fast_only=False):
     """A GND via within RET_FAST mm of every signal via that moves the
     return between In1 and In4 (fast nets first; a slow net may take one
     out to RET_SLOW if nothing nearer fits). Also run by route.py on the
-    pre-routes, before freerouting, so their spots are kept free.
+    pre-routes, before freerouting, so their spots are kept free; with
+    `ahead` a fast net's pin-escape via that so far has copper on one
+    outer layer only counts too, since freerouting gives it the other side.
+    (Slow nets' escapes are left to stitch.py: reserved ahead, their GND
+    vias walled in the next pin's escape -- SWCLK, RUN, SDA, SCL and
+    TAC_CS3 went open in every ordering; `fast_only` keeps route.py's
+    pass to fast nets altogether -- a slow pre-route's return via took
+    the spot under the next pin.)
     Returns (placed, without room)."""
     sp = sp or Space(board)
     classes = net_classes()
+    outer = {"In1.Cu", "In4.Cu"}
     todo = [(classes.get(net) not in FAST, net, x - CX, y - CY)
-            for net, x, y, refs in layer_change_vias(board, classes) if refs >= {"In1.Cu", "In4.Cu"}]
+            for net, x, y, refs in layer_change_vias(board, classes)
+            if (refs >= outer or (ahead and refs and refs <= outer and classes.get(net) in FAST))
+            and (not fast_only or classes.get(net) in FAST)]
     done = miss = 0
     for slow, net, x, y in sorted(todo):
         if sp.nearest_gnd(x, y) <= RET_FAST:

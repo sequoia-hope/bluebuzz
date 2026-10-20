@@ -118,8 +118,10 @@ def grid_of(design, step=STEP):
     return x0, y0, nx, ny, step
 
 
-def build_masks(board, design, netcode, grid):
-    """blocked[layer_index] and via_blocked, as sets of (ix, iy)."""
+def build_masks(board, design, netcode, grid, soft=False):
+    """blocked[layer_index] and via_blocked, as sets of (ix, iy). `soft`
+    leaves out the unlocked wires and vias of other nets (the rip-up
+    search: rip_up)."""
     x0, y0, nx, ny, STEP = grid
     b = design["board"]
     hw, hh = b["width_mm"] / 2, b["height_mm"] / 2
@@ -182,6 +184,8 @@ def build_masks(board, design, netcode, grid):
     # tracks and vias: sampled disks (they are thin; circles are honest)
     for t in board.GetTracks():
         same = t.GetNetCode() == netcode
+        if soft and not same and not t.IsLocked():
+            continue
         if isinstance(t, pcbnew.PCB_VIA):
             vx, vy = rel(t.GetPosition())
             rv = to_mm(t.GetWidth(pcbnew.F_Cu)) / 2     # 0.2, or 0.3 on a Power via
@@ -406,6 +410,91 @@ def straighten(path, blocked):
     return out
 
 
+def polyline(path, grid, true_start, true_goal, blocked=None):
+    """The wires (layer index, a, b) and via points draw() would lay."""
+    x0, y0, _, _, STEP = grid
+    if blocked is not None:
+        path = straighten(path, blocked)
+
+    def heading(a, b):
+        dx, dy = b[0][0] - a[0][0], b[0][1] - a[0][1]
+        n = max(abs(dx), abs(dy)) or 1
+        return (dx / n, dy / n)
+    nodes = [path[0]]
+    for k in range(1, len(path) - 1):
+        a, b, c = path[k - 1], path[k], path[k + 1]
+        if heading(a, b) != heading(b, c) or a[1] != b[1] or b[1] != c[1]:
+            nodes.append(b)
+    nodes.append(path[-1])
+    pts = [(x0 + n[0][0] * STEP, y0 + n[0][1] * STEP) for n in nodes]
+    if true_start is not None:
+        pts[0] = true_start
+    if true_goal is not None:
+        pts[-1] = true_goal
+    wires, vias = [], []
+    for k in range(len(nodes) - 1):
+        if nodes[k][1] != nodes[k + 1][1]:
+            vias.append(pts[k])
+        elif pts[k] != pts[k + 1]:
+            wires.append((nodes[k][1], pts[k], pts[k + 1]))
+    return wires, vias
+
+
+def rip_up(board, design, nc, ends, grid):
+    """For a pair with no path: search again with the other nets' unlocked
+    wires and vias left out, and delete the ones that path would cross
+    (rip(), with what then dangles), so the path can be laid; the ripped
+    nets come back as open pairs in the next round. Returns the items in
+    the way, or None when even that finds no path."""
+    from route import seg_dist
+    sb, svb = build_masks(board, design, nc, grid, soft=True)
+    (p1, l1), (p2, l2) = ends
+    starts = [(c, li) for li in l1 if (c := free_anchor(p1, sb[li], grid)) is not None]
+    goals = [(c, li) for li in l2 if (c := free_anchor(p2, sb[li], grid)) is not None]
+    if not starts or not goals:
+        return None
+    path = astar(starts, goals, sb, svb, grid)
+    if path is None:
+        return None
+    wires, vias = polyline(path, grid, p1, p2, sb)
+    hit = []
+    for t in board.GetTracks():
+        if t.GetNetCode() == nc or t.IsLocked():
+            continue
+        if t.Type() == pcbnew.PCB_VIA_T:
+            c = rel(t.GetPosition())
+            r = to_mm(t.GetWidth(pcbnew.F_Cu)) / 2
+            if any(seg_dist(a, b, c, c) < r + HALF + CLEAR + 0.02 for _li, a, b in wires) or \
+                    any(math.hypot(v[0] - c[0], v[1] - c[1]) < r + VIA_D / 2 + CLEAR + 0.02 for v in vias):
+                hit.append(t)
+            continue
+        a2, b2 = rel(t.GetStart()), rel(t.GetEnd())
+        w2 = to_mm(t.GetWidth()) / 2
+        if any(LAYERS[li] == t.GetLayer() and seg_dist(a, b, a2, b2) < w2 + HALF + CLEAR + 0.02
+               for li, a, b in wires) or \
+                any(seg_dist(v, v, a2, b2) < w2 + VIA_D / 2 + CLEAR + 0.02 for v in vias):
+            hit.append(t)
+    return hit
+
+
+def net_class(netname):
+    """The net's class in design/nets.csv (SIGNAL, CLOCK, POWER ...)."""
+    import csv
+    global _NET_CLASSES
+    if "_NET_CLASSES" not in globals():
+        with open(ROOT / "design" / "nets.csv") as f:
+            _NET_CLASSES = {r["net"]: r["class"] for r in csv.DictReader(f)}
+    return _NET_CLASSES.get(netname, "")
+
+
+def rip(board, hit):
+    """Delete what rip_up found in the way, and what then dangles."""
+    from route import prune_dangling
+    for t in hit:
+        board.Delete(t)
+    prune_dangling(board)
+
+
 def draw(rt, path, netname, grid, true_start, true_goal, blocked=None):
     x0, y0, _, _, STEP = grid
 
@@ -562,15 +651,26 @@ def item_cluster(board, item):
 def finish_board(design, plane_layers):
 
     closed_total = 0
-    for _round in range(5):
+    ripped = {}                      # net -> times ripped up (rip_up)
+    # a rip-up is a transaction: the board before it is kept, the next
+    # round (which rips nothing) tries to re-route the ripped nets, and if
+    # the open count did not drop the board goes back and that pair is
+    # never ripped for again
+    pending, no_rip = None, set()
+    backup = PCB.with_suffix(".prerip.kicad_pcb")
+    for _round in range(10):
         board = pcbnew.LoadBoard(str(PCB))
         rt = Router(board, design)
         idx = index_board(board)
         pairs = drc_unconnected()
-        if not pairs:
+        if not pairs and pending is None:
             break
         closed = 0
+        ripped_now = False
+        may_rip = pending is None
         for u in pairs:
+            if ripped_now:
+                break                # the board changed under the other pairs: next round
             items = [idx.get(i["uuid"]) for i in u["items"]]
             if all(i is None for i in items):
                 continue
@@ -688,19 +788,59 @@ def finish_board(design, plane_layers):
                             break
                     if path is not None:
                         break
+            key = (netname, round(p1[0], 1), round(p1[1], 1), round(p2[0], 1), round(p2[1], 1))
+            if path is None and may_rip and netname != "GND" and key not in no_rip \
+                    and sum(ripped.values()) < 12:
+                # rip up: clear the freerouted wires in the way (never a
+                # locked one, never a net ripped twice already) and lay it
+                grid = grid_of(design, STEP)
+                hit = rip_up(board, design, nc, ((p1, l1), (p2, l2)), grid)
+                nets = {t.GetNetname() for t in hit} if hit is not None else set()
+                # only plain SIGNAL nets are ripped (never a clock, a fast
+                # net, power or a switch node: the crystal went once), at
+                # most two at a time, none for the third time
+                if hit is not None and len(nets) <= 2 \
+                        and all(net_class(n) == "SIGNAL" for n in nets) \
+                        and not any(ripped.get(n, 0) >= 2 for n in nets):
+                    pcbnew.SaveBoard(str(backup), board)
+                    pending = (len(pairs) - closed, key)
+                    rip(board, hit)
+                    ripped_now = True
+                    for n in nets:
+                        ripped[n] = ripped.get(n, 0) + 1
+                    blocked, via_blocked = build_masks(board, design, nc, grid)
+                    starts = [(c, li) for li in l1 if (c := free_anchor(p1, blocked[li], grid)) is not None]
+                    goals = [(c, li) for li in l2 if (c := free_anchor(p2, blocked[li], grid)) is not None]
+                    if starts and goals:
+                        path = astar(starts, goals, blocked, via_blocked, grid)
+                    print(f"  ripped up {sorted(nets)} for {netname}: "
+                          f"{'laid' if path is not None else 'still no path'}")
             if path is None:
                 continue
             nv = draw(rt, path, netname, grid, p1, p2, blocked)
             print(f"  closed {netname}: ({p1[0]:.2f},{p1[1]:.2f}) -> "
                   f"({p2[0]:.2f},{p2[1]:.2f}), {nv} vias")
             closed += 1
-        if closed:
+        if closed or ripped_now:
             filler = pcbnew.ZONE_FILLER(board)
             filler.Fill(board.Zones())
             pcbnew.SaveBoard(str(PCB), board)
             closed_total += closed
-        else:
+        if pending is not None and not ripped_now:
+            # the round after a rip-up: keep it only if it paid
+            before, key = pending
+            after = len(drc_unconnected())
+            if after >= before:
+                shutil.copy(backup, PCB)
+                no_rip.add(key)
+                print(f"  rip-up for {key[0]} undone: {after} open after it, {before} before")
+            else:
+                print(f"  rip-up for {key[0]} kept: {before} -> {after} open")
+            pending = None
+            continue
+        if not closed and not ripped_now:
             break
+    backup.unlink(missing_ok=True)
     board = pcbnew.LoadBoard(str(PCB))
     n = stitch_fragments(board, design)
     if n:

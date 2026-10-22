@@ -103,7 +103,8 @@ ADAPT_VIAS = [(0.2, 4.8), (4.5, -0.4), (0.93, -5.2), (0.93, -5.8)]
 # pin 1 the same way (the reference feeds it from its board-wide 3V3 pour;
 # a via beside it here took the left pins' only way north, 2026-10-18)
 ADAPT_3V3 = [("F.Cu", (-3.438, 1.2), (-2.6, 1.2), 0.2),
-             ("F.Cu", (-3.438, -2.8), (-2.6, -2.8), 0.2)]
+             ("F.Cu", (-3.438, -2.8), (-2.6, -2.8), 0.2),
+             ("F.Cu", (3.438, -2.8), (2.6, -2.8), 0.2)]
 # PGND: pin 47 and the CIN/COUT grounds reach the main GND only through the
 # PGND zone's two adjacent vias (s6.3.8.1, "only connect to main GND at one
 # point"). They get no via-in-pad, and the board's F.Cu GND pour has a hole

@@ -6,7 +6,7 @@
    {
     "sheet": "root",
     "title": "bluebuzz-rm2",
-    "desc": "one sheet: USB-C and ESD, the BQ24074 charger, the LDO, two motor channels, the switched sensor rail, the DPS368 tactile array on SPI1, the LSM6DS3TR-C IMU on I2C1, the RP2350A with its regulator, crystal, flash and SWD/boot pads, the RM2 \u00b7 109 symbols",
+    "desc": "one sheet: USB-C and ESD, the BQ24074 charger, the LDO, two motor channels, the switched sensor rail, the 4x DPS368 tactile array on SPI1, the MP34DT05TR-A PDM mic, the LSM6DS3TR-C IMU on I2C1, the RP2350A with its regulator, crystal, flash and SWD/boot pads, the RM2 \u00b7 109 symbols",
     "file": "bluebuzz-rm2.svg",
     "source": "bluebuzz-rm2.kicad_sch",
     "paper": "User",
@@ -37,13 +37,13 @@
   "thickness": 1.6,
   "plate": "#c8c8c8",
   "body": "body.svg",
-  "vias": 314,
+  "vias": 330,
   "nets": 72,
   "footprints": 109,
   "front": 64,
   "back": 45,
-  "tracks": 1376,
-  "length_mm": 1414.3,
+  "tracks": 2290,
+  "length_mm": 1704.5,
   "layers": [
    {
     "name": "F.Cu",
@@ -52,16 +52,16 @@
     "file": "f.svg",
     "color": "#C83434",
     "note": "Front. Every part, the RM2's and RP2350's escapes, the hand-laid QSPI lines, the GND pour. The strip across the top with nothing on any layer is the RM2's RF keep-out.",
-    "tracks": 511,
-    "length_mm": 410.2,
+    "tracks": 711,
+    "length_mm": 485.7,
     "pads": 282,
     "zones": [
-     "1V1",
-     "GND",
-     "VBAT",
      "3V3_SYS",
+     "1V1",
+     "VSYS",
+     "GND",
      "VREG_LX",
-     "VSYS"
+     "VBAT"
     ]
    },
    {
@@ -85,8 +85,8 @@
     "file": "in2.svg",
     "color": "#CE7D2C",
     "note": "The signal layer: the QSPI lanes to the flash, PG_N down the left side, and whatever would not fit outside.",
-    "tracks": 373,
-    "length_mm": 559.0,
+    "tracks": 753,
+    "length_mm": 655.8,
     "pads": 17,
     "zones": []
    },
@@ -125,8 +125,8 @@
     "file": "b.svg",
     "color": "#4D7FC4",
     "note": "Back. The pad rows, the wiring between the front parts, the GND pour.",
-    "tracks": 492,
-    "length_mm": 445.1,
+    "tracks": 826,
+    "length_mm": 563.0,
     "pads": 162,
     "zones": [
      "GND"
@@ -178,8 +178,8 @@
   "board": "bluebuzz-rm2.kicad_pcb",
   "generated": "2026-10-22",
   "glb": "board.glb",
-  "bytes": 7450748,
-  "kicad_bytes": 27796444,
+  "bytes": 7629980,
+  "kicad_bytes": 29167160,
   "parts": 109,
   "modelled": 102,
   "no_model": [
@@ -219,10 +219,10 @@
    "legacy": 0,
    "found": 0
   },
-  "triangles": 524563,
+  "triangles": 542397,
   "primitives": 369
  },
- "when": "2026-10-22 01:20",
+ "when": "2026-10-22 11:05",
  "source": {
   "kind": "file",
   "pcb": "out/bluebuzz-rm2.kicad_pcb",

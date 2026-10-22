@@ -105,12 +105,12 @@ PLACEMENT = {
     "C98": (-0.3, 12.3, 90, "back"),         # 1V1 100n for DVDD pin 6, off the 1V1 ring's W via
     "C81": (2.6, 18.25, 90, "back"),         # 1V1 4.7u for DVDD 23 (second VOUT cap), under the S spoke's via
     "C97": (-0.15, 14.25, 90, "back"),       # 3V3 100n for IOVDD pin 11, a via in its pad up into the 3V3 band
-    "C91": (-1.8, 5.8, 0),                   # 100n for pin 1 (-1.05, 9.5), above the QSPI ribbon
+    "C91": (-2.0, 5.8, 0),                   # 100n for pin 1 (-1.05, 9.5), above the QSPI ribbon
     # top edge, rows 2-4: the VREG filter, the USB terminations, the inductor
     "C94": (10.5, 9.6, 90),                  # 100n for pin 45, right edge
     # right edge: pin 45 IOVDD feeds R85 (10R) -> C85 (1u) -> pin 44 ADC_AVDD
-    "R85": (7.1, 9.6, 90),                   # 3V3 pad up at pin 45, 3V3A pad down at pin 44
-    "C85": (8.4, 9.6, 90),                   # 1u, 3V3A pad down beside R85's (7.1, 10.11)
+    "R85": (7.25, 9.25, 90),                 # 3V3 pad up at pin 45, 3V3A pad down at pin 44 (y=9.76)
+    "C85": (8.55, 9.00, 90),                 # 1u, 3V3A pad down beside R85's (y=9.78)
     "C82": (8.0, 12.75, 0),                  # 1V1 100n for pin 39, beside the E spoke's via (rp2350_block)
     "C95": (8.0, 13.8, 0),                   # 100n for pin 38 (5.85, 12.3)
     # bottom edge, the strip between the pins and the crystal
@@ -189,7 +189,7 @@ PLACEMENT = {
 
     # ---- PDM MEMS microphone on the FRONT (upper-right shoulder above U1 pins 42/43) ----
     "U40": (9.1, 5.2, 90),                   # MP34DT05TR-A top-port PDM mic, CLK/DOUT on left facing U1
-    "C140": (10.2, 8.0, 0),                  # 100n VDD decoupling below-right of U40 pin 1, leaving x=8.9..9.8 open for PDM_CLK/DATA
+    "C140": (10.3, 8.0, 0),                  # 100n VDD decoupling below-right of U40 pin 1, leaving x=8.9..9.8 open for PDM_CLK/DATA
 
     # ---- battery divider at the ADC pin (40, right edge on FRONT): a 500k node stays short ----
     "R60": (10.5, 14.4, 90),                 # 1M, VBAT end up (y=13.89, clear of U21's no-via box y<=13.25)
@@ -205,10 +205,10 @@ PLACEMENT = {
     "C132": (-2.6, 16.8, 90, "back"),        # VDDIO 100n beside pin 5
 
     # ---- soft power latch on the FRONT (left belly above SW1, clear of QSPI_SD3 via at (-3.8, 10.95)) ----
-    "D5": (-10.35, 11.4, 0),                 # BAT54C: shifted left 0.15 mm so U22's GND via lands straight at (-8.38, 11.68)
-    "R63": (-10.2, 13.7, 0),                 # 100k EN pull-down below D5
-    "R66": (-10.2, 15.0, 0),                 # 100k VBUS_EN -> EN
-    "D6": (-10.2, 16.6, 0),                  # 1N4148WS: VBUS -> R66 (USB keeps the board on)
+    "D5": (-10.35, 11.55, 90),                # BAT54C: rotated 90 so its narrow dimension is in X, clearing U22's GND via (-8.38, 11.68) and board edge
+    "R63": (-10.2, 14.05, 0),                # 100k EN pull-down below D5
+    "R66": (-10.2, 15.35, 0),                # 100k VBUS_EN -> EN
+    "D6": (-10.2, 16.95, 0),                 # 1N4148WS: VBUS -> R66 (USB keeps the board on)
     "Q3": (-4.0, 21.8, 90),                  # 2N7002 reading the button, on FRONT clear of J4.1 VSYS vias and SW1
     "R64": (-4.0, 24.4, 0),                  # 100k gate pull-down
 
@@ -247,7 +247,7 @@ FACING = [
     ("R80", "WL_DOUT", (-6.75, -3.55)), ("R81", "WL_IRQ", (-1.5, -0.55)),
     ("C88", "3V3_SYS", (-6.55, 12.0)), ("R87", "QSPI_SS", (-3.85, 12.0)),
     ("C94", "3V3_SYS", (10.5, 8.8)),
-    ("R85", "3V3_SYS", (5.85, 9.5)), ("C85", "3V3A", (7.1, 10.1)),
+    ("R85", "3V3_SYS", (5.85, 8.8)), ("C85", "3V3A", (7.25, 9.9)),
     ("C95", "3V3_SYS", (5.85, 12.3)),
     ("C92", "3V3_SYS", (-1.05, 15.7)), ("R86", "XOUT", (3.6, 15.8)), ("C96", "3V3_SYS", (6.8, 15.8)), ("R88", "RUN", (9.0, 18.8)), ("C89", "RUN", (9.0, 15.8)),
     ("Y1", "XIN", (-0.4, 17.8)),        # XIN pad top-left (pin 21 comes straight down to it)

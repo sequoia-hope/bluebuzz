@@ -16,13 +16,13 @@
  "thickness": 1.6,
  "plate": "#c8c8c8",
  "body": "body.svg",
- "vias": 314,
+ "vias": 330,
  "nets": 72,
  "footprints": 109,
  "front": 64,
  "back": 45,
- "tracks": 1376,
- "length_mm": 1414.3,
+ "tracks": 2290,
+ "length_mm": 1704.5,
  "layers": [
   {
    "name": "F.Cu",
@@ -31,16 +31,16 @@
    "file": "f.svg",
    "color": "#C83434",
    "note": "Front. Every part, the RM2's and RP2350's escapes, the hand-laid QSPI lines, the GND pour. The strip across the top with nothing on any layer is the RM2's RF keep-out.",
-   "tracks": 511,
-   "length_mm": 410.2,
+   "tracks": 711,
+   "length_mm": 485.7,
    "pads": 282,
    "zones": [
-    "1V1",
-    "GND",
-    "VBAT",
     "3V3_SYS",
+    "1V1",
+    "VSYS",
+    "GND",
     "VREG_LX",
-    "VSYS"
+    "VBAT"
    ]
   },
   {
@@ -64,8 +64,8 @@
    "file": "in2.svg",
    "color": "#CE7D2C",
    "note": "The signal layer: the QSPI lanes to the flash, PG_N down the left side, and whatever would not fit outside.",
-   "tracks": 373,
-   "length_mm": 559.0,
+   "tracks": 753,
+   "length_mm": 655.8,
    "pads": 17,
    "zones": []
   },
@@ -104,8 +104,8 @@
    "file": "b.svg",
    "color": "#4D7FC4",
    "note": "Back. The pad rows, the wiring between the front parts, the GND pour.",
-   "tracks": 492,
-   "length_mm": 445.1,
+   "tracks": 826,
+   "length_mm": 563.0,
    "pads": 162,
    "zones": [
     "GND"

@@ -5,7 +5,7 @@
   {
    "sheet": "root",
    "title": "bluebuzz-rm2",
-   "desc": "one sheet: USB-C and ESD, the BQ24074 charger, the LDO, two motor channels, the switched sensor rail, the DPS368 tactile array on SPI1, the LSM6DS3TR-C IMU on I2C1, the RP2350A with its regulator, crystal, flash and SWD/boot pads, the RM2 \u00b7 109 symbols",
+   "desc": "one sheet: USB-C and ESD, the BQ24074 charger, the LDO, two motor channels, the switched sensor rail, the 4x DPS368 tactile array on SPI1, the MP34DT05TR-A PDM mic, the LSM6DS3TR-C IMU on I2C1, the RP2350A with its regulator, crystal, flash and SWD/boot pads, the RM2 \u00b7 109 symbols",
    "file": "bluebuzz-rm2.svg",
    "source": "bluebuzz-rm2.kicad_sch",
    "paper": "User",

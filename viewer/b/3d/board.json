@@ -2,8 +2,8 @@
  "board": "bluebuzz-rm2.kicad_pcb",
  "generated": "2026-10-22",
  "glb": "board.glb",
- "bytes": 7450748,
- "kicad_bytes": 27796444,
+ "bytes": 7629980,
+ "kicad_bytes": 29167160,
  "parts": 109,
  "modelled": 102,
  "no_model": [
@@ -43,6 +43,6 @@
   "legacy": 0,
   "found": 0
  },
- "triangles": 524563,
+ "triangles": 542397,
  "primitives": 369
 }

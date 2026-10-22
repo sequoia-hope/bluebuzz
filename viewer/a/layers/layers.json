@@ -1,0 +1,124 @@
+{
+ "board": "bluebuzz.kicad_pcb",
+ "generated": "2026-10-18",
+ "view_mm": [
+  82.12,
+  77.12,
+  35.76,
+  45.76
+ ],
+ "size_mm": [
+  34.0,
+  44.0
+ ],
+ "round": null,
+ "polar": null,
+ "thickness": 1.6,
+ "plate": "#c8c8c8",
+ "body": "body.svg",
+ "vias": 212,
+ "nets": 42,
+ "footprints": 66,
+ "front": 23,
+ "back": 43,
+ "tracks": 516,
+ "length_mm": 693.8,
+ "layers": [
+  {
+   "name": "F.Cu",
+   "slug": "f",
+   "kind": "copper",
+   "file": "f.svg",
+   "color": "#C83434",
+   "note": "Front. Every part, the RM2's and RP2350's escapes, the hand-laid QSPI lines, the GND pour. The strip across the top with nothing on any layer is the RM2's RF keep-out.",
+   "tracks": 242,
+   "length_mm": 256.9,
+   "pads": 171,
+   "zones": [
+    "GND"
+   ]
+  },
+  {
+   "name": "In1.Cu",
+   "slug": "in1",
+   "kind": "copper",
+   "file": "in1.svg",
+   "color": "#7FC87F",
+   "note": "Solid ground, directly under the front: the return for the radio and for every escape. No wires on it.",
+   "tracks": 0,
+   "length_mm": 0.0,
+   "pads": 11,
+   "zones": [
+    "GND"
+   ]
+  },
+  {
+   "name": "In2.Cu",
+   "slug": "in2",
+   "kind": "copper",
+   "file": "in2.svg",
+   "color": "#CE7D2C",
+   "note": "The signal layer: the QSPI lanes to the flash, PG_N down the left side, and whatever would not fit outside.",
+   "tracks": 62,
+   "length_mm": 178.9,
+   "pads": 11,
+   "zones": [
+    "3V3_SYS"
+   ]
+  },
+  {
+   "name": "B.Cu",
+   "slug": "b",
+   "kind": "copper",
+   "file": "b.svg",
+   "color": "#4D7FC4",
+   "note": "Back. The pad rows, the wiring between the front parts, the GND pour. (The nRF board: the passives and the Tag-Connect pads.)",
+   "tracks": 212,
+   "length_mm": 258.0,
+   "pads": 101,
+   "zones": [
+    "GND"
+   ]
+  },
+  {
+   "name": "Edge.Cuts",
+   "slug": "edge",
+   "kind": "outline",
+   "file": "edge.svg",
+   "color": "#D0D2CD",
+   "note": "28 x 44 mm (the nRF board 34 x 44), 2 mm corners, no mounting holes."
+  },
+  {
+   "name": "F.Silkscreen",
+   "slug": "silk_f",
+   "kind": "silk",
+   "file": "silk_f.svg",
+   "color": "#F2EDA1",
+   "note": "Silkscreen, front: reference designators and markings as printed."
+  },
+  {
+   "name": "B.Silkscreen",
+   "slug": "silk_b",
+   "kind": "silk",
+   "file": "silk_b.svg",
+   "color": "#E8B2A7",
+   "note": "Silkscreen, back, seen through the board (mirror the view to read it)."
+  },
+  {
+   "name": "F.Fab",
+   "slug": "fab_f",
+   "kind": "fab",
+   "file": "fab_f.svg",
+   "color": "#DDE1E8",
+   "note": "Part bodies and reference designators, front: what each piece of copper belongs to."
+  },
+  {
+   "name": "B.Fab",
+   "slug": "fab_b",
+   "kind": "fab",
+   "file": "fab_b.svg",
+   "color": "#96A2CE",
+   "note": "Part bodies and reference designators, back."
+  }
+ ]
+}

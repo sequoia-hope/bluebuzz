@@ -70,7 +70,7 @@ def main():
     # board file with a .step sibling that --subst-models picks up
     step = ROOT / "out" / "bluebuzz-rm2.step"
     run(["kicad-cli", "pcb", "export", "step", "--subst-models", "-f",
-         "--include-tracks", "--include-zones", "-o", str(step), str(PCB)])
+         "-o", str(step), str(PCB)])
     print(f"wrote {step}")
 
     cir = build_circuit()

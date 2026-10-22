@@ -1,0 +1,27 @@
+{
+ "board": "bluebuzz.kicad_pcb",
+ "generated": "2026-10-18",
+ "glb": "board.glb",
+ "bytes": 4911856,
+ "kicad_bytes": 19149932,
+ "parts": 66,
+ "modelled": 65,
+ "no_model": [
+  "J3"
+ ],
+ "missing": [],
+ "empty": [],
+ "substituted": [],
+ "resolved": [],
+ "flattened": [],
+ "boxed": [],
+ "why": {},
+ "missing_models": [],
+ "boxes": [],
+ "resolved_how": {
+  "legacy": 0,
+  "found": 0
+ },
+ "triangles": 336497,
+ "primitives": 244
+}

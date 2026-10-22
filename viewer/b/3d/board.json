@@ -1,0 +1,48 @@
+{
+ "board": "bluebuzz-rm2.kicad_pcb",
+ "generated": "2026-10-22",
+ "glb": "board.glb",
+ "bytes": 7450748,
+ "kicad_bytes": 27796444,
+ "parts": 109,
+ "modelled": 102,
+ "no_model": [
+  "D2",
+  "J2",
+  "J3",
+  "J4",
+  "J5",
+  "U7"
+ ],
+ "missing": [
+  "L1"
+ ],
+ "empty": [],
+ "substituted": [],
+ "resolved": [],
+ "flattened": [],
+ "boxed": [
+  "L1"
+ ],
+ "why": {
+  "L1": "no such file"
+ },
+ "missing_models": [
+  "${KICAD7_3DMODEL_DIR}/Inductor_SMD.3dshapes/AOTA-B201610SR47MT.STEP"
+ ],
+ "boxes": [
+  {
+   "model": "${KICAD7_3DMODEL_DIR}/Inductor_SMD.3dshapes/AOTA-B201610SR47MT.STEP",
+   "why": "no such file",
+   "refs": [
+    "L1"
+   ]
+  }
+ ],
+ "resolved_how": {
+  "legacy": 0,
+  "found": 0
+ },
+ "triangles": 524563,
+ "primitives": 369
+}

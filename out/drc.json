@@ -1,7 +1,7 @@
 {
     "$schema": "https://schemas.kicad.org/drc.v1.json",
     "coordinate_units": "mm",
-    "date": "2026-10-19T00:26:03-0700",
+    "date": "2026-10-22T00:52:14-0700",
     "included_severities": [
         "error",
         "warning",
@@ -10,26 +10,602 @@
     "kicad_version": "9.0.8",
     "schematic_parity": [],
     "source": "bluebuzz-rm2.kicad_pcb",
-    "unconnected_items": [],
+    "unconnected_items": [
+        {
+            "description": "Missing connection between items",
+            "items": [
+                {
+                    "description": "Pad 2 [3V3A] of R85 on F.Cu",
+                    "pos": {
+                        "x": 107.1,
+                        "y": 110.11
+                    },
+                    "uuid": "b003f1a2-7ead-4296-92c8-9b226d8e0939"
+                },
+                {
+                    "description": "Pad 44 [3V3A] of U1 on F.Cu",
+                    "pos": {
+                        "x": 105.85,
+                        "y": 109.9
+                    },
+                    "uuid": "cb436bb2-d163-47fa-a4c9-f9cb937a9d11"
+                }
+            ],
+            "severity": "error",
+            "type": "unconnected_items"
+        },
+        {
+            "description": "Missing connection between items",
+            "items": [
+                {
+                    "description": "Track [3V3_SENS] on B.Cu, length 0.2000 mm",
+                    "pos": {
+                        "x": 91.05,
+                        "y": 111.15
+                    },
+                    "uuid": "f1571af8-7a19-4b09-afc7-9b08b418996e"
+                },
+                {
+                    "description": "Pad 6 [3V3_SENS] of U22 on B.Cu",
+                    "pos": {
+                        "x": 90.725,
+                        "y": 112.325
+                    },
+                    "uuid": "056bfb88-0c2f-4f2e-8445-525233534304"
+                }
+            ],
+            "severity": "error",
+            "type": "unconnected_items"
+        },
+        {
+            "description": "Missing connection between items",
+            "items": [
+                {
+                    "description": "Track [3V3_SENS] on B.Cu, length 0.1414 mm",
+                    "pos": {
+                        "x": 108.15,
+                        "y": 111.85
+                    },
+                    "uuid": "72591df8-13a4-4ce5-b56f-26565e69ccf3"
+                },
+                {
+                    "description": "Track [3V3_SENS] on B.Cu, length 0.9500 mm",
+                    "pos": {
+                        "x": 105.4625,
+                        "y": 103.65
+                    },
+                    "uuid": "670e8b79-78cf-4b6b-86ad-238175b28f7c"
+                }
+            ],
+            "severity": "error",
+            "type": "unconnected_items"
+        },
+        {
+            "description": "Missing connection between items",
+            "items": [
+                {
+                    "description": "Zone 'gnd_front' [GND] on F.Cu, priority 0",
+                    "pos": {
+                        "x": 92.570364,
+                        "y": 88.399836
+                    },
+                    "uuid": "5f97e4a3-8f48-41b9-8363-ebdd0d0ac2db"
+                },
+                {
+                    "description": "Pad 4 [GND] of U7 on F.Cu",
+                    "pos": {
+                        "x": 93.25,
+                        "y": 93.6
+                    },
+                    "uuid": "e8447736-2cb4-45a7-b288-7cf2b3f30f3a"
+                }
+            ],
+            "severity": "error",
+            "type": "unconnected_items"
+        },
+        {
+            "description": "Missing connection between items",
+            "items": [
+                {
+                    "description": "Zone 'gnd_in1' [GND] on In1.Cu, priority 0",
+                    "pos": {
+                        "x": 92.668123,
+                        "y": 88.420891
+                    },
+                    "uuid": "571d7974-67ff-4e34-a105-86f35e215a91"
+                },
+                {
+                    "description": "Zone 'gnd_back' [GND] on B.Cu, priority 0",
+                    "pos": {
+                        "x": 92.570364,
+                        "y": 88.399836
+                    },
+                    "uuid": "25f94eed-335a-4e65-8c0f-431965da5263"
+                }
+            ],
+            "severity": "error",
+            "type": "unconnected_items"
+        },
+        {
+            "description": "Missing connection between items",
+            "items": [
+                {
+                    "description": "Track [SENS_EN] on F.Cu, length 0.1131 mm",
+                    "pos": {
+                        "x": 98.95,
+                        "y": 111.9
+                    },
+                    "uuid": "4a8784f6-ef66-4b15-b927-f8a8d03e0390"
+                },
+                {
+                    "description": "Track [SENS_EN] on B.Cu, length 0.8019 mm",
+                    "pos": {
+                        "x": 107.49,
+                        "y": 106.9
+                    },
+                    "uuid": "b9f9afba-35fb-4cba-a757-e87cb07e027e"
+                }
+            ],
+            "severity": "error",
+            "type": "unconnected_items"
+        },
+        {
+            "description": "Missing connection between items",
+            "items": [
+                {
+                    "description": "Track [SWDIO] on F.Cu, length 0.5300 mm",
+                    "pos": {
+                        "x": 103.2,
+                        "y": 115.75
+                    },
+                    "uuid": "b99b0ee4-163b-448f-b919-114aecce91ab"
+                },
+                {
+                    "description": "Track [SWDIO] on B.Cu, length 0.5535 mm",
+                    "pos": {
+                        "x": 99.1844,
+                        "y": 99.6081
+                    },
+                    "uuid": "ac09b1a7-4764-45c3-9faa-3eb2842cc9c3"
+                }
+            ],
+            "severity": "error",
+            "type": "unconnected_items"
+        },
+        {
+            "description": "Missing connection between items",
+            "items": [
+                {
+                    "description": "Track [TAC_SDO] on F.Cu, length 1.4516 mm",
+                    "pos": {
+                        "x": 99.4306,
+                        "y": 117.371
+                    },
+                    "uuid": "04bb56b0-fd12-438f-8763-fcaeec712a52"
+                },
+                {
+                    "description": "Pad 5 [TAC_SDO] of U22 on B.Cu",
+                    "pos": {
+                        "x": 90.725,
+                        "y": 112.975
+                    },
+                    "uuid": "713041b3-8bcc-4433-be06-413247a3a0f6"
+                }
+            ],
+            "severity": "error",
+            "type": "unconnected_items"
+        },
+        {
+            "description": "Missing connection between items",
+            "items": [
+                {
+                    "description": "Pad 3 [TS] of J2 on B.Cu",
+                    "pos": {
+                        "x": 97.65,
+                        "y": 101.05
+                    },
+                    "uuid": "b60fcc48-dbdf-4a23-861a-51b53d0ae592"
+                },
+                {
+                    "description": "Track [TS] on F.Cu, length 1.2425 mm",
+                    "pos": {
+                        "x": 93.25,
+                        "y": 105.2375
+                    },
+                    "uuid": "1aaab65f-2b10-4a64-9fb2-67766cc435a2"
+                }
+            ],
+            "severity": "error",
+            "type": "unconnected_items"
+        },
+        {
+            "description": "Missing connection between items",
+            "items": [
+                {
+                    "description": "Zone 'pwr_vbat' [VBAT] on F.Cu, priority 2",
+                    "pos": {
+                        "x": 93.6,
+                        "y": 105.087499
+                    },
+                    "uuid": "77cde3ec-f4ba-4e25-aa86-c77f8d3fd8e8"
+                },
+                {
+                    "description": "Zone 'pwr_vbat' [VBAT] on F.Cu, priority 2",
+                    "pos": {
+                        "x": 93.6,
+                        "y": 105.087499
+                    },
+                    "uuid": "77cde3ec-f4ba-4e25-aa86-c77f8d3fd8e8"
+                }
+            ],
+            "severity": "error",
+            "type": "unconnected_items"
+        },
+        {
+            "description": "Missing connection between items",
+            "items": [
+                {
+                    "description": "Pad 1 [VBAT] of J2 on B.Cu",
+                    "pos": {
+                        "x": 97.65,
+                        "y": 105.05
+                    },
+                    "uuid": "b8b22a4f-330b-46ae-9ef8-0d5ae7d72a14"
+                },
+                {
+                    "description": "Pad 1 [VBAT] of R60 on F.Cu",
+                    "pos": {
+                        "x": 110.5,
+                        "y": 112.89
+                    },
+                    "uuid": "7d34ec70-9018-4800-8db5-cbf7e48e6ff8"
+                }
+            ],
+            "severity": "error",
+            "type": "unconnected_items"
+        },
+        {
+            "description": "Missing connection between items",
+            "items": [
+                {
+                    "description": "Track [WL_DATA] on F.Cu, length 0.1273 mm",
+                    "pos": {
+                        "x": 93.25,
+                        "y": 95.1
+                    },
+                    "uuid": "b28fd963-40db-4462-8f65-764424eeabbc"
+                },
+                {
+                    "description": "Track [WL_DATA] on F.Cu, length 0.1000 mm",
+                    "pos": {
+                        "x": 101.75,
+                        "y": 101.35
+                    },
+                    "uuid": "263daf4a-6cf5-477e-bfc4-67448c4bcdd4"
+                }
+            ],
+            "severity": "error",
+            "type": "unconnected_items"
+        },
+        {
+            "description": "Missing connection between items",
+            "items": [
+                {
+                    "description": "Pad 41 [WL_ON] of U1 on F.Cu",
+                    "pos": {
+                        "x": 105.85,
+                        "y": 111.1
+                    },
+                    "uuid": "8c7723c7-04f2-403a-bb9c-76e57771b419"
+                },
+                {
+                    "description": "Track [WL_ON] on F.Cu, length 1.5000 mm",
+                    "pos": {
+                        "x": 103.0,
+                        "y": 99.4
+                    },
+                    "uuid": "0b290bca-1796-4aec-8aa6-5dd635f784e7"
+                }
+            ],
+            "severity": "error",
+            "type": "unconnected_items"
+        }
+    ],
     "violations": [
         {
             "description": "Silkscreen overlap",
             "items": [
                 {
-                    "description": "Segment of R13 on F.Silkscreen",
+                    "description": "Polygon on B.Silkscreen",
                     "pos": {
-                        "x": 89.853641,
-                        "y": 88.82
+                        "x": 109.6,
+                        "y": 102.5
                     },
-                    "uuid": "39f033f5-2867-4141-a690-3723c1f36f00"
+                    "uuid": "0e1f08f9-0e8f-4390-a7a5-b83cd12bdfd1"
                 },
                 {
-                    "description": "Polygon of U2 on F.Silkscreen",
+                    "description": "Segment of R50 on B.Silkscreen",
                     "pos": {
-                        "x": 89.75,
-                        "y": 88.64
+                        "x": 107.846359,
+                        "y": 107.28
                     },
-                    "uuid": "3c070b5d-abcb-406e-ae2d-942e97b1988f"
+                    "uuid": "d3e6b8c2-4c5d-4fd8-89e3-707addba35fd"
+                }
+            ],
+            "severity": "warning",
+            "type": "silk_overlap"
+        },
+        {
+            "description": "Silkscreen overlap",
+            "items": [
+                {
+                    "description": "Polygon on B.Silkscreen",
+                    "pos": {
+                        "x": 109.6,
+                        "y": 102.5
+                    },
+                    "uuid": "0e1f08f9-0e8f-4390-a7a5-b83cd12bdfd1"
+                },
+                {
+                    "description": "Polygon of U5 on B.Silkscreen",
+                    "pos": {
+                        "x": 108.05,
+                        "y": 103.09
+                    },
+                    "uuid": "1775eaff-28a7-4826-9b12-de5b64bceb20"
+                }
+            ],
+            "severity": "warning",
+            "type": "silk_overlap"
+        },
+        {
+            "description": "Silkscreen overlap",
+            "items": [
+                {
+                    "description": "Polygon on B.Silkscreen",
+                    "pos": {
+                        "x": 109.6,
+                        "y": 102.5
+                    },
+                    "uuid": "0e1f08f9-0e8f-4390-a7a5-b83cd12bdfd1"
+                },
+                {
+                    "description": "Segment of U5 on B.Silkscreen",
+                    "pos": {
+                        "x": 105.69,
+                        "y": 103.04
+                    },
+                    "uuid": "915174f3-92b6-4681-895e-b0eadaa835ac"
+                }
+            ],
+            "severity": "warning",
+            "type": "silk_overlap"
+        },
+        {
+            "description": "Silkscreen overlap",
+            "items": [
+                {
+                    "description": "Segment of U5 on B.Silkscreen",
+                    "pos": {
+                        "x": 107.51,
+                        "y": 103.04
+                    },
+                    "uuid": "06b5345f-d2df-4089-99f1-58b4e1fc6790"
+                },
+                {
+                    "description": "Polygon on B.Silkscreen",
+                    "pos": {
+                        "x": 109.6,
+                        "y": 102.5
+                    },
+                    "uuid": "0e1f08f9-0e8f-4390-a7a5-b83cd12bdfd1"
+                }
+            ],
+            "severity": "warning",
+            "type": "silk_overlap"
+        },
+        {
+            "description": "Silkscreen overlap",
+            "items": [
+                {
+                    "description": "Polygon on B.Silkscreen",
+                    "pos": {
+                        "x": 109.6,
+                        "y": 102.5
+                    },
+                    "uuid": "0e1f08f9-0e8f-4390-a7a5-b83cd12bdfd1"
+                },
+                {
+                    "description": "Segment of U5 on B.Silkscreen",
+                    "pos": {
+                        "x": 107.51,
+                        "y": 103.09
+                    },
+                    "uuid": "3fb6bf13-f73d-487b-996f-2ab89c8df1e1"
+                }
+            ],
+            "severity": "warning",
+            "type": "silk_overlap"
+        },
+        {
+            "description": "Silkscreen overlap",
+            "items": [
+                {
+                    "description": "Polygon on B.Silkscreen",
+                    "pos": {
+                        "x": 109.6,
+                        "y": 102.5
+                    },
+                    "uuid": "0e1f08f9-0e8f-4390-a7a5-b83cd12bdfd1"
+                },
+                {
+                    "description": "Segment of U5 on B.Silkscreen",
+                    "pos": {
+                        "x": 105.69,
+                        "y": 106.16
+                    },
+                    "uuid": "e6088893-6dbf-4073-a8db-50409d81229a"
+                }
+            ],
+            "severity": "warning",
+            "type": "silk_overlap"
+        },
+        {
+            "description": "Silkscreen overlap",
+            "items": [
+                {
+                    "description": "Segment of U5 on B.Silkscreen",
+                    "pos": {
+                        "x": 107.51,
+                        "y": 106.16
+                    },
+                    "uuid": "0b1519b5-39c8-4402-b44b-435dbb6b6060"
+                },
+                {
+                    "description": "Polygon on B.Silkscreen",
+                    "pos": {
+                        "x": 109.6,
+                        "y": 102.5
+                    },
+                    "uuid": "0e1f08f9-0e8f-4390-a7a5-b83cd12bdfd1"
+                }
+            ],
+            "severity": "warning",
+            "type": "silk_overlap"
+        },
+        {
+            "description": "Silkscreen overlap",
+            "items": [
+                {
+                    "description": "Polygon on B.Silkscreen",
+                    "pos": {
+                        "x": 109.6,
+                        "y": 102.5
+                    },
+                    "uuid": "0e1f08f9-0e8f-4390-a7a5-b83cd12bdfd1"
+                },
+                {
+                    "description": "Segment of U5 on B.Silkscreen",
+                    "pos": {
+                        "x": 105.69,
+                        "y": 106.11
+                    },
+                    "uuid": "8575e199-9ed3-4711-a303-e702c8f04b8a"
+                }
+            ],
+            "severity": "warning",
+            "type": "silk_overlap"
+        },
+        {
+            "description": "Silkscreen overlap",
+            "items": [
+                {
+                    "description": "Polygon on B.Silkscreen",
+                    "pos": {
+                        "x": 109.6,
+                        "y": 102.5
+                    },
+                    "uuid": "0e1f08f9-0e8f-4390-a7a5-b83cd12bdfd1"
+                },
+                {
+                    "description": "Segment of R50 on B.Silkscreen",
+                    "pos": {
+                        "x": 107.846359,
+                        "y": 106.52
+                    },
+                    "uuid": "4fd5fcb8-5c2b-444c-9d87-fd9d2e7c5a16"
+                }
+            ],
+            "severity": "warning",
+            "type": "silk_overlap"
+        },
+        {
+            "description": "Silkscreen overlap",
+            "items": [
+                {
+                    "description": "Polygon on B.Silkscreen",
+                    "pos": {
+                        "x": 109.6,
+                        "y": 102.5
+                    },
+                    "uuid": "0e1f08f9-0e8f-4390-a7a5-b83cd12bdfd1"
+                },
+                {
+                    "description": "Segment of C51 on B.Silkscreen",
+                    "pos": {
+                        "x": 108.99,
+                        "y": 104.25942
+                    },
+                    "uuid": "89613c72-46fa-455a-a143-23cad6e34b4f"
+                }
+            ],
+            "severity": "warning",
+            "type": "silk_overlap"
+        },
+        {
+            "description": "Silkscreen overlap",
+            "items": [
+                {
+                    "description": "Polygon on B.Silkscreen",
+                    "pos": {
+                        "x": 109.6,
+                        "y": 102.5
+                    },
+                    "uuid": "0e1f08f9-0e8f-4390-a7a5-b83cd12bdfd1"
+                },
+                {
+                    "description": "Segment of U3 on B.Silkscreen",
+                    "pos": {
+                        "x": 104.49,
+                        "y": 102.31
+                    },
+                    "uuid": "d9dfa1f3-4eea-4324-81a3-99381dee9fa2"
+                }
+            ],
+            "severity": "warning",
+            "type": "silk_overlap"
+        },
+        {
+            "description": "Silkscreen overlap",
+            "items": [
+                {
+                    "description": "Polygon on B.Silkscreen",
+                    "pos": {
+                        "x": 109.6,
+                        "y": 102.5
+                    },
+                    "uuid": "0e1f08f9-0e8f-4390-a7a5-b83cd12bdfd1"
+                },
+                {
+                    "description": "Segment of U3 on B.Silkscreen",
+                    "pos": {
+                        "x": 106.31,
+                        "y": 102.31
+                    },
+                    "uuid": "d03d4345-4064-49cc-9975-347aac4aa0f0"
+                }
+            ],
+            "severity": "warning",
+            "type": "silk_overlap"
+        },
+        {
+            "description": "Silkscreen overlap",
+            "items": [
+                {
+                    "description": "PCB text 'PROBE' on B.Silkscreen",
+                    "pos": {
+                        "x": 98.8,
+                        "y": 94.5
+                    },
+                    "uuid": "1e72c89f-3000-4a2f-a120-453d3bd07254"
+                },
+                {
+                    "description": "Segment of J6 on B.Silkscreen",
+                    "pos": {
+                        "x": 97.24,
+                        "y": 95.19
+                    },
+                    "uuid": "cea089f4-d3cb-42dc-9e65-4c6a253ec1c9"
                 }
             ],
             "severity": "warning",
@@ -39,12 +615,12 @@
             "description": "Silkscreen clipped by solder mask",
             "items": [
                 {
-                    "description": "PCB text 'ST' on F.Silkscreen",
+                    "description": "Polygon on B.Silkscreen",
                     "pos": {
-                        "x": 87.7,
-                        "y": 112.85
+                        "x": 109.6,
+                        "y": 102.5
                     },
-                    "uuid": "5f45b727-fb62-46f6-8ab5-ed4fe8902c52"
+                    "uuid": "0e1f08f9-0e8f-4390-a7a5-b83cd12bdfd1"
                 }
             ],
             "severity": "warning",
@@ -54,12 +630,12 @@
             "description": "Silkscreen clipped by solder mask",
             "items": [
                 {
-                    "description": "Circle of U7 on F.Silkscreen",
+                    "description": "PCB text 'PROBE' on B.Silkscreen",
                     "pos": {
-                        "x": 97.45,
-                        "y": 83.7
+                        "x": 98.8,
+                        "y": 94.5
                     },
-                    "uuid": "538e56ee-5ae4-4491-91f8-7ff3bee06bf4"
+                    "uuid": "1e72c89f-3000-4a2f-a120-453d3bd07254"
                 }
             ],
             "severity": "warning",
@@ -69,12 +645,27 @@
             "description": "Silkscreen clipped by solder mask",
             "items": [
                 {
-                    "description": "Circle of L1 on F.Silkscreen",
+                    "description": "PCB text 'BAT' on B.Silkscreen",
                     "pos": {
-                        "x": 105.9,
-                        "y": 95.0
+                        "x": 99.7,
+                        "y": 100.0
                     },
-                    "uuid": "a4431374-8272-4585-8567-b703039ad645"
+                    "uuid": "a1693307-f422-44ef-8f82-5ddd54bb7cb5"
+                }
+            ],
+            "severity": "warning",
+            "type": "silk_over_copper"
+        },
+        {
+            "description": "Silkscreen clipped by solder mask",
+            "items": [
+                {
+                    "description": "PCB text 'bluebuzz-rm2 A' on B.Silkscreen",
+                    "pos": {
+                        "x": 100.5,
+                        "y": 119.5
+                    },
+                    "uuid": "828b359e-68ec-44c9-bbb6-a5ed6e7a143b"
                 }
             ],
             "severity": "warning",
@@ -86,33 +677,71 @@
                 {
                     "description": "Polygon of U2 on F.Silkscreen",
                     "pos": {
-                        "x": 89.75,
-                        "y": 88.64
+                        "x": 93.25,
+                        "y": 105.94
                     },
-                    "uuid": "3c070b5d-abcb-406e-ae2d-942e97b1988f"
+                    "uuid": "dbca3c6e-4bb9-4ac0-9bd2-4ffa2c91aac3"
                 }
             ],
             "severity": "warning",
             "type": "silk_over_copper"
         },
         {
+            "description": "Silkscreen clipped by solder mask",
+            "items": [
+                {
+                    "description": "Circle of U40 on F.Silkscreen",
+                    "pos": {
+                        "x": 110.6,
+                        "y": 107.55
+                    },
+                    "uuid": "f2f8b9ac-56a3-4931-8696-3945d27d802a"
+                }
+            ],
+            "severity": "warning",
+            "type": "silk_over_copper"
+        },
+        {
+            "description": "Rear solder mask aperture bridges items with different nets",
+            "items": [
+                {
+                    "description": "NPTH pad of SW1",
+                    "pos": {
+                        "x": 91.633673,
+                        "y": 122.357244
+                    },
+                    "uuid": "8dddc795-a30c-4a2c-a602-76828e6c6d46"
+                },
+                {
+                    "description": "Pad 2 [GND] of C40 on B.Cu",
+                    "pos": {
+                        "x": 91.1,
+                        "y": 122.525
+                    },
+                    "uuid": "cf19a73d-7488-49d6-9a00-efcb3f140aa1"
+                }
+            ],
+            "severity": "warning",
+            "type": "solder_mask_bridge"
+        },
+        {
             "description": "Silkscreen clipped by board edge",
             "items": [
                 {
-                    "description": "Segment on Edge.Cuts",
+                    "description": "Arc on Edge.Cuts",
                     "pos": {
-                        "x": 88.0,
-                        "y": 78.0
+                        "x": 100.0,
+                        "y": 130.839237
                     },
-                    "uuid": "1e9acbcd-d415-4bcc-8f5b-0ffe4df459a8"
+                    "uuid": "47948e1a-b7f1-4410-947a-87b385a2f1fe"
                 },
                 {
-                    "description": "Segment of U7 on F.Silkscreen",
+                    "description": "Segment of J1 on F.Silkscreen",
                     "pos": {
-                        "x": 98.55,
-                        "y": 77.9
+                        "x": 95.3,
+                        "y": 135.4
                     },
-                    "uuid": "8aaad8d7-3f80-4dd7-98fb-2109af71513f"
+                    "uuid": "54262a8b-c495-424c-9aa0-e2aac65788d7"
                 }
             ],
             "severity": "warning",
@@ -124,41 +753,110 @@
                 {
                     "description": "Arc on Edge.Cuts",
                     "pos": {
-                        "x": 112.0,
-                        "y": 80.0
+                        "x": 100.0,
+                        "y": 130.839237
                     },
-                    "uuid": "2b8312f1-4fc6-43e1-a07a-60619324dff5"
-                },
-                {
-                    "description": "Segment of U7 on F.Silkscreen",
-                    "pos": {
-                        "x": 113.25,
-                        "y": 77.9
-                    },
-                    "uuid": "85d73f8c-92af-4cbe-8bae-f9f65306bc98"
-                }
-            ],
-            "severity": "warning",
-            "type": "silk_edge_clearance"
-        },
-        {
-            "description": "Silkscreen clipped by board edge",
-            "items": [
-                {
-                    "description": "Segment on Edge.Cuts",
-                    "pos": {
-                        "x": 112.0,
-                        "y": 122.0
-                    },
-                    "uuid": "91029c38-e715-426f-81bc-915d2ad5090c"
+                    "uuid": "47948e1a-b7f1-4410-947a-87b385a2f1fe"
                 },
                 {
                     "description": "Segment of J1 on F.Silkscreen",
                     "pos": {
                         "x": 95.3,
-                        "y": 120.6
+                        "y": 137.3
                     },
-                    "uuid": "3cddd896-b7be-45b3-a739-222052c7857f"
+                    "uuid": "b12e0699-108d-43f2-b487-d2eed99c61df"
+                }
+            ],
+            "severity": "warning",
+            "type": "silk_edge_clearance"
+        },
+        {
+            "description": "Silkscreen clipped by board edge",
+            "items": [
+                {
+                    "description": "Arc on Edge.Cuts",
+                    "pos": {
+                        "x": 100.0,
+                        "y": 130.839237
+                    },
+                    "uuid": "47948e1a-b7f1-4410-947a-87b385a2f1fe"
+                },
+                {
+                    "description": "Segment of J1 on F.Silkscreen",
+                    "pos": {
+                        "x": 104.7,
+                        "y": 135.4
+                    },
+                    "uuid": "1fb7b7fd-b1cd-4989-8648-07b0d9ebcadd"
+                }
+            ],
+            "severity": "warning",
+            "type": "silk_edge_clearance"
+        },
+        {
+            "description": "Silkscreen clipped by board edge",
+            "items": [
+                {
+                    "description": "Arc on Edge.Cuts",
+                    "pos": {
+                        "x": 99.999999,
+                        "y": 90.0
+                    },
+                    "uuid": "bc611711-95f7-4588-8492-997955cf6af5"
+                },
+                {
+                    "description": "Segment of U7 on F.Silkscreen",
+                    "pos": {
+                        "x": 92.65,
+                        "y": 83.3
+                    },
+                    "uuid": "219c0b8b-4141-4e22-96b7-975ad4196554"
+                }
+            ],
+            "severity": "warning",
+            "type": "silk_edge_clearance"
+        },
+        {
+            "description": "Silkscreen clipped by board edge",
+            "items": [
+                {
+                    "description": "Arc on Edge.Cuts",
+                    "pos": {
+                        "x": 99.999999,
+                        "y": 90.0
+                    },
+                    "uuid": "bc611711-95f7-4588-8492-997955cf6af5"
+                },
+                {
+                    "description": "Segment of U7 on F.Silkscreen",
+                    "pos": {
+                        "x": 92.65,
+                        "y": 83.3
+                    },
+                    "uuid": "52b5da2b-47fa-469f-98a9-1733e14aa26d"
+                }
+            ],
+            "severity": "warning",
+            "type": "silk_edge_clearance"
+        },
+        {
+            "description": "Silkscreen clipped by board edge",
+            "items": [
+                {
+                    "description": "Arc on Edge.Cuts",
+                    "pos": {
+                        "x": 99.999999,
+                        "y": 90.0
+                    },
+                    "uuid": "bc611711-95f7-4588-8492-997955cf6af5"
+                },
+                {
+                    "description": "Segment of U7 on F.Silkscreen",
+                    "pos": {
+                        "x": 107.35,
+                        "y": 83.3
+                    },
+                    "uuid": "f0f4ae38-57ce-4e67-8a42-b8b4f5942eaf"
                 }
             ],
             "severity": "warning",
@@ -170,22 +868,52 @@
                 {
                     "description": "Segment on Edge.Cuts",
                     "pos": {
-                        "x": 112.0,
-                        "y": 122.0
+                        "x": 87.978516,
+                        "y": 121.63582
                     },
-                    "uuid": "91029c38-e715-426f-81bc-915d2ad5090c"
+                    "uuid": "0c030df2-cfd0-491d-a314-28e79223efe1"
                 },
                 {
-                    "description": "Segment of J1 on F.Silkscreen",
+                    "description": "Segment of SW1 on F.Silkscreen",
                     "pos": {
-                        "x": 104.7,
-                        "y": 120.6
+                        "x": 87.780712,
+                        "y": 121.319067
                     },
-                    "uuid": "62e5c37e-a072-4dec-b272-a699712e2762"
+                    "uuid": "426f7d6e-b0a5-475f-a176-bd7bfb709e97"
                 }
             ],
             "severity": "warning",
             "type": "silk_edge_clearance"
+        },
+        {
+            "description": "Track has unconnected end",
+            "items": [
+                {
+                    "description": "Track [SENS_EN] on F.Cu, length 0.5700 mm",
+                    "pos": {
+                        "x": 98.87,
+                        "y": 111.82
+                    },
+                    "uuid": "8262e74b-784d-489a-a7bb-1abd0498db68"
+                }
+            ],
+            "severity": "warning",
+            "type": "track_dangling"
+        },
+        {
+            "description": "Track has unconnected end",
+            "items": [
+                {
+                    "description": "Track [SWDIO] on F.Cu, length 0.0800 mm",
+                    "pos": {
+                        "x": 103.89,
+                        "y": 116.97
+                    },
+                    "uuid": "cc9f59f2-bb9a-4965-a3b5-61f4f21a8c04"
+                }
+            ],
+            "severity": "warning",
+            "type": "track_dangling"
         }
     ]
 }

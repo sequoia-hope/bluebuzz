@@ -1,0 +1,18 @@
+{
+ "title": "bluebuzz",
+ "built": "2026-10-22T01:20:20",
+ "config": "pcbview.toml",
+ "boards": [
+  {
+   "id": "b",
+   "name": "bluebuzz-rm2 rev A",
+   "page": "index.html",
+   "embed": "index.html",
+   "source": {
+    "kind": "file",
+    "pcb": "out/bluebuzz-rm2.kicad_pcb",
+    "sch": "out/bluebuzz-rm2.kicad_sch"
+   }
+  }
+ ]
+}

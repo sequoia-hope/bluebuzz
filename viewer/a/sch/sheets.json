@@ -1,0 +1,20 @@
+{
+ "schematic": "bluebuzz.kicad_sch",
+ "pdf": "bluebuzz.pdf",
+ "sheets": [
+  {
+   "sheet": "root",
+   "title": "bluebuzz",
+   "desc": "the whole design on one sheet: USB-C and ESD, the BQ24074 charger, the LDO, two motor channels, the switched sensor rail with the HX711 and the load-cell port, the pressure port, the nRF52840 module with its LFXO, SWD, battery sense and UI \u00b7 66 symbols",
+   "file": "bluebuzz.svg",
+   "source": "bluebuzz.kicad_sch",
+   "paper": "User",
+   "page": "1",
+   "symbols": 66,
+   "size_mm": [
+    954.9892,
+    444.9826
+   ]
+  }
+ ]
+}

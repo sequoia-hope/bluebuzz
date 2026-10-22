@@ -1467,7 +1467,9 @@ def main(attempt=0):
     # TS (pin 1 -> R13) is laid first, down the zone's west side, so the
     # zone fills round it.
     r13 = rel(pad_net(fps["R13"], "TS").GetPosition())
+    v_ts = (P2[1][0], 5.85)
     rt.path([P2[1], (P2[1][0], r13[1]), r13], "TS", width=0.15, chamfer=0.2)
+    rt.via(v_ts, "TS")
     j2 = pad_of(fps["J2"], 1).GetBoundingBox()
     jx0, jy0 = to_mm(j2.GetLeft()) - CX, to_mm(j2.GetTop()) - CY
     jx1, jy1 = to_mm(j2.GetRight()) - CX, to_mm(j2.GetBottom()) - CY
@@ -1475,17 +1477,19 @@ def main(attempt=0):
     for vy in (y_hi, y_hi + 0.50):
         for vx in (jx0 + 0.50, jx0 + 1.10):
             rt.via((vx, vy), "VBAT", drill=0.25, size=0.5)
+    rt.path([P2[3], (P2[3][0], 5.98), (-4.40, 5.98), (-3.50, 5.05), (jx0 + 0.50, y_hi + 0.50)],
+            "VBAT", width=0.25, chamfer=0.0)
     c15 = pad_net(fps["C15"], "VBAT").GetBoundingBox()
     c12 = pad_net(fps["C12"], "VBAT").GetBoundingBox()
     bx0 = jx0 - 0.05                               # east of U2's right pins (-4.12), EN2 (-3.91), PG_N (-4.06)
     bx1 = max(jx0 + 1.40, to_mm(c15.GetRight()) - CX + 0.15, to_mm(c12.GetRight()) - CX + 0.15)
     by0 = min(y_hi - 0.3, to_mm(c15.GetTop()) - CY - 0.15)
-    by1_e = y_hi + 0.65                            # 5.15: clears C91 (y>=5.49) and vg (-3.80, 5.35)
-    by1_w = P2[2][1] + 0.31                        # 5.55: covers U2 pins 2+3 on the west (x <= -4.15)
-    yb = P2[3][1] - 0.15                           # 4.90: steps into J2.1 above vg (-3.80, 5.35)
+    by1_e = y_hi + 0.65                            # 5.15: clears C91 (y>=5.49)
+    by1_w = 6.12                                   # passes below U2.4 GND (y<=5.67) and above R13.2 GND (y>=6.28)
+    yb = P2[3][1] - 0.15                           # 5.09: steps into J2.1
     z = rt.zone(pcbnew.F_Cu, "VBAT", [(P2[2][0] - 0.15, yb), (bx0, yb), (bx0, by0),
-                                       (bx1, by0), (bx1, by1_e), (-4.15, by1_e),
-                                       (-4.15, by1_w), (P2[2][0] - 0.15, by1_w)],
+                                       (bx1, by0), (bx1, by1_e), (-3.40, by1_e),
+                                       (-4.25, by1_w), (-6.15, by1_w), (P2[2][0] - 0.15, 5.50)],
                 priority=2, name="pwr_vbat", full=True)
     z.SetLocked(True)
 
@@ -1729,6 +1733,7 @@ def main(attempt=0):
     fan = ((25, "SWDIO", 0.53, 0.69, (0.0, 0.08)), (26, "RUN", 0.41, 0.87, (0.0, 0.13)),
            (27, "TAC_CS4", 0.37, 1.11, (0.0, 0.43)), (28, "MOTOR2_PWM", 0.37, 1.17, (0.0, 0.79)),
            (29, "IMU_INT2", 0.37, 0.75, (0.18, 0.0)))
+    fan_vias = {}
     for num, net, dy, run, (vx, vy) in fan:
         p = rel(pad_of(fps["U1"], num).GetPosition())
         a = (p[0], p[1] + dy)
@@ -1736,6 +1741,13 @@ def main(attempt=0):
         v = (b[0] + vx, b[1] + vy)
         rt.path([p, a, b, v], net, width=0.15, chamfer=0.0)
         rt.via(v, net)
+        fan_vias[net] = v
+    # 3V3A (pin 44 -> R85.2 -> C85.1) locked on F.Cu before PDM_CLK/PDM_DATA route
+    p44u = rel(pad_of(fps["U1"], 44).GetPosition())
+    r85_a = rel(pad_net(fps["R85"], "3V3A").GetPosition())
+    c85_a = rel(pad_net(fps["C85"], "3V3A").GetPosition())
+    rt.path([p44u, (r85_a[0] - abs(r85_a[1] - p44u[1]), p44u[1]), r85_a], "3V3A", width=0.15, chamfer=0.0)
+    rt.path([r85_a, (c85_a[0] - abs(c85_a[1] - r85_a[1]), r85_a[1]), c85_a], "3V3A", width=0.15, chamfer=0.0)
 
     # ---- pre-route: the USB pair, receptacle joins -> R3/R4, on B.Cu ----
     dpv = v6
@@ -1935,7 +1947,7 @@ def main(attempt=0):
         nv = preroute(board, design, "USB_DM", (dma, every), (r4, every), avoid=avoid_dm)
     print(f"USB_DM: {'no path' if nv is None else f'{nv} vias'}")
 
-    # WL_DATA (gSPI data, R81 -> pin 4) first so WL_CS/WL_CLK don't wall off R81 or pin 4
+    # WL_DATA (gSPI data, R81 -> pin 4 and U7.5 -> R81) first so WL_CS/WL_CLK don't wall off R81 or pin 4
     r81 = rel(pad_net(fps["R81"], "WL_DATA").GetPosition())
     p4 = rel(pad_of(fps["U1"], 4).GetPosition())
     nv = preroute(board, design, "WL_DATA", (r81, [pcbnew.F_Cu]), (p4, [pcbnew.F_Cu]),
@@ -1943,6 +1955,9 @@ def main(attempt=0):
     if nv is None:
         nv = preroute(board, design, "WL_DATA", (r81, [pcbnew.F_Cu]), (p4, [pcbnew.F_Cu]))
     print(f"WL_DATA: {'no path' if nv is None else f'{nv} vias'}")
+    p5_u7 = rel(pad_of(fps["U7"], 5).GetPosition())
+    nv = preroute(board, design, "WL_DATA", (p5_u7, [pcbnew.F_Cu]), (r81, [pcbnew.F_Cu]))
+    print(f"WL_DATA (U7.5->R81): {'no path' if nv is None else f'{nv} vias'}")
 
     # PG_N, WL_CS, WL_CLK via grid router
     nv = preroute(board, design, "PG_N", (v1_pg, every), (v2_pg, every))
@@ -1964,10 +1979,16 @@ def main(attempt=0):
     print(f"PDM_CLK: {'no path' if nv is None else f'{nv} vias'}")
     p42u = rel(pad_of(fps["U1"], 42).GetPosition())
     u40_dat = rel(pad_net(fps["U40"], "PDM_DATA").GetPosition())
-    nv = preroute(board, design, "PDM_DATA", (p42u, [pcbnew.F_Cu]), (u40_dat, [pcbnew.F_Cu]), layers=[pcbnew.F_Cu])
+    nv = preroute(board, design, "PDM_DATA", (p42u, [pcbnew.F_Cu]), (u40_dat, [pcbnew.F_Cu]), layers=[pcbnew.F_Cu],
+                  avoid=[(pcbnew.F_Cu, 5.8, 10.95, 7.0, 11.4)])
     if nv is None:
         nv = preroute(board, design, "PDM_DATA", (p42u, [pcbnew.F_Cu]), (u40_dat, [pcbnew.F_Cu]))
     print(f"PDM_DATA: {'no path' if nv is None else f'{nv} vias'}")
+    # WL_ON (pin 41 -> U7.12)
+    p41u = rel(pad_of(fps["U1"], 41).GetPosition())
+    u7_12 = rel(pad_of(fps["U7"], 12).GetPosition())
+    nv = preroute(board, design, "WL_ON", (p41u, [pcbnew.F_Cu]), (u7_12, [pcbnew.F_Cu]))
+    print(f"WL_ON: {'no path' if nv is None else f'{nv} vias'}")
 
     # TAC_CS2 (pin 18's escape via -> the East sensor U21) and TAC_CS3 (pin 19's escape via -> the West sensor U22)
     u21 = rel(pad_net(fps["U21"], "TAC_CS2").GetPosition())
@@ -1995,6 +2016,36 @@ def main(attempt=0):
             sp = rel(pad_of(sf, pn).GetPosition())
             preroute(board, design, "3V3_SENS", (sp, [pcbnew.B_Cu]), (cp, [pcbnew.B_Cu]),
                      layers=[pcbnew.B_Cu], avoid=av_s)
+    # 3V3_SENS trunk from U5.5/C52 to C121 and C122
+    u5_3v3s = rel(pad_of(fps["U5"], 5).GetPosition())
+    u5_3v3s6 = rel(pad_of(fps["U5"], 6).GetPosition())
+    c52_s = rel(pad_net(fps["C52"], "3V3_SENS").GetPosition())
+    c121_s = rel(pad_net(fps["C121"], "3V3_SENS").GetPosition())
+    c122_s = rel(pad_net(fps["C122"], "3V3_SENS").GetPosition())
+    preroute(board, design, "3V3_SENS", (u5_3v3s, [pcbnew.B_Cu]), (u5_3v3s6, [pcbnew.B_Cu]), layers=[pcbnew.B_Cu])
+    preroute(board, design, "3V3_SENS", (u5_3v3s6, [pcbnew.B_Cu]), (c52_s, [pcbnew.B_Cu]))
+    nv = preroute(board, design, "3V3_SENS", (u5_3v3s, [pcbnew.B_Cu]), (c121_s, [pcbnew.B_Cu]))
+    print(f"3V3_SENS (U5->C121): {'no path' if nv is None else f'{nv} vias'}")
+    # SENS_EN (v7 -> R50.1 -> U5.3) before IMU_INT1 and J5 1V1
+    r50_en = rel(pad_net(fps["R50"], "SENS_EN").GetPosition())
+    u5_en = rel(pad_net(fps["U5"], "SENS_EN").GetPosition())
+    preroute(board, design, "SENS_EN", (r50_en, [pcbnew.B_Cu]), (u5_en, [pcbnew.B_Cu]), layers=[pcbnew.B_Cu])
+    nv = preroute(board, design, "SENS_EN", (v7, every), (r50_en, [pcbnew.B_Cu]))
+    print(f"SENS_EN: {'no path' if nv is None else f'{nv} vias'}")
+    # SWDIO (v25 -> J6.3)
+    j6_swdio = rel(pad_net(fps["J6"], "SWDIO").GetPosition())
+    nv = preroute(board, design, "SWDIO", (fan_vias["SWDIO"], every), (j6_swdio, [pcbnew.B_Cu]))
+    print(f"SWDIO: {'no path' if nv is None else f'{nv} vias'}")
+    # TAC_SDO (U22.5 -> U30)
+    u22_sdo = rel(pad_net(fps["U22"], "TAC_SDO").GetPosition())
+    u30_sdo = rel(pad_net(fps["U30"], "TAC_SDO").GetPosition())
+    nv = preroute(board, design, "TAC_SDO", (u22_sdo, [pcbnew.B_Cu]), (u30_sdo, [pcbnew.B_Cu]))
+    print(f"TAC_SDO (U22->U30): {'no path' if nv is None else f'{nv} vias'}")
+    # VBAT sense (R60.1 -> C15.1)
+    r60_vbat = rel(pad_net(fps["R60"], "VBAT").GetPosition())
+    c15_vbat = rel(pad_net(fps["C15"], "VBAT").GetPosition())
+    nv = preroute(board, design, "VBAT", (r60_vbat, [pcbnew.F_Cu]), (c15_vbat, [pcbnew.F_Cu]))
+    print(f"VBAT (R60->C15): {'no path' if nv is None else f'{nv} vias'}")
     # WL_IRQ (R81 -> RM2 pad 10)
     r81i = rel(pad_net(fps["R81"], "WL_IRQ").GetPosition())
     u710 = rel(pad_of(fps["U7"], 10).GetPosition())
@@ -2011,12 +2062,12 @@ def main(attempt=0):
     p30 = rel(pad_net(fps["U30"], "IMU_INT1").GetPosition())
     nv = preroute(board, design, "IMU_INT1", (v8, every), (p30, [pcbnew.B_Cu]))
     print(f"IMU_INT1: {'no path' if nv is None else f'{nv} vias'}")
-    # CHG_N (v9c -> R14), TS (R13 -> J2.3), J5.3 (1V1 -> C98)
+    # CHG_N (v9c -> R14), TS (v_ts -> J2.3), J5.3 (1V1 -> C98)
     r14_chg = rel(pad_net(fps["R14"], "CHG_N").GetPosition())
     nv = preroute(board, design, "CHG_N", (v9c, every), (r14_chg, [pcbnew.F_Cu]))
     print(f"CHG_N: {'no path' if nv is None else f'{nv} vias'}")
     j2_ts = rel(pad_net(fps["J2"], "TS").GetPosition())
-    nv = preroute(board, design, "TS", (r13, [pcbnew.F_Cu]), (j2_ts, [pcbnew.B_Cu]))
+    nv = preroute(board, design, "TS", (v_ts, every), (j2_ts, [pcbnew.B_Cu]))
     print(f"TS: {'no path' if nv is None else f'{nv} vias'}")
     j5_1v1 = rel(pad_net(fps["J5"], "1V1").GetPosition())
     c98_1v1 = rel(pad_net(fps["C98"], "1V1").GetPosition())

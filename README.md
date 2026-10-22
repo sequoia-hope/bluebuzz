@@ -1,28 +1,26 @@
 # bluebuzz-rm2
 
+**Live project page & interactive schematic / PCB / 3D viewer:** <https://sequoia-hope.github.io/bluebuzz/> ([full-window board viewer](https://sequoia-hope.github.io/bluebuzz/viewer/), [renders & 3D gallery](https://sequoia-hope.github.io/bluebuzz/out/index.html))
+
 A Bluetooth vibrator controller: RP2350A + Raspberry Pi Radio Module 2
 (the first board, an nRF52840 module, is abandoned and kept in
 `archive/nrf52840/`):
 Wi-Fi 4 and Bluetooth 5.2 Classic + LE (CYW43439), so the toy can be a
 Bluetooth **A2DP audio sink** (BTstack, in the Pico SDK) as well as a
 BLE-controlled device, and a **USB audio device** (TinyUSB) over its USB-C.
-**28 x 44 mm, 6 layers.** Every component is on the front except the
-sensing array; USB-C on the bottom (short) edge is the one connector (the
-top edge is the RM2's RF keep-out); every other lead is an SMT pad row on
-the back, each row a single line along an edge so a soldering iron
-reaches one pad without bridging the next.
+**26 × 56.84 mm (`squish_pcb.dxf` with r = 10 mm lower tip offset inward by 2.0 mm), 6 layers.**
+USB-C on the bottom tip is the only connector (the top dome is the RM2's RF keep-out);
+every other lead is an SMT pad row on the back.
 
-Sensing is a **2 x 2 array of Infineon DPS368 barometers on the back**,
-6 x 8 mm pitch, meant to be cast in soft elastomer after Tenzer, Jentoft
+Sensing is a **4-sensor diamond array of Infineon DPS368 barometers on the back**
+(North, East, West, South), meant to be cast in soft elastomer after Tenzer, Jentoft
 & Howe, *The Feel of MEMS Barometers* (IEEE RAM 2014): rubber poured over
 the array and vacuum degassed so it fills the pressure ports, after which
 a load on the surface reads as pressure, linear to under 1 %, with 10 mN
 resolution. Each sensor is on SPI1 with its own chip select (CSB low at
 power-up selects SPI; the part has only two I2C addresses), on the
-switched 3.3 V rail, 100n beside it. The array size is a table in
-`design.yaml` (`tactile:` rows, cols, pitch) and `circuit.py`'s
-`TACTILE`; the schematic, placement and firmware pin map follow it. An
-**LSM6DS3TR-C IMU** on I2C1 sits at the left edge on the always-on rail,
+switched 3.3 V rail, 100n beside it. An **MP34DT05TR-A top-port digital PDM MEMS microphone** (`U40`) sits on the front upper-right shoulder (`PDM_CLK` on GPIO29, `PDM_DATA` on GPIO28), and an
+**LSM6DS3TR-C IMU** on I2C1 sits on the back on the always-on rail,
 with both interrupts on GPIOs for wake-on-motion.
 
 Same pipeline as the parent (`python3 build.py` here; the `site` stage

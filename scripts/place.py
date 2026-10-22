@@ -105,7 +105,7 @@ PLACEMENT = {
     "C98": (-0.3, 12.3, 90, "back"),         # 1V1 100n for DVDD pin 6, off the 1V1 ring's W via
     "C81": (2.6, 18.25, 90, "back"),         # 1V1 4.7u for DVDD 23 (second VOUT cap), under the S spoke's via
     "C97": (-0.15, 14.25, 90, "back"),       # 3V3 100n for IOVDD pin 11, a via in its pad up into the 3V3 band
-    "C91": (-2.2, 5.8, 0),                   # 100n for pin 1 (-1.05, 9.5), above the QSPI ribbon
+    "C91": (-1.8, 5.8, 0),                   # 100n for pin 1 (-1.05, 9.5), above the QSPI ribbon
     # top edge, rows 2-4: the VREG filter, the USB terminations, the inductor
     "C94": (10.5, 9.6, 90),                  # 100n for pin 45, right edge
     # right edge: pin 45 IOVDD feeds R85 (10R) -> C85 (1u) -> pin 44 ADC_AVDD
@@ -144,11 +144,11 @@ PLACEMENT = {
     "C20": (8.3, 0.75, 90, "back"),          # LDO in 1u, VSYS pad at pin 1 (6.54, -0.20)
     "C21": (1.7, 0.15, 0, "back"),           # LDO out 1u in line with pin 5 (4.26, -0.20)
     "C22": (1.7, 1.75, 0, "back"),           # LDO out 10u below it
-    "U5": (6.6, 4.6, 180, "back"),
-    "C51": (9.5, 4.4, 90, "back"),           # switch in 1u, 3V3 pad at pin 1 (7.74, 3.65)
-    "R50": (8.0, 6.9, 0, "back"),            # SENS_EN pull-down in line with pin 3 (7.74, 5.55)
-    "C50": (3.9, 5.2, 90, "back"),           # CT 470p at pin 4 (5.46, 5.55), clear of 1V1 via at (3.33, 6.5)
-    "C52": (2.8, 3.3, 0, "back"),            # 3V3_SENS 10u at pins 5/6 (5.46, 4.60/3.65), above R3/R4 USB vias (y=4.39)
+    "U5": (6.85, 4.6, 180, "back"),
+    "C51": (9.75, 4.4, 90, "back"),          # switch in 1u, 3V3 pad at pin 1 (7.99, 3.65)
+    "R50": (8.0, 6.9, 0, "back"),            # SENS_EN pull-down in line with pin 3 (7.99, 5.55)
+    "C50": (4.25, 5.05, 90, "back"),         # CT 470p shifted right/up so USB_DM passes between it and 1V1 via (3.33, 6.5)
+    "C52": (2.8, 3.3, 0, "back"),            # 3V3_SENS 10u at pins 5/6, above R3/R4 USB vias (y=4.39)
 
     # ---- USB-C and its ESD array (bottom r = 8 mm tip on FRONT) ----
     "J1": (0.0, 33.4, 0),                    # USB-C centred on the bottom tip
@@ -192,9 +192,9 @@ PLACEMENT = {
     "C140": (10.2, 8.0, 0),                  # 100n VDD decoupling below-right of U40 pin 1, leaving x=8.9..9.8 open for PDM_CLK/DATA
 
     # ---- battery divider at the ADC pin (40, right edge on FRONT): a 500k node stays short ----
-    "R60": (10.5, 13.4, 90),                 # 1M, VBAT end up; away from L1
-    "R61": (10.5, 15.4, 90),                 # 1M to GND
-    "C64": (10.5, 17.4, 90),                 # 100n at the divider tap
+    "R60": (10.5, 14.4, 90),                 # 1M, VBAT end up (y=13.89, clear of U21's no-via box y<=13.25)
+    "R61": (10.5, 16.4, 90),                 # 1M to GND
+    "C64": (10.5, 18.4, 90),                 # 100n at the divider tap
 
     # ---- IMU on the BACK (mid-left belly, spaced >2.1 mm below U22 & U24) ----
     "U30": (-5.0, 16.8, 0, "back"),          # LSM6DS3TR-C on BACK
@@ -205,7 +205,7 @@ PLACEMENT = {
     "C132": (-2.6, 16.8, 90, "back"),        # VDDIO 100n beside pin 5
 
     # ---- soft power latch on the FRONT (left belly above SW1, clear of QSPI_SD3 via at (-3.8, 10.95)) ----
-    "D5": (-10.2, 11.4, 0),                  # BAT54C: BTN_RAW / PWR_HOLD -> LDO_EN (K)
+    "D5": (-10.35, 11.4, 0),                 # BAT54C: shifted left 0.15 mm so U22's GND via lands straight at (-8.38, 11.68)
     "R63": (-10.2, 13.7, 0),                 # 100k EN pull-down below D5
     "R66": (-10.2, 15.0, 0),                 # 100k VBUS_EN -> EN
     "D6": (-10.2, 16.6, 0),                  # 1N4148WS: VBUS -> R66 (USB keeps the board on)
@@ -220,7 +220,7 @@ PLACEMENT = {
     "C133": (8.3, 24.6, 90),                 # 100n at the LED's VDD, below
     "U11": (5.3, 24.2, 0),                   # TPS22918: VSYS -> LED_VDD while 3V3 is up
     "J5": (-3.5, 8.45, 0, "back"),           # TP   VSYS 3V3 1V1 -- bring-up pogo pads on the back under the crystal/flash gap
-    "J3": (-6.8, -4.8, 90, "back"),          # SWD  SWDIO SWCLK RUN BOOT GND -- pogo pads on the back under RM2
+    "J3": (-6.1, -4.8, 90, "back"),          # SWD  SWDIO SWCLK RUN BOOT GND -- pogo pads on the back under RM2, uncovering U7.4 and J3.5 for GND vias
 }
 
 # The RP2350's regulator, USB 27R pair, 53/54 cap and DVDD 23/39 caps come

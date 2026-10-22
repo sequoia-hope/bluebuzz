@@ -112,7 +112,16 @@ def grid_of(design, step=STEP):
     b = design["board"]
     hw, hh = b["width_mm"] / 2, b["height_mm"] / 2
     x0, x1 = -hw + 0.35, hw - 0.35
-    y0, y1 = -hh + 0.35, hh - 0.35
+    if b.get("outline") == "squish":
+        from squish_outline import generate_outline_points_pcb
+        _, info = generate_outline_points_pcb(
+            r_tip=float(b.get("r_tip_mm", 10.0)),
+            top_y_pcb=float(b.get("top_y_mm", -22.0)),
+            offset_mm=float(b.get("offset_mm", 0.0)),
+        )
+        y0, y1 = info["y_top_pcb"] + 0.35, info["y_bot_pcb"] - 0.35
+    else:
+        y0, y1 = -hh + 0.35, hh - 0.35
     nx = int((x1 - x0) / step) + 1
     ny = int((y1 - y0) / step) + 1
     return x0, y0, nx, ny, step
@@ -251,15 +260,19 @@ def build_masks(board, design, netcode, grid, soft=False):
 
     # a via wants 0.2 copper-to-edge on its 0.45 annulus: keep centres
     # 0.45 in from every edge (the wire grid is already inset 0.35)
+    ol_poly = pcbnew.SHAPE_POLY_SET()
+    board.GetBoardPolygonOutlines(ol_poly)
+    via_poly = pcbnew.SHAPE_POLY_SET(ol_poly)
+    via_poly.Inflate(-pcbnew.FromMM(VIA_D / 2 + 0.28), pcbnew.CORNER_STRATEGY_ROUND_ALL_CORNERS, pcbnew.FromMM(0.01))
+    wire_poly = pcbnew.SHAPE_POLY_SET(ol_poly)
+    wire_poly.Inflate(-pcbnew.FromMM(0.25 + HALF), pcbnew.CORNER_STRATEGY_ROUND_ALL_CORNERS, pcbnew.FromMM(0.01))
     for i in range(nx):
         for j in range(ny):
             x, y = x0 + i * STEP, y0 + j * STEP
-            if abs(y) > hh - VIA_D / 2 - 0.25 or abs(x) > hw - VIA_D / 2 - 0.25:
+            pt = pcbnew.VECTOR2I(pcbnew.FromMM(CX + x), pcbnew.FromMM(CY + y))
+            if not via_poly.Contains(pt):
                 via_blocked.add((i, j))
-            # and a wire 0.2 copper-to-edge on its own half-width: the
-            # 0.35 grid inset suits a 0.15 wire only; a 0.4 GND wire was
-            # laid 0.15 from the edge (copper_edge_clearance, 2026-10-18)
-            if abs(y) > hh - 0.2 - HALF or abs(x) > hw - 0.2 - HALF:
+            if not wire_poly.Contains(pt):
                 for bl in blocked:
                     bl.add((i, j))
 
@@ -864,7 +877,10 @@ def stitch_fragments(board, design):
     rt = Router(board, design)
     gnd = board.FindNet("GND").GetNetCode()
     r_via = design["jlcpcb"]["via_diameter_mm"] / 2
-    hw, hh = design["board"]["width_mm"] / 2, design["board"]["height_mm"] / 2
+    ol_poly = pcbnew.SHAPE_POLY_SET()
+    board.GetBoardPolygonOutlines(ol_poly)
+    via_inner = pcbnew.SHAPE_POLY_SET(ol_poly)
+    via_inner.Inflate(-mm(0.6), pcbnew.CORNER_STRATEGY_ROUND_ALL_CORNERS, mm(0.01))
     through = [rel(t.GetPosition()) for t in board.GetTracks()
                if t.Type() == pcbnew.PCB_VIA_T and t.GetNetCode() == gnd]
     through += [rel(p.GetPosition()) for fp in board.GetFootprints() for p in fp.Pads()
@@ -893,7 +909,7 @@ def stitch_fragments(board, design):
                     while y <= y1 and best is None:
                         x = x0
                         while x <= x1:
-                            if (abs(x) < hw - 0.6 and abs(y) < hh - 0.6
+                            if (via_inner.Contains(pt(x, y))
                                     and o.PointInside(pt(x, y))
                                     and not any(k.Outline().Collide(pt(x, y), mm(r_via + 0.1)) for k in no_via)
                                     and obs.clear(x, y, r_via, gap)):

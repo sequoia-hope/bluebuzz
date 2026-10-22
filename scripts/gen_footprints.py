@@ -117,7 +117,7 @@ def rm2_pads():
     # left column 1..7, top to bottom; side pad centred 0.5 under the edge
     for k in range(7):
         y = -hh + 5.7 + 1.5 * k          # fig. 6 p.9: pad 1 centre 5.7 mm from the antenna end
-        pads[1 + k] = (-hw + 0.5, y, 2.0, 1.0)
+        pads[1 + k] = (-hw + (0.6 if k == 0 else 0.5), y, 1.8 if k == 0 else 2.0, 1.0)
     # bottom row 8..14, left to right
     for k in range(7):
         x = -hw + 2.75 + 1.5 * k
@@ -125,7 +125,7 @@ def rm2_pads():
     # right column 15..21, bottom to top
     for k in range(7):
         y = hh - 1.8 - 1.5 * k           # fig. 6: lowest side pad centre 1.8 mm from the bottom edge
-        pads[15 + k] = (hw - 0.5, y, 2.0, 1.0)
+        pads[15 + k] = (hw - (0.6 if k == 6 else 0.5), y, 1.8 if k == 6 else 2.0, 1.0)
     return pads
 
 
@@ -240,14 +240,58 @@ def pad_row(n, paste):
     x0 = -(n - 1) * 1.0
     for i in range(n):
         smd_pad(fp, i + 1, x0 + 2.0 * i, 0.0, 1.6, 2.2, paste=paste, roundrect=0.15)
-    rect(fp, x0 - 0.95, -1.25, x0 + 2.0 * (n - 1) + 0.95, 1.25, pcbnew.F_CrtYd, 0.05)
+    if paste:
+        # Larger courtyard for hand-soldered wire leads (motor/battery leads)
+        rect(fp, x0 - 2.05, -2.4, x0 + 2.0 * (n - 1) + 2.05, 2.4, pcbnew.F_CrtYd, 0.05)
+        rect(fp, x0 - 1.9, -2.2, x0 + 2.0 * (n - 1) + 1.9, 2.2, pcbnew.F_Fab, 0.1)
+    else:
+        rect(fp, x0 - 0.95, -1.25, x0 + 2.0 * (n - 1) + 0.95, 1.25, pcbnew.F_CrtYd, 0.05)
     # pin-1 tick, outside the row on the left
     line(fp, (x0 - 1.15, -1.1), (x0 - 1.15, 1.1), pcbnew.F_SilkS, 0.15)
     return save(fp, name)
 
 
+def mp34dt05():
+    """ST MP34DT05TR-A / MP34DT06JTR, HCLGA-4 3.0 x 4.0 x 1.0 mm top-port
+    digital PDM MEMS microphone (LCSC C2688664 / C503097).
+    1 = VDD, 2 = LR, 3 = CLK, 4 = DOUT, 5 = GND frame (4 segments with
+    corner openings for signal escape)."""
+    name = "MP34DT05_HCLGA-4"
+    fp = new_fp(name, "ST MP34DT05TR-A top-port digital PDM MEMS microphone, HCLGA-4 3x4x1 mm",
+                "MP34DT05 MP34DT06 PDM MEMS microphone ST")
+    for num, (x, y) in {1: (-0.68, 0.42), 2: (0.68, 0.42), 3: (0.68, -0.42), 4: (-0.68, -0.42)}.items():
+        smd_pad(fp, num, x, y, 0.95, 0.40, roundrect=0.15)
+    for x, y, w, h in ((-1.72, 0.0, 0.35, 1.00), (1.72, 0.0, 0.35, 1.00),
+                       (0.0, 1.23, 2.00, 0.35), (0.0, -1.23, 2.00, 0.35)):
+        smd_pad(fp, 5, x, y, w, h, roundrect=0.15)
+    rect(fp, -2.0, -1.5, 2.0, 1.5, pcbnew.F_Fab, 0.1)
+    c = pcbnew.PCB_SHAPE(fp)
+    c.SetShape(pcbnew.SHAPE_T_CIRCLE)
+    c.SetStart(pcbnew.VECTOR2I(mm(1.0), mm(0.0)))       # top-port acoustic hole indicator
+    c.SetEnd(pcbnew.VECTOR2I(mm(1.35), mm(0.0)))
+    c.SetLayer(pcbnew.F_Fab)
+    c.SetWidth(mm(0.08))
+    fp.Add(c)
+    text(fp, "${REFERENCE}", -0.4, 0.0, pcbnew.F_Fab, 0.5)
+    rect(fp, -2.2, -1.7, 2.2, 1.7, pcbnew.F_CrtYd, 0.05)
+    # silk corners outside the 4.0 x 3.0 body, and pin-1 dot at (-2.0, +1.5)
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            line(fp, (sx * 2.1, sy * 1.6), (sx * 1.4, sy * 1.6), pcbnew.F_SilkS, 0.12)
+            line(fp, (sx * 2.1, sy * 1.6), (sx * 2.1, sy * 0.9), pcbnew.F_SilkS, 0.12)
+    d = pcbnew.PCB_SHAPE(fp)
+    d.SetShape(pcbnew.SHAPE_T_CIRCLE)
+    d.SetStart(pcbnew.VECTOR2I(mm(-2.35), mm(1.5)))
+    d.SetEnd(pcbnew.VECTOR2I(mm(-2.25), mm(1.5)))
+    d.SetLayer(pcbnew.F_SilkS)
+    d.SetWidth(mm(0.2))
+    d.SetFilled(True)
+    fp.Add(d)
+    return save(fp, name)
+
+
 def main():
-    made = [rm2(), dps368(), led_1010()]
+    made = [rm2(), dps368(), led_1010(), mp34dt05()]
     for n in (2, 3):
         made.append(pad_row(n, paste=True))
     for n in (3, 5):

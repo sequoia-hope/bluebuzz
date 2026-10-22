@@ -86,159 +86,141 @@ RM2_HALF_H = 8.25
 # where its neighbours are signals that need the space. Rotation is picked
 # so the signal/supply pad faces the pin; `check_facing` below verifies it.
 PLACEMENT = {
-    # ---- RM2, top right, antenna end flush with the top edge ----
-    "U7": (5.9, -13.75, 0),
-    "C101": (12.6, -4.15, 0),                # Vin 100n below the module's right column (pin 16)
-    "C102": (10.55, -4.15, 0),               # VDDIO 100n below pin 14 (10.4,-6.0), right of the regulator block
+    # ---- RM2 centered at the top dome (2.0 mm inward offset, y_top = -18.0 mm) ----
+    "U7": (0.0, -8.35, 0),
+    "C101": (6.7, 1.05, 0),                  # Vin 100n below the module's right column (pin 16)
+    "C102": (4.4, 1.05, 0),                  # VDDIO 100n below pin 14 (4.5, -0.55)
     # Vin 10u on the BACK, straight under pad 16: its VSYS pad shares pad
-    # 16's vias, its GND pad sits under GND pad 15 (it was 6 mm away at the
-    # right edge below the column: phase-7 review M11, parts/rm2-radio.md)
-    "C100": (12.05, -8.03, 90, "back"),
-    "R80": (-3.0, -9.75, 90),          # DOUT 470R spanning pins 6 (-9.0) and 5 (-10.5)
-    "R81": (0.6, -4.3, 0),                  # nIRQ 10k below the RM2, left of the RP2350 block's 53/54 cap
+    # 16's vias, its GND pad sits under GND pad 15 (phase-7 review M11)
+    "C100": (6.15, -2.58, 90, "back"),
+    "R80": (-8.35, -4.3, 90),                # DOUT 470R spanning pins 6 (-3.55) and 5 (-5.05)
+    "R81": (1.5, 1.05, 0),                   # nIRQ 10k below RM2 pin 10
 
-    # ---- RP2350 and its satellites ----
-    "U1": (4.8, 3.5, 0),               # QFN-60; pin 1 top-left, CCW; 1 mm lower than first laid out,
-                                       # so two rows of passives fit between it and the RM2
-    "U6": (-2.8, 2.0, 180),            # flash, rot 180: SS/SD1/SD2 face the QSPI pins (route.py lays all six lines)
-    "C88": (-4.1, 5.3, 90),            # flash 100n under its VCC pad (-4.15,3.2)
-    "R87": (-1.5, 5.2, 0),             # 1k QSPI_SS -> BOOT under the flash's SS pad
-    # top edge, row 1 (rot 90 caps straddle the pin row): 53/54 IOVDD, 49 VREG_VIN
-    # pins 6 (DVDD) and 11 (IOVDD) get their 100n on the BACK, right behind
-    # the pins: the front lane between the flash and the pins is the escape
-    # for pins 2-13 (design/decisions.md)
-    # C98/C97 sit under the chip on the back, between the left pin column
-    # and the exposed pad: the 1V1 ring and 3V3 band took the inner space
-    # the left pins used to escape through, and behind the pins these two
-    # held the only via spots in the lane to the QSPI columns (SDA, SCL,
-    # SENS_EN, WL_DATA, WL_CLK open in every ordering, 2026-10-18)
-    "C98": (2.1, 3.5, 90, "back"),          # 1V1 100n for DVDD pin 6, off the 1V1 ring's W via
-    "C81": (5.0, 9.45, 90, "back"),         # 1V1 4.7u for DVDD 23 (second VOUT cap), under the S spoke's via
-    "C97": (2.25, 5.45, 90, "back"),   # 3V3 100n for IOVDD pin 11, a via in its pad up into the 3V3 band
-    "C91": (0.2, -3.0, 0),                  # 100n for pin 1 (1.35,0.7), above the QSPI ribbon (pin 1 also stubs into the 3V3 band)
+    # ---- RP2350 and its satellites (in the 26 mm belly, shifted left to x = +2.4 mm) ----
+    "U1": (2.4, 12.3, 0),                    # QFN-60; pin 1 top-left, CCW
+    "U6": (-5.2, 10.8, 180),                 # flash, rot 180: SS/SD1/SD2 face the QSPI pins
+    "C88": (-6.5, 14.1, 90),                 # flash 100n under its VCC pad (-6.55, 12.0)
+    "R87": (-3.9, 14.0, 0),                  # 1k QSPI_SS -> BOOT under the flash's SS pad
+    # pins 6 (DVDD) and 11 (IOVDD) get their 100n on the BACK, spaced >2.2 mm away from U24
+    "C98": (-0.3, 12.3, 90, "back"),         # 1V1 100n for DVDD pin 6, off the 1V1 ring's W via
+    "C81": (2.6, 18.25, 90, "back"),         # 1V1 4.7u for DVDD 23 (second VOUT cap), under the S spoke's via
+    "C97": (-0.15, 14.25, 90, "back"),       # 3V3 100n for IOVDD pin 11, a via in its pad up into the 3V3 band
+    "C91": (-2.2, 5.8, 0),                   # 100n for pin 1 (-1.05, 9.5), above the QSPI ribbon
     # top edge, rows 2-4: the VREG filter, the USB terminations, the inductor
-    "C94": (12.9, 1.4, 90),                 # 100n for pin 45, right edge
+    "C94": (10.5, 9.6, 90),                  # 100n for pin 45, right edge
     # right edge: pin 45 IOVDD feeds R85 (10R) -> C85 (1u) -> pin 44 ADC_AVDD
-    "R85": (9.5, 0.8, 90),             # 3V3 pad up at pin 45, 3V3A pad down at pin 44
-    "C85": (10.8, 1.9, 90),            # 1u, 3V3A pad up beside R85's
-    "C82": (10.4, 3.95, 0),             # 1V1 100n for pin 39, beside the E spoke's via (rp2350_block)
-    "C95": (10.4, 5.0, 0),             # 100n for pin 38 (8.25,3.5)
+    "R85": (7.1, 9.6, 90),                   # 3V3 pad up at pin 45, 3V3A pad down at pin 44
+    "C85": (8.4, 9.6, 90),                   # 1u, 3V3A pad down beside R85's (7.1, 10.11)
+    "C82": (8.0, 12.75, 0),                  # 1V1 100n for pin 39, beside the E spoke's via (rp2350_block)
+    "C95": (8.0, 13.8, 0),                   # 100n for pin 38 (5.85, 12.3)
     # bottom edge, the strip between the pins and the crystal
-    "C92": (0.1, 8.4, 90),                  # 100n for pin 20, below-left of the pin row
-    "R86": (6.0, 9.8, 90),                  # 1k in XOUT, from pin 22 down to Y1's XTAL2 pad
-    "C96": (9.2, 8.6, 90),                  # 100n at pin 30 (7.6,6.95)
-    "R88": (11.4, 7.6, 90),                 # RUN 10k
-    "C89": (11.4, 9.6, 90),                 # RUN 100n below R88
-    "Y1": (3.6, 11.1, 270),                # crystal under XIN/XOUT, 0.5 lower than first laid: the
-                                           # 1V1 S spoke via and XOUT pass between it and the pins
-    "C86": (0.85, 10.4, 0),                   # 15p at Y1's XIN pad
-    "C87": (5.9, 12.6, 90),                 # 15p at Y1's XTAL2 pad
+    "C92": (-2.3, 17.2, 90),                 # 100n for pin 20, below-left of the pin row
+    "R86": (3.6, 18.6, 90),                  # 1k in XOUT, from pin 22 down to Y1's XTAL2 pad
+    "C96": (6.8, 17.4, 90),                  # 100n at pin 30 (5.2, 15.75)
+    "R88": (9.0, 16.4, 90),                  # RUN 10k
+    "C89": (9.0, 18.4, 90),                  # RUN 100n below R88
+    "Y1": (1.2, 19.9, 270),                  # crystal under XIN/XOUT
+    "C86": (-1.55, 19.2, 0),                 # 15p at Y1's XIN pad
+    "C87": (3.5, 21.3, 90),                  # 15p at Y1's XTAL2 pad
 
-    # ---- charger (top-left corner) ----
-    "U2": (-9.5, -13.5, 90),           # pins: TS/VBAT/GND down, CHG/VSYS/ILIM up, VBUS/TMR/ISET left
-    "C10": (-12.9, -14.9, 90),         # VBUS 10u at pin 13 (-10.94,-14.25)
-    "R12": (-12.9, -12.4, 0),          # TMR, toward pin 14 (-10.94,-13.75)
-    "R10": (-12.9, -11.3, 0),          # ISET, toward pin 16 (-10.94,-12.75)
-    "R11": (-10.5, -16.3, 0),          # ILIM above pin 12 (-10.25,-14.94)
-    "C14": (-8.5, -16.3, 0),           # VSYS 100n above pins 10/11 (-9.25..-9.75,-14.94)
-    # VBUS 100n on the BACK below the top-left sensor, near the VBUS via
-    # beside C10 (route.py): pin 13 and C10 sit in that sensor's no-via box,
-    # and at (-6.5,-16.3) on the far side of the charger it was 4.5 mm from
-    # its pin and walled in by the OUT copper. (x -12.55: R12 / R10's GND
-    # vias are at x -13.38 on the front.)
-    "C13": (-12.55, -11.9, 90, "back"),
-    "C11": (-5.3, -13.9, 0),           # VSYS 10u right of the charger, over the BAT pads
-    "R13": (-10.3, -10.8, 0),          # TS 10k below pin 1 (-10.25,-12.06), in the gap above the LDO
-    "C15": (-5.0, -12.2, 0),           # VBAT 100n at the cell pad's via (-6.2,-11.2)
-    "C12": (-3.5, -15.7, 0),           # VBAT 10u above the cell pad
-    "J2": (-4.0, -13.5, 0, "back"),    # BAT  + - T (T = TS, for a cell with an NTC)
+    # ---- charger (upper-left below RM2 on FRONT) ----
+    "U2": (-6.0, 3.8, 90),                   # pins: TS/VBAT/GND down, CHG/VSYS/ILIM up, VBUS/TMR/ISET left
+    "C10": (-9.3, 2.2, 90),                  # VBUS 10u at pin 13 (-7.44, 3.05)
+    "R12": (-9.3, 4.5, 0),                   # TMR, toward pin 14 (-7.44, 3.55)
+    "R10": (-9.3, 5.6, 0),                   # ISET, toward pin 16 (-7.44, 4.55)
+    "R11": (-7.5, 1.05, 0),                  # ILIM above-left of pin 12 (-6.75, 2.36), below U7
+    "C14": (-5.0, 1.05, 0),                  # VSYS 100n above U2, below U7
+    "C13": (-8.8, -0.4, 90, "back"),         # VBUS 100n on the BACK near the VBUS via beside C10
+    "C11": (-1.6, 1.3, 0),                   # VSYS 10u right of the charger
+    "R13": (-6.0, 6.6, 0),                   # TS 10k below U2
+    "C15": (-1.5, 2.7, 0),                   # VBAT 100n at the cell pad's via
+    "C12": (-1.8, 4.1, 0),                   # VBAT 10u beside U2 pin 2
+    "J2": (-2.35, 3.05, 90, "back"),         # BAT  + - T (vertical on back: pad 1 VBAT at y=5.05, pad 2 GND at y=3.05, pad 3 TS at y=1.05)
+    "D1": (-10.2, 7.8, 90),                  # CHG LED at the left edge, 3V3 end up
+    "R14": (-8.5, 7.8, 90),                  # 330R beside the LED's cathode
 
-    # ---- LDO and load switch, with their caps beside them ----
-    "U3": (-9.5, -8.5, 0),
-    "C20": (-12.8, -9.2, 90),          # LDO in 1u, VSYS pad at pin 1 (-10.64,-9.45)
-    "C21": (-5.85, -9.45, 0),          # LDO out 1u in line with pin 5 (-8.36,-9.45)
-    "C22": (-5.85, -7.6, 0),           # LDO out 10u below it
-    "U5": (-9.5, -4.8, 0),
-    "C51": (-12.8, -6.0, 90),          # switch in 1u, 3V3 pad at pin 1 (-10.64,-5.75)
-    "R50": (-12.6, -3.96, 0),           # SENS_EN pull-down in line with pin 3 (-10.64,-3.85)
-    "C50": (-6.4, -4.5, 0),            # CT 470p at pin 4 (-8.36,-3.85), clear of the QSPI In2 lanes
-    "C52": (-5.85, -5.8, 0),           # 3V3_SENS 10u at pins 5/6 (-8.36,-4.8/-5.75)
-    "D1": (-12.9, -1.92, 90),          # CHG LED at the left edge, 3V3 end up
-    "R14": (-11.0, -1.2, 0),           # 330R beside the LED's cathode
+    # ---- LDO and load switch on the BACK (upper-right belly, clear of J2 and R3/R4 USB vias) ----
+    "U3": (5.4, 0.75, 180, "back"),
+    "C20": (8.3, 0.75, 90, "back"),          # LDO in 1u, VSYS pad at pin 1 (6.54, -0.20)
+    "C21": (1.7, 0.15, 0, "back"),           # LDO out 1u in line with pin 5 (4.26, -0.20)
+    "C22": (1.7, 1.75, 0, "back"),           # LDO out 10u below it
+    "U5": (6.6, 4.6, 180, "back"),
+    "C51": (9.5, 4.4, 90, "back"),           # switch in 1u, 3V3 pad at pin 1 (7.74, 3.65)
+    "R50": (8.0, 6.9, 0, "back"),            # SENS_EN pull-down in line with pin 3 (7.74, 5.55)
+    "C50": (3.9, 5.2, 90, "back"),           # CT 470p at pin 4 (5.46, 5.55), clear of 1V1 via at (3.33, 6.5)
+    "C52": (2.8, 3.3, 0, "back"),            # 3V3_SENS 10u at pins 5/6 (5.46, 4.60/3.65), above R3/R4 USB vias (y=4.39)
 
-    # ---- USB-C and its ESD array ----
-    "J1": (0.0, 18.6, 0),                  # USB-C centred on the bottom (short) edge
-    "U10": (-1.6, 10.4, 90),                # ESD array above-left of the receptacle, clear of its pad-pair join vias
-    "C2": (-3.3, 9.0, 90),                 # VBUS 100n beside the array's VBUS pin
-    "R1": (-3.3, 12.25, 90),                # CC1 5.1k
-    "R2": (-4.5, 12.25, 90),               # CC2 5.1k
+    # ---- USB-C and its ESD array (bottom r = 8 mm tip on FRONT) ----
+    "J1": (0.0, 33.4, 0),                    # USB-C centred on the bottom tip
+    "U10": (1.2, 24.5, 90),                  # ESD array above the receptacle, clear of Y1
+    "C2": (-0.7, 24.5, 90),                  # VBUS 100n beside the array's VBUS pin
+    "R1": (-2.2, 27.1, 90),                  # CC1 5.1k (shifted west to clear USB_DP/DM vias)
+    "R2": (2.2, 27.1, 90),                   # CC2 5.1k
 
-    # ---- motor 1 (left) and motor 2 (middle), bottom ----
-    "Q1": (-8.45, 16.75, 180),               # channel 1: gate right, drain left toward the flyback
-    "R41": (-5.95, 17.6, 90),               # gate pull-down 4.7k
-    "R40": (-5.95, 15.4, 90),               # gate 100R, PWM end up
-    "D3": (-9.3, 20.4, 0),                 # flyback in the bottom-left corner
-    "C40": (-12.4, 17.5, 90),               # 22u at the channel's VSYS
-    "C41": (-11.0, 17.5, 90),               # 100n beside it
-    "Q2": (8.45, 16.6, 0),                  # channel 2: gate left, drain right toward the flyback
-    "R43": (5.95, 17.6, 90),                # gate pull-down 4.7k
-    "R42": (5.95, 15.4, 90),                # gate 100R, PWM end up
-    "D4": (9.3, 20.4, 180),                # flyback in the bottom-right corner
-    "C42": (12.4, 17.5, 90),                # 22u at the channel's VSYS
-    "C43": (11.0, 17.5, 90),                # 100n beside it
-    "J4": (0.0, 20.6, 0, "back"),          # MOT  VSYS M1 M2, centred on the back between the receptacle's shell pads
+    # ---- motor 1 (left) and motor 2 (right), on the BACK beside J4 (MOT), well above USB GND ----
+    "J4": (0.0, 23.8, 0, "back"),            # MOT  VSYS M1 M2 (pad 1 at -2.0, pad 2 at 0.0, pad 3 at +2.0)
+    "Q1": (-6.1, 23.3, 180, "back"),         # channel 1 on BACK: gate right, drain left toward the flyback
+    "R41": (-3.6, 20.3, 90, "back"),         # gate pull-down 4.7k
+    "R40": (-2.2, 20.3, 90, "back"),         # gate 100R, PWM end up
+    "D3": (-6.5, 26.5, 180, "back"),         # flyback below Q1, 3.2 mm below Q1 for a wide B.Cu channel
+    "C40": (-8.9, 23.3, 90, "back"),         # 22u at the channel's VSYS
+    "C41": (-7.4, 20.5, 90, "back"),         # 100n beside it
+    "Q2": (6.1, 23.3, 0, "back"),            # channel 2 on BACK: gate left, drain right toward the flyback
+    "R43": (3.6, 20.3, 90, "back"),          # gate pull-down 4.7k
+    "R42": (2.2, 20.3, 90, "back"),          # gate 100R, PWM end up
+    "D4": (6.5, 26.5, 0, "back"),            # flyback below Q2, 3.2 mm below Q2 for a wide B.Cu channel
+    "C42": (8.9, 23.3, 90, "back"),          # 22u at the channel's VSYS
+    "C43": (7.4, 20.5, 90, "back"),          # 100n beside it
 
-
-    # ---- the tactile array: four DPS368s on the BACK, one toward each board
-    # corner (user), each with its 100n on the inboard side next to VDD/VDDIO.
-    # Top pair just below the RF keep-out (y < -17); bottom-left inside the
-    # corner radius, clear of SW1's pegs; bottom-right above the USB-C, whose
-    # shell pads and pegs fill the true corner. The left pair is turned 180
-    # so VDD faces inboard. route.py keeps vias out from under each body.
-    "U20": (-11.7, -14.8, 180, "back"),     # top-left
-    "U21": (11.7, -14.8, 0, "back"),        # top-right, clear of RM2 pad 21's via
-    "U22": (-11.7, 20.0, 180, "back"),      # bottom-left
-    "U23": (11.7, 20.0, 0, "back"),         # bottom-right (the receptacle is centred now)
-    "C120": (-9.3, -14.8, 90, "back"), "C121": (9.3, -14.8, 90, "back"),
-    "C122": (-9.3, 20.0, 90, "back"), "C123": (9.3, 20.0, 90, "back"),
-    "U24": (-1.5, 2.6, 0, "back"),        # centre: midway between the corner rows, left of the PWM vias
-    "C124": (-3.9, 2.6, 90, "back"),
+    # ---- the tactile array: four DPS368s on the BACK in a symmetric DIAMOND pattern ----
+    # North (U20, near top RF keep-out), West (U22), East (U21),
+    # South (U23, near bottom tip); each with its 100n decoupling cap beside pins 6/7/8,
+    # and >= 2.0 mm clearance from every other component on the board.
+    "U20": (0.0, -10.0, 180, "back"),        # North (top of diamond, right below RF keep-out y = -11.6)
+    "C120": (2.4, -10.0, 90, "back"),
+    "U21": (10.0, 12.0, 0, "back"),          # East (right of diamond, inside 26 mm belly)
+    "C121": (7.6, 13.2, 90, "back"),         # shifted down 1.2 mm so y=11.5..12.2 is open beside VIA 1V1 (6.9, 11.9)
+    "U22": (-10.0, 12.0, 180, "back"),       # West (left of diamond, inside 26 mm belly)
+    "C122": (-7.6, 13.0, 90, "back"),        # shifted down 1.0 mm so pad 1 clears QSPI_SD3 via at (-3.8, 10.95)
+    "U23": (0.0, 34.8, 180, "back"),         # South (bottom of diamond, near lower tip)
+    "C123": (0.0, 32.4, 0, "back"),          # C123 directly above U23 on centerline (well away from J1 PTH at x=+-4.32)
     # the Raspberry Pi Debug Probe's 3-pin JST-SH, footprint only (DNP)
-    "J6": (7.0, -4.0, 0, "back"),
+    "J6": (-1.2, -3.7, 0, "back"),
 
-    # ---- battery divider at the ADC pin (40, right edge): a 500k node stays short ----
-    "R60": (12.9, 4.6, 90),                 # 1M, VBAT end up; away from L1
-    "R61": (12.9, 6.6, 90),                 # 1M to GND
-    "C64": (12.9, 8.6, 90),                 # 100n at the divider tap
+    # ---- PDM MEMS microphone on the FRONT (upper-right shoulder above U1 pins 42/43) ----
+    "U40": (9.1, 5.2, 90),                   # MP34DT05TR-A top-port PDM mic, CLK/DOUT on left facing U1
+    "C140": (10.2, 8.0, 0),                  # 100n VDD decoupling below-right of U40 pin 1, leaving x=8.9..9.8 open for PDM_CLK/DATA
 
-    # ---- IMU at the left edge, pull-ups above it, caps beside it ----
-    "U30": (-10.6, 4.0, 0),                 # LSM6DS3TR-C, 1.6 mm in from the edge
-    "R130": (-11.3, 1.4, 90),                # SDA 4.7k
-    "R131": (-10.25, 1.4, 90),               # SCL 4.7k
-    "C130": (-8.0, 3.4, 90),                 # VDD 100n beside pin 8
-    "C131": (-8.0, 6.0, 90),                 # VDD 10u
-    "C132": (-12.6, 6.3, 0),                 # VDDIO 100n below pin 5
+    # ---- battery divider at the ADC pin (40, right edge on FRONT): a 500k node stays short ----
+    "R60": (10.5, 13.4, 90),                 # 1M, VBAT end up; away from L1
+    "R61": (10.5, 15.4, 90),                 # 1M to GND
+    "C64": (10.5, 17.4, 90),                 # 100n at the divider tap
 
-    # ---- soft power latch: D5 by the LDO's EN, Q3 + R64 between the button and GPIO8 ----
-    "D5": (-7.6, -1.25, 0),            # BAT54C: BTN_RAW / PWR_HOLD -> LDO_EN (K), in the old ESD spot by the LDO
-    "R66": (-6.1, 3.1, 90),            # 100k VBUS_EN -> EN, EN end up toward D5/R63
-    "D6": (-6.1, 5.75, 90),            # 1N4148WS: VBUS -> R66 (USB keeps the board on)
-    "R63": (-7.6, 1.1, 0),             # 100k EN pull-down below it
-    "Q3": (-7.0, 11.25, 90),                # 2N7002 reading the button, beside SW1
-    "R64": (-6.9, 8.7, 0),                # 100k gate pull-down
+    # ---- IMU on the BACK (mid-left belly, spaced >2.1 mm below U22 & U24) ----
+    "U30": (-5.0, 16.8, 0, "back"),          # LSM6DS3TR-C on BACK
+    "R130": (-5.5, 18.9, 0, "back"),         # SDA 4.7k
+    "R131": (-7.7, 18.9, 0, "back"),         # SCL 4.7k
+    "C130": (-7.6, 16.8, 90, "back"),        # VDD 100n beside pin 8
+    "C131": (-9.5, 17.2, 90, "back"),        # VDD 10u
+    "C132": (-2.6, 16.8, 90, "back"),        # VDDIO 100n beside pin 5
 
-    # ---- button (plunger proud of the left edge), status LED, SWD ----
-    # The plunger tip stands 0.5 mm past the edge so a finger finds it (user,
-    # 2026-10-18; it was flush). 0.5 is the most it can: the locating pegs'
-    # 0.75 mm holes keep a 0.5 mm web to the edge.
-    "SW1": (-11.75, 11.0, 90),              # power button, plunger 0.5 mm past the left edge
-    # status LED at the right edge above motor channel 2, its supply switch beside it
-    "D2": (12.5, 12.6, 180),               # 1010 addressable RGB LED: DI top-left, VDD bottom-left
-    "R62": (12.4, 11.1, 0),                # 330R into DI, above
-    "C133": (12.4, 14.2, 0),               # 100n at the LED's VDD, below
-    "U11": (8.75, 12.5, 0),                # TPS22918: VSYS -> LED_VDD while 3V3 is up
-    "J5": (12.4, 6.5, 90, "back"),     # TP   VSYS 3V3 1V1 -- bring-up pogo pads, right edge
-    "J3": (6.0, -8.5, 0, "back"),      # SWD  SWDIO SWCLK RUN BOOT GND -- pogo pads on the back under the RM2
+    # ---- soft power latch on the FRONT (left belly above SW1, clear of QSPI_SD3 via at (-3.8, 10.95)) ----
+    "D5": (-10.2, 11.4, 0),                  # BAT54C: BTN_RAW / PWR_HOLD -> LDO_EN (K)
+    "R63": (-10.2, 13.7, 0),                 # 100k EN pull-down below D5
+    "R66": (-10.2, 15.0, 0),                 # 100k VBUS_EN -> EN
+    "D6": (-10.2, 16.6, 0),                  # 1N4148WS: VBUS -> R66 (USB keeps the board on)
+    "Q3": (-4.0, 21.8, 90),                  # 2N7002 reading the button, on FRONT clear of J4.1 VSYS vias and SW1
+    "R64": (-4.0, 24.4, 0),                  # 100k gate pull-down
+
+    # ---- button (lower-left tapered edge closer to USB, housing flush with edge & actuator extending 1mm past outline) ----
+    "SW1": (-9.65, 22.85, 111.0),             # power button, rotated 111.0 deg: housing flush with edge, actuator overhangs by 1.0 mm
+    # status LED at the right edge on FRONT, its supply switch beside it
+    "D2": (8.8, 22.6, 180),                  # 1010 addressable RGB LED: DI top-left, VDD bottom-left
+    "R62": (8.8, 20.9, 0),                   # 330R into DI, above
+    "C133": (8.3, 24.6, 90),                 # 100n at the LED's VDD, below
+    "U11": (5.3, 24.2, 0),                   # TPS22918: VSYS -> LED_VDD while 3V3 is up
+    "J5": (-3.5, 8.45, 0, "back"),           # TP   VSYS 3V3 1V1 -- bring-up pogo pads on the back under the crystal/flash gap
+    "J3": (-6.8, -4.8, 90, "back"),          # SWD  SWDIO SWCLK RUN BOOT GND -- pogo pads on the back under RM2
 }
 
 # The RP2350's regulator, USB 27R pair, 53/54 cap and DVDD 23/39 caps come
@@ -255,52 +237,51 @@ BLOCK = set(RP2350_BLOCK["parts"]) | {"U1"}
 
 # (part, pad net, (x, y) the pad must be nearest to): orientation check
 FACING = [
-    ("C91", "3V3_SYS", (1.35, 0.7)),
-    ("C98", "1V1", (2.65, 2.7)), ("C97", "3V3_SYS", (2.25, 4.6)), ("C81", "1V1", (5.0, 8.3)), ("C82", "1V1", (8.25, 3.1)),
-    ("R66", "LDO_EN", (-6.1, 1.0)), ("D6", "VBUS_EN", (-6.1, 4.0)),
-    ("C133", "LED_VDD", (12.1, 13.0)),
-    ("C41", "VSYS", (-11.0, 20.4)),
-    ("C124", "3V3_SENS", (-2.2, 2.6)),
-    ("C101", "VSYS", (12.65, -9.0)), ("C100", "VSYS", (12.05, -8.8)), ("C102", "3V3_SYS", (10.4, -6.0)),
-    ("R80", "WL_DOUT", (-0.85, -9.0)), ("R81", "WL_IRQ", (4.4, -6.0)),
-    ("C88", "3V3_SYS", (-4.15, 3.2)), ("R87", "QSPI_SS", (-1.45, 3.2)),
-    ("C91", "3V3_SYS", (1.35, 0.7)),
-    ("C94", "3V3_SYS", (12.9, 0.0)),
-            ("R85", "3V3_SYS", (8.25, 0.7)), ("C85", "3V3A", (9.5, 1.3)),
-    ("C95", "3V3_SYS", (8.25, 3.5)),
-    ("C92", "3V3_SYS", (1.35, 6.9)), ("R86", "XOUT", (6.0, 7.0)),     ("C96", "3V3_SYS", (9.2, 7.0)), ("R88", "RUN", (11.4, 10.0)), ("C89", "RUN", (11.4, 7.0)),
-    ("Y1", "XIN", (2.0, 9.0)),        # XIN pad top-left (pin 21 comes straight down to it)
-    ("C86", "XIN", (2.8, 9.5)), ("C87", "XTAL2", (4.4, 11.7)),
-    ("C10", "VBUS", (-10.94, -14.25)), ("R12", "TMR", (-10.94, -13.75)), ("R10", "ISET", (-10.94, -12.75)),
-    ("R11", "ILIM", (-10.25, -14.94)), ("C14", "VSYS", (-9.25, -14.94)), ("C13", "VBUS", (-13.42, -14.12)),
-    ("C11", "VSYS", (-9.25, -14.94)), ("R13", "TS", (-10.25, -12.06)),
-    ("C15", "VBAT", (-6.2, -11.2)), ("C12", "VBAT", (-6.0, -13.5)),
-    ("C20", "VSYS", (-10.64, -9.45)), ("C21", "3V3_SYS", (-8.36, -9.45)), ("C22", "3V3_SYS", (-8.36, -9.45)),
-    ("C51", "3V3_SYS", (-10.64, -5.75)), ("R50", "SENS_EN", (-10.64, -3.85)),
-    ("C50", "CT_SENS", (-8.36, -3.85)), ("C52", "3V3_SENS", (-8.36, -4.8)),
-    ("D1", "CHG_LED", (-12.9, 0.0)), ("R14", "CHG_LED", (-12.9, -1.15)),
-    ("C2", "VBUS", (-1.6, 9.5)), ("R1", "CC1", (-1.25, 14.6)), ("R2", "CC2", (1.75, 14.6)),
-    ("R41", "MOTOR1_G", (-7.4, 17.5)), ("R40", "MOTOR1_G", (-7.4, 17.5)),
-    ("D3", "MOTOR1_SW", (-9.2, 16.6)), ("C40", "VSYS", (-11.0, 20.4)),
-    ("R43", "MOTOR2_G", (7.4, 17.5)), ("R42", "MOTOR2_G", (7.4, 17.5)),
-    ("D4", "MOTOR2_SW", (9.2, 16.6)), ("C42", "VSYS", (11.0, 20.4)), ("C43", "VSYS", (11.0, 20.4)),
-    ("R60", "VBAT", (12.9, 3.0)), ("R61", "VBAT_SENSE", (12.9, 5.5)), ("C64", "VBAT_SENSE", (12.9, 7.5)),
-    ("R62", "LED_DIN", (12.1, 12.2)), ("R63", "LDO_EN", (-7.6, -1.25)), ("R64", "BTN_RAW", (-6.75, 12.0)),
-    ("R130", "SDA", (-11.1, 3.0)), ("R131", "SCL", (-10.6, 3.0)), ("C130", "3V3_SYS", (-9.34, 4.75)),
-    ("C131", "3V3_SYS", (-9.34, 4.75)), ("C132", "3V3_SYS", (-11.1, 5.0)),
-    ("C120", "3V3_SENS", (-11.0, -14.8)), ("C121", "3V3_SENS", (11.0, -14.8)), ("C122", "3V3_SENS", (-11.0, 20.0)),
-    ("C123", "3V3_SENS", (11.0, 20.0)),
+    ("C91", "3V3_SYS", (-1.05, 9.5)),
+    ("C98", "1V1", (0.25, 11.5)), ("C97", "3V3_SYS", (-0.15, 13.5)), ("C81", "1V1", (2.6, 17.1)), ("C82", "1V1", (5.85, 11.9)),
+    ("R66", "LDO_EN", (-10.2, 13.7)), ("D6", "VBUS_EN", (-10.2, 15.0)),
+    ("C133", "LED_VDD", (8.38, 23.03)),
+    ("C41", "VSYS", (-7.4, 24.0)),
+    ("C140", "3V3_SYS", (9.52, 5.88)),
+    ("C101", "VSYS", (6.75, -3.55)), ("C100", "VSYS", (6.15, -3.35)), ("C102", "3V3_SYS", (4.5, -0.55)),
+    ("R80", "WL_DOUT", (-6.75, -3.55)), ("R81", "WL_IRQ", (-1.5, -0.55)),
+    ("C88", "3V3_SYS", (-6.55, 12.0)), ("R87", "QSPI_SS", (-3.85, 12.0)),
+    ("C94", "3V3_SYS", (10.5, 8.8)),
+    ("R85", "3V3_SYS", (5.85, 9.5)), ("C85", "3V3A", (7.1, 10.1)),
+    ("C95", "3V3_SYS", (5.85, 12.3)),
+    ("C92", "3V3_SYS", (-1.05, 15.7)), ("R86", "XOUT", (3.6, 15.8)), ("C96", "3V3_SYS", (6.8, 15.8)), ("R88", "RUN", (9.0, 18.8)), ("C89", "RUN", (9.0, 15.8)),
+    ("Y1", "XIN", (-0.4, 17.8)),        # XIN pad top-left (pin 21 comes straight down to it)
+    ("C86", "XIN", (0.4, 18.3)), ("C87", "XTAL2", (2.0, 20.5)),
+    ("C10", "VBUS", (-7.44, 3.05)), ("R12", "TMR", (-7.44, 3.55)), ("R10", "ISET", (-7.44, 4.55)),
+    ("R11", "ILIM", (-6.75, 2.36)), ("C14", "VSYS", (-5.75, 2.36)), ("C13", "VBUS", (-9.3, 2.2)),
+    ("C11", "VSYS", (-5.75, 2.36)), ("R13", "TS", (-6.75, 5.24)),
+    ("C15", "VBAT", (-5.75, 5.24)), ("C12", "VBAT", (-5.75, 5.24)),
+    ("C20", "VSYS", (6.54, -0.45)), ("C21", "3V3_SYS", (4.26, -0.45)), ("C22", "3V3_SYS", (4.26, -0.45)),
+    ("C51", "3V3_SYS", (7.74, 3.65)), ("R50", "SENS_EN", (7.74, 5.55)),
+    ("C50", "CT_SENS", (5.46, 5.55)), ("C52", "3V3_SENS", (5.46, 3.65)),
+    ("D1", "CHG_LED", (-10.2, 8.59)), ("R14", "CHG_LED", (-10.2, 8.59)),
+    ("C2", "VBUS", (1.2, 23.58)), ("R1", "CC1", (-2.2, 30.0)), ("R2", "CC2", (2.2, 30.0)),
+    ("R41", "MOTOR1_G", (-5.26, 24.0)), ("R40", "MOTOR1_G", (-5.26, 24.0)),
+    ("D3", "MOTOR1_SW", (-7.14, 24.0)), ("C40", "VSYS", (-9.1, 27.0)),
+    ("R43", "MOTOR2_G", (5.26, 24.0)), ("R42", "MOTOR2_G", (5.26, 24.0)),
+    ("D4", "MOTOR2_SW", (7.14, 24.0)), ("C42", "VSYS", (9.1, 27.0)), ("C43", "VSYS", (7.4, 24.0)),
+    ("R60", "VBAT", (10.5, 11.8)), ("R61", "VBAT_SENSE", (10.5, 14.3)), ("C64", "VBAT_SENSE", (10.5, 16.3)),
+    ("R62", "LED_DIN", (8.38, 22.17)), ("R63", "LDO_EN", (-10.2, 11.4)), ("R64", "BTN_RAW", (-4.0, 21.8)),
+    ("R130", "SDA", (-6.7, 17.71)), ("R131", "SCL", (-6.2, 17.71)), ("C130", "3V3_SYS", (-5.7, 17.71)),
+    ("C131", "3V3_SYS", (-5.7, 17.71)), ("C132", "3V3_SYS", (-3.84, 16.05)),
+    ("C120", "3V3_SENS", (0.72, -10.92)), ("C121", "3V3_SENS", (9.28, 12.97)), ("C122", "3V3_SENS", (-9.28, 11.03)),
+    ("C123", "3V3_SENS", (0.72, 33.83)),
 ]
 
 # silkscreen (text, x, y, kwargs) -- the pad rows are named beside pin 1,
 # reading from the BACK (mirrored), and the LEDs on the front
 LEGEND = [
-    ("BAT", -4.0, -11.8, dict(back=True, size=0.8, thickness=0.12)),
-    ("SWD", 6.0, -10.8, dict(back=True, size=0.8, thickness=0.12)),
-    ("MOT", 0.0, 18.8, dict(back=True, size=0.8, thickness=0.12)),
-    ("PROBE SC GND SD", 7.0, -1.2, dict(back=True, size=0.8, thickness=0.12)),
-    ("ST", -12.3, 12.85, dict(size=0.8, thickness=0.12)),
-    ("bluebuzz-rm2 A", 7.5, 2.0, dict(back=True, size=0.8, thickness=0.12)),
+    ("BAT", -0.3, 0.0, dict(back=True, size=0.8, thickness=0.12)),
+    ("SWD", -6.8, -10.5, dict(back=True, size=0.8, thickness=0.12)),
+    ("MOT", 0.0, 21.4, dict(back=True, size=0.8, thickness=0.12)),
+    ("PROBE", -1.2, -5.5, dict(back=True, size=0.8, thickness=0.12)),
+    ("ST", 7.0, 20.8, dict(size=0.8, thickness=0.12)),
+    ("bluebuzz-rm2 A", 0.5, 19.5, dict(back=True, size=0.8, thickness=0.12)),
 ]
 
 
@@ -333,34 +314,95 @@ def keepout_box(design, u7):
     datasheet's 10.5 mm either side reaches both edges here)."""
     ux, uy = to_mm(u7.GetPosition().x) - CX, to_mm(u7.GetPosition().y) - CY
     k = design["radio"]["keepout_mm"]
-    hw, hh = design["board"]["width_mm"] / 2, design["board"]["height_mm"] / 2
+    b = design["board"]
+    hw = b["width_mm"] / 2
+    y_top = float(b.get("top_y_mm", -b["height_mm"] / 2))
     x0 = max(-hw - 1, ux - 7.25 - k["side"])
     x1 = min(hw + 1, ux + 7.25 + k["side"])
-    return (x0, -hh - 1, x1, uy - RM2_HALF_H + k["depth"])
+    return (x0, y_top - 1, x1, uy - RM2_HALF_H + k["depth"])
 
 
 def check(board, design):
-    w, h = design["board"]["width_mm"], design["board"]["height_mm"]
-    boxes = {fp.GetReference(): (crtyd_bbox(fp), fp.GetLayer()) for fp in board.GetFootprints()}
-    kx0, ky0, kx1, ky1 = keepout_box(design, next(f for f in board.GetFootprints() if f.GetReference() == "U7"))
+    b = design["board"]
+    w, h = b["width_mm"], b["height_mm"]
+    hw_at = None
+    if b.get("outline") == "squish":
+        from squish_outline import generate_outline_points_pcb
+        pts, info = generate_outline_points_pcb(
+            r_tip=float(b.get("r_tip_mm", 10.0)),
+            top_y_pcb=float(b.get("top_y_mm", -22.0)),
+            offset_mm=float(b.get("offset_mm", 0.0)),
+            n_arc=360,
+            n_spline=300,
+        )
+        right_pts = sorted([(p[1], p[0]) for p in pts if p[0] >= -1e-6])
+        y_top = info["y_top_pcb"]
+        y_bot = info["y_bot_pcb"]
+
+        def hw_at(y):
+            if y <= y_top or y >= y_bot:
+                return 0.0
+            for idx in range(len(right_pts) - 1):
+                y0, x0 = right_pts[idx]
+                y1, x1 = right_pts[idx + 1]
+                if y0 <= y <= y1 and y1 > y0:
+                    return x0 + (x1 - x0) * (y - y0) / (y1 - y0)
+            return 0.0
+
+    fps_by_ref = {fp.GetReference(): fp for fp in board.GetFootprints()}
+    boxes = {ref: (crtyd_bbox(fp), fp.GetLayer()) for ref, fp in fps_by_ref.items()}
+    kx0, ky0, kx1, ky1 = keepout_box(design, fps_by_ref["U7"])
     problems = []
     refs = sorted(boxes)
     for i, a in enumerate(refs):
         (ax0, ay0, ax1, ay1), al = boxes[a]
-        if a not in EDGE_PARTS and (ax0 < -w / 2 or ax1 > w / 2 or ay0 < -h / 2 or ay1 > h / 2):
-            problems.append(f"{a} outside board: {ax0:.2f},{ay0:.2f}..{ax1:.2f},{ay1:.2f}")
+        if a not in EDGE_PARTS:
+            if hw_at is not None:
+                worst = max(abs(x) - hw_at(y) for x in (ax0, ax1) for y in (ay0, ay1))
+                if worst > 0.0:
+                    problems.append(f"{a} outside squish outline by {worst:.2f} mm: {ax0:.2f},{ay0:.2f}..{ax1:.2f},{ay1:.2f}")
+            elif ax0 < -w / 2 or ax1 > w / 2 or ay0 < -h / 2 or ay1 > h / 2:
+                problems.append(f"{a} outside board: {ax0:.2f},{ay0:.2f}..{ax1:.2f},{ay1:.2f}")
         if a != "U7" and ax0 < kx1 and kx0 < ax1 and ay0 < ky1 and ky0 < ay1:
             problems.append(f"{a} inside the RF keep-out (y < {ky1:.1f})")
-        for b in refs[i + 1:]:
-            if a in BLOCK and b in BLOCK:
+        for b_ref in refs[i + 1:]:
+            if a in BLOCK and b_ref in BLOCK:
                 continue                 # touching exactly as in Raspberry Pi's layout
-            (bx0, by0, bx1, by1), bl = boxes[b]
+            (bx0, by0, bx1, by1), bl = boxes[b_ref]
             if al != bl:
                 continue
             ox = min(ax1, bx1) - max(ax0, bx0)
             oy = min(ay1, by1) - max(ay0, by0)
             if ox > 0.001 and oy > 0.001:
-                problems.append(f"{a} x {b}: overlap {ox:.2f} x {oy:.2f} mm")
+                problems.append(f"{a} x {b_ref}: overlap {ox:.2f} x {oy:.2f} mm")
+
+    # Enforce >= 2.0 mm clearance around each pressure sensor (except its own 100n cap)
+    from circuit import TACTILE
+    sensor_caps = dict(TACTILE)
+    for sref, capref in sensor_caps.items():
+        (sx0, sy0, sx1, sy1), _ = boxes[sref]
+        for oref, ((ox0, oy0, ox1, oy1), ol) in boxes.items():
+            if oref in (sref, capref) or ol != pcbnew.B_Cu:
+                continue
+            dx = max(0.0, sx0 - ox1, ox0 - sx1)
+            dy = max(0.0, sy0 - oy1, oy0 - sy1)
+            dist = (dx * dx + dy * dy) ** 0.5
+            if dist < 2.0:
+                problems.append(f"{sref} too close to {oref} ({dist:.2f} mm < 2.00 mm)")
+
+    # Enforce clearance between J1's through-hole USB GND shield slots and back components
+    for p in fps_by_ref["J1"].Pads():
+        if p.GetAttribute() == pcbnew.PAD_ATTRIB_PTH:
+            px, py = to_mm(p.GetPosition().x) - CX, to_mm(p.GetPosition().y) - CY
+            pw, ph = to_mm(p.GetSize().x) / 2.0, to_mm(p.GetSize().y) / 2.0
+            for oref, ((ox0, oy0, ox1, oy1), ol) in boxes.items():
+                if ol != pcbnew.B_Cu:
+                    continue
+                dx = max(0.0, (px - pw) - ox1, ox0 - (px + pw))
+                dy = max(0.0, (py - ph) - oy1, oy0 - (py + ph))
+                dist = (dx * dx + dy * dy) ** 0.5
+                if dist < 1.5:
+                    problems.append(f"J1 USB GND PTH ({px:.1f},{py:.1f}) too close to back part {oref} ({dist:.2f} mm < 1.50 mm)")
     return problems
 
 

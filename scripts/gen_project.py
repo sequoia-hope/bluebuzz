@@ -30,7 +30,7 @@ ERC_IGNORE = {
 # Layers a netclass may be routed on (route.py writes them into the DSN as
 # the class's `use_layer`; the finish stage keeps to them too). Classes not
 # listed may use every signal layer.
-LAYER_RULES = {"Motor": ["F.Cu"], "Vbus": ["F.Cu", "In2.Cu", "B.Cu"]}
+LAYER_RULES = {"Motor": ["B.Cu"], "Vbus": ["F.Cu", "In2.Cu", "B.Cu"]}
 
 DEFAULT = {
     "board": {"design_settings": {"defaults": {}, "rules": {}},

@@ -278,8 +278,10 @@ def main():
     print(f"edge fence: {fence_n} vias")
 
     # 3. interior, farthest point first
-    hw, hh = design["board"]["width_mm"] / 2, design["board"]["height_mm"] / 2
-    grid = [(float(x), float(y)) for x in np.arange(-hw + 0.5, hw - 0.5, 0.25) for y in np.arange(-hh + 0.5, hh - 0.5, 0.25)
+    eb = board.GetBoardEdgesBoundingBox()
+    ex0, ey0 = to_mm(eb.GetLeft()) - CX + 0.5, to_mm(eb.GetTop()) - CY + 0.5
+    ex1, ey1 = to_mm(eb.GetRight()) - CX - 0.5, to_mm(eb.GetBottom()) - CY - 0.5
+    grid = [(float(x), float(y)) for x in np.arange(ex0, ex1, 0.25) for y in np.arange(ey0, ey1, 0.25)
             if sp.inner.Contains(sp.vec(x, y))
             and not any(z.GetIsRuleArea() and z.Outline().Contains(sp.vec(x, y)) for z in sp.areas)]
     tried, inner_n = set(), 0

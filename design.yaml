@@ -21,11 +21,16 @@ board:
                          # QFN-60 with its decoupling on the back wants a
                          # real inner signal layer.
   thickness_mm: 1.6
-  width_mm: 28
-  height_mm: 44          # RM2 antenna end at the TOP edge; the top 5 mm of
-                         # the board is the RM2's RF keep-out (no metal on
-                         # any layer, no pads), so the pad groups start below it
-  floorplan_h_mm: 44
+  width_mm: 26
+  height_mm: 56.84       # squish_pcb.dxf (r_tip = 10.0 mm) offset inward by 2.0 mm:
+                         # top dome at y = -20.0 mm (r = 8.0 mm), 26.0 mm max belly width at y = +12.9 mm,
+                         # bottom tip at y = +36.84 mm (r = 8.0 mm).
+                         # RM2 centered at the top dome; top 8.25 mm (y < -11.75 mm) is RF keep-out.
+  floorplan_h_mm: 56.84
+  outline: squish
+  r_tip_mm: 10.0
+  offset_mm: 2.0
+  top_y_mm: -20.0
   corner_radius_mm: 2.0
   mounting_holes: null
 
@@ -84,11 +89,11 @@ pads:                    # every other lead: 1.6 x 2.2 mm pads at 2.0 mm pitch
   swd: [SWDIO, SWCLK, RUN, BOOT, GND]
 
 tactile:                 # DPS368 barometers on the BACK, cast in elastomer
-  count: 5              # (after Tenzer, Jentoft & Howe 2014: MPL115A2s under
+  count: 4              # (after Tenzer, Jentoft & Howe 2014: MPL115A2s under
   cols: 2               # 4-10 mm of VytaFlex 20; here pressure-pot cast,
-  layout: corners        # not vacuum -- DPS368 p.43). One sensor toward each
-                         # board corner (user, 2026-10-18); positions in place.py
-  bus: SPI1 (GPIO10 SCK, 11 SDI, 12 SDO), CS on GPIO13-16 and GPIO20
+  layout: diamond        # not vacuum -- DPS368 p.43). Symmetric 4-point diamond
+                         # pattern across the back belly (user, 2026-10-21); positions in place.py
+  bus: SPI1 (GPIO10 SCK, 11 SDI, 12 SDO), CS on GPIO0 and GPIO14-16
 
 jlcpcb:
   min_track_mm: 0.127

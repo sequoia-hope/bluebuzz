@@ -137,8 +137,19 @@ baro:
   notes: >
     Infineon DPS368 barometer, LGA-8 2.0 x 2.5 x 1.1 mm, waterproof (IPx8)
     with the pressure port on top. 1.7-3.6 V, I2C or SPI (CSB low at
-    power-up = SPI). The tactile array: six of them on the back, cast in
-    elastomer, one chip select each on SPI1.
+    power-up = SPI). The tactile array: four of them on the back in a
+    diamond pattern, cast in elastomer, one chip select each on SPI1.
+
+pdm_mic:
+  mpn: MP34DT05TR-A
+  lcsc: C2688664
+  footprint: bluebuzz-rm2:MP34DT05_HCLGA-4
+  verified: api          # JLC 2026-10-21: 557 in stock (MP34DT06JTR C503097 drop-in, 123 in stock)
+  notes: >
+    ST MP34DT05-A top-port digital PDM MEMS microphone, HCLGA-4 3.0 x 4.0 x 1.0 mm,
+    64 dB SNR, 122.5 dBSPL AOP, 1.6-3.6 V. Top-port requires no acoustic hole in
+    the PCB. 1=VDD, 2=LR (GND = left channel), 3=CLK (PDM_CLK), 4=DOUT (PDM_DATA),
+    5=GND seal ring.
 
 dual_schottky:
   mpn: BAT54C,215

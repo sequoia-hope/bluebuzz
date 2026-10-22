@@ -150,6 +150,15 @@ def sync_project_rules(design):
 
 def outline(board, design):
     b = design["board"]
+    if b.get("outline") == "squish":
+        from squish_outline import add_squish_outline_to_board
+        add_squish_outline_to_board(
+            board,
+            r_tip=float(b.get("r_tip_mm", 10.0)),
+            top_y_pcb=float(b.get("top_y_mm", -22.0)),
+            offset_mm=float(b.get("offset_mm", 0.0)),
+        )
+        return
     w, h, r = b["width_mm"], b["height_mm"], b["corner_radius_mm"]
     hw, hh = w / 2, h / 2
 

@@ -19,15 +19,15 @@ import math
 import pcbnew
 
 CX, CY = 100.0, 100.0
-ZONE = (-13.2, -10.0, -5.2, 9.0)          # x0, y0, x1, y1
-POOL_TOP, POOL_BOTTOM = -10.0, -8.6
+ZONE = (4.0, 2.5, 9.6, 9.2)              # x0, y0, x1, y1 (open upper-right back strip inside 2mm-offset outline)
+POOL_TOP, POOL_BOTTOM = 2.5, 3.3
 # (centre x, neck half-width, length below the pool, bead radius, droplet?)
 DRIPS = [
-    (-12.25, 0.28, 3.2, 0.42, False),
-    (-10.75, 0.33, 9.6, 0.55, True),
-    (-9.15, 0.30, 5.4, 0.48, False),
-    (-7.55, 0.36, 13.0, 0.62, True),
-    (-6.05, 0.28, 6.6, 0.45, False),
+    (4.65, 0.24, 1.8, 0.35, False),
+    (5.70, 0.28, 3.8, 0.42, True),
+    (6.80, 0.26, 2.6, 0.38, False),
+    (7.90, 0.30, 4.2, 0.44, True),
+    (8.95, 0.24, 3.0, 0.36, False),
 ]
 LINE = 0.1
 

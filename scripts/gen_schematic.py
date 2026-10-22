@@ -1050,8 +1050,8 @@ def mcu_sides():
     right = [gpio(13, "M1_PWM"), gpio(17, "M2_PWM"), None,
              gpio(2, "WL_DATA"), gpio(3, "WL_CLK"), gpio(27, "WL_ON"), gpio(25, "WL_CS"), None,
              gpio(10, "TAC_SCK"), gpio(11, "TAC_SDI"), gpio(12, "TAC_SDO"), None,
-             gpio(0, "TAC_CS1"), gpio(14, "TAC_CS2"), gpio(15, "TAC_CS3"), gpio(16, "TAC_CS4"),
-             gpio(20, "TAC_CS5"), None,
+             gpio(0, "TAC_CS1"), gpio(14, "TAC_CS2"), gpio(15, "TAC_CS3"), gpio(16, "TAC_CS4"), None,
+             gpio(29, "PDM_CLK"), gpio(28, "PDM_DATA"), None,
              gpio(6, "SDA"), gpio(7, "SCL"), gpio(5, "IMU_INT1"), gpio(18, "IMU_INT2"), None,
              gpio(19, "PWR_HOLD"),
              gpio(4, "SENS_EN"), gpio(22, "LED"), gpio(8, "BTN"), gpio(9, "PG"), None,
@@ -1083,6 +1083,8 @@ IC_SIDES = {
     # DPS368: the SPI on the left, supplies top, grounds stacked bottom
     "baro": {"l": [("2", "CSB"), ("4", "SCK"), ("3", "SDI"), ("5", "SDO")],
              "t": [("8", "VDD"), ("6", "VDDIO")], "b": [("1", "GND", ["7"])]},
+    "pdm_mic": {"l": [("3", "CLK"), ("4", "DOUT")],
+                "t": [("1", "VDD")], "b": [("5", "GND"), ("2", "LR")]},
     "motor_fet": {"l": [("1", "G")], "r": [("3", "D")], "b": [("2", "S")]},
     "sig_fet": {"l": [("1", "G")], "r": [("3", "D")], "b": [("2", "S")]},
     "rgb_led": {"l": [("4", "DI")], "r": [("1", "DOUT")], "t": [("2", "VDD")], "b": [("3", "GND")]},
@@ -1116,7 +1118,7 @@ IC_SIDES = {
     "pads_3": {"l": [("1", "VSYS"), None, ("2", "M1"), None, ("3", "M2")]},
 }
 
-IC_MIN_W = {"rgb_led": 17.78, "debug_jst": 15.24, "sig_fet": 15.24, "dual_schottky": 15.24, "usb_esd": 17.78, "pads_2": 15.24, "pads_bat": 15.24, "pads_tp": 15.24, "pads_3": 15.24, "motor_fet": 15.24, "baro": 17.78, "imu": 20.32,
+IC_MIN_W = {"rgb_led": 17.78, "debug_jst": 15.24, "sig_fet": 15.24, "dual_schottky": 15.24, "usb_esd": 17.78, "pads_2": 15.24, "pads_bat": 15.24, "pads_tp": 15.24, "pads_3": 15.24, "motor_fet": 15.24, "baro": 17.78, "pdm_mic": 17.78, "imu": 20.32,
             "pads_4": 15.24, "pads_5": 10.16, "pads_swd": 15.24,
             "flash": 20.32}
 
@@ -1603,14 +1605,48 @@ def blk_tactile(s, cir, bk, x, y):
         s.wire(u["1"], (u["1"][0], u["1"][1] + 7.62))
         s.rail("GND", (u["1"][0], u["1"][1] + 7.62))
         caps.append(cap)
-    s.note("Five Infineon DPS368s on the BACK of the board, one toward each "
-           "corner and one in the centre, cast in soft elastomer after Tenzer, Jentoft & Howe "
+    s.note("Four Infineon DPS368s on the BACK of the board in a diamond pattern "
+           "(North U20, East U21, West U22, South U23), cast in soft elastomer after Tenzer, Jentoft & Howe "
            "2014 (The Feel of MEMS Barometers): rubber poured over the array "
            "and pressure-cast (not vacuum: DPS368 p.43) so it fills the ports; a load on the "
            "surface then reads as pressure. CSB low at power-up puts each "
            "sensor in SPI mode; SPI1 on GPIO10-12, one chip select each on "
-           "GPIO13-16 and 20. 100n at every sensor.",
-           x - 20.0, y + 2 * 66.04 + 30.48, 150.0)
+           "GPIO0 and GPIO14-16. 100n at every sensor.",
+           x - 20.0, y + 66.04 + 30.48, 150.0)
+    s.end()
+
+
+def blk_mic(s, cir, bk, x, y):
+    s.begin("14 — PDM MEMS microphone: MP34DT05-A (top-port)")
+    u = put(s, cir, "U40", x, y, ref_off="corner")
+    for pin, net in (("3", "PDM_CLK"), ("4", "PDM_DATA")):
+        bk.take("U40", pin, net)
+        s.wire(u[pin], (u[pin][0] - 15.24, u[pin][1]))
+        s.glabel(net, (u[pin][0] - 15.24, u[pin][1]), just="right")
+    bk.take("U40", "1", "3V3_SYS")
+    yt = u["1"][1] - 11.43
+    s.wire(u["1"], (u["1"][0], yt))
+    xc = u["1"][0] + 12.7
+    s.wire((u["1"][0], yt), (xc, yt))
+    s.junction((u["1"][0], yt))
+    s.wire((u["1"][0], yt), (u["1"][0], yt - 5.08))
+    s.rail("3V3_SYS", (u["1"][0], yt - 5.08))
+    vdrop(s, cir, bk, "C140", xc, yt, ref_off=(2.3, -0.4))
+    bk.take("C140", "1", "3V3_SYS")
+    for pin in ("5", "2"):
+        bk.take("U40", pin, "GND")
+    yb = u["5"][1] + 5.08
+    s.wire(u["5"], (u["5"][0], yb))
+    s.wire(u["2"], (u["2"][0], yb))
+    s.wire((u["5"][0], yb), (u["2"][0], yb))
+    s.junction((u["5"][0], yb))
+    s.wire((u["5"][0], yb), (u["5"][0], yb + 3.81))
+    s.rail("GND", (u["5"][0], yb + 3.81))
+    s.note("ST MP34DT05TR-A top-port digital PDM MEMS microphone (3 x 4 x 1 mm "
+           "HCLGA-4, 64 dB SNR, 122.5 dBSPL AOP) on the always-on 3.3 V rail. "
+           "LR tied to GND selects the left-channel slot; CLK on GPIO29, DOUT "
+           "on GPIO28 (PIO PDM state machine). Top acoustic port needs no PCB hole.",
+           x - 20.0, y + 30.48, 130.0)
     s.end()
 
 
@@ -2176,6 +2212,7 @@ def build_sheet(design, cir):
     blk_motor(s, cir, bk, 640.08, 190.5)
     blk_sensors(s, cir, bk, 251.46, 149.86)
     blk_tactile(s, cir, bk, 528.32, 231.14)
+    blk_mic(s, cir, bk, 528.32, 419.1)
     blk_imu(s, cir, bk, 668.02, 83.82)
     blk_mcu(s, cir, bk, 403.86, 243.84)
     blk_flash(s, cir, bk, 358.14, 76.2)

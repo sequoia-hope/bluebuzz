@@ -67,6 +67,9 @@ INDEX_HTML = """<!DOCTYPE html>
   <figure><img class="rf" id="rbot" src="render_bottom.png"><figcaption>back, routed</figcaption></figure>
 </div>
 <div class="row">
+  <figure><img class="rf" id="squish" src="squish_outline_overlay.png" style="max-width:min(94vw,1500px)"><figcaption>design/squish_pcb.dxf superimposed on current 28 × 44 mm board (parametric lower-tip radii)</figcaption></figure>
+</div>
+<div class="row">
   <figure><img class="rf" id="laytop" src="layout_top.png"><figcaption>layout top (F.Cu over In1/In2/B.Cu)</figcaption></figure>
   <figure><img class="rf" id="laybot" src="layout_bottom.png"><figcaption>layout bottom, mirrored (B.Cu over In2/In1/F.Cu)</figcaption></figure>
 </div>
@@ -355,6 +358,11 @@ def main():
     index = ROOT / "out" / "index.html"
     index.write_text(INDEX_HTML % (imgs, layers_js))
     print(f"wrote {index}")
+    try:
+        from squish_outline import render_superimposed
+        render_superimposed()
+    except Exception as e:
+        print(f"squish overlay failed: {e}")
     sys.exit(0 if ok else 1)
 
 

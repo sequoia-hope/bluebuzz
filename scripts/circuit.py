@@ -126,19 +126,19 @@ ROLE = {
     17: "MOTOR2_PWM",     # pin 28, PWM slice 0 B
     18: "IMU_INT2",
     19: "PWR_HOLD",       # soft power latch: high keeps the LDO enabled
-    20: "TAC_CS5",        # the fifth (centre) tactile sensor
     22: "LED_STAT",       # pin 34, on the side facing D2 (was GPIO5 on the far
                           # side: no route around the RP2350, 2026-10-18)
     27: "WL_ON",          # RM2 pins 12 + 13 (R2)
     25: "WL_CS",          # RM2 pin 9
     26: "VBAT_SENSE",     # ADC0
+    28: "PDM_DATA",       # MP34DT05-A DOUT (pin 42)
+    29: "PDM_CLK",        # MP34DT05-A CLK (pin 43)
 }
 
-# the tactile array: rows x cols of DPS368 barometers on the BACK of the
-# board, cast in soft elastomer (Tenzer, Jentoft & Howe 2014, "The Feel of
-# MEMS Barometers"); the sensor refs and their 100n, in row-major order
-# four toward the board corners and one in the centre (user, 2026-10-18)
-TACTILE_COUNT, TACTILE_COLS = 5, 2
+# the tactile array: 4 DPS368 barometers on the BACK of the board in a
+# diamond pattern (North U20, East U21, West U22, South U23), cast in soft
+# elastomer (Tenzer, Jentoft & Howe 2014, "The Feel of MEMS Barometers")
+TACTILE_COUNT, TACTILE_COLS = 4, 2
 TACTILE = [(f"U{20 + k}", f"C{120 + k}") for k in range(TACTILE_COUNT)]
 
 # footprint only, not fitted: out of the BOM and the CPL, marked DNP on the
@@ -281,6 +281,14 @@ def build_circuit(design=None):
     c.add("C132", "c_100n", "100n", {1: "3V3_SYS", 2: "GND"})     # VDDIO
     c.add("R130", "r_4k7", "4.7k", {1: "3V3_SYS", 2: "SDA"})
     c.add("R131", "r_4k7", "4.7k", {1: "3V3_SYS", 2: "SCL"})
+
+    # =====================================================================
+    # Block 7b -- PDM MEMS microphone: MP34DT05TR-A (top-port)
+    # =====================================================================
+    c.add("U40", "pdm_mic", "MP34DT05-A", {
+        1: "3V3_SYS", 2: "GND", 3: "PDM_CLK", 4: "PDM_DATA", 5: "GND",
+    })
+    c.add("C140", "c_100n", "100n", {1: "3V3_SYS", 2: "GND"})
 
     # =====================================================================
     # Block 8 -- RP2350A: core regulator, decoupling, crystal, flash, USB, SWD
